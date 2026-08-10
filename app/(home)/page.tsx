@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { PageContainer } from '@/shared/components/page-container';
 
 const LINKS = [
+  { href: '/components', label: '공통 컴포넌트' },
   { href: '/login', label: '로그인' },
   { href: '/onboarding', label: '온보딩 인트로' },
   { href: '/welcome', label: '가치 소개 + 로그인' },

@@ -11,7 +11,7 @@ const NotFound = () => {
         <p className="text-body-xl text-text-subtle text-center leading-normal font-medium">
           요청하신 페이지를 찾을 수 없습니다.
         </p>
-        <Button asChild variant="primary" size="large">
+        <Button asChild variant="primary">
           <Link href="/">홈으로 가기</Link>
         </Button>
       </PageContainer>

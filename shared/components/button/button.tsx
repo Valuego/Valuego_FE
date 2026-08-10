@@ -6,50 +6,29 @@ import { Slot } from 'radix-ui';
 import { cn } from '@/shared/lib/cn';
 
 export const buttonVariants = cva(
-  'inline-flex items-center justify-center font-medium transition-colors gap-1 self-start cursor-pointer',
+  'inline-flex h-[52px] items-center justify-center gap-2 rounded-xl px-[30px] text-[15.5px] font-semibold tracking-[-0.3px] transition-opacity cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
-        primary:
-          'bg-button-primary-fill hover:bg-button-primary-fill-hover focus:bg-button-primary-fill-focus active:bg-button-primary-fill-pressed text-text-basic-inverse',
-        secondary:
-          'border border-button-secondary-border text-text-primary bg-button-secondary-fill hover:bg-button-secondary-fill-hover focus:bg-button-secondary-fill-focus active:bg-button-secondary-fill-pressed',
-        tertiary:
-          'bg-button-tertiary-fill hover:bg-button-tertiary-fill-hover focus:bg-button-tertiary-fill-focus active:bg-button-tertiary-fill-pressed text-text-basic',
+        primary: 'bg-brand-blue text-white hover:opacity-90 active:opacity-80',
+        dark: 'bg-ink-900 text-white hover:opacity-90 active:opacity-80',
+        success: 'bg-brand-success text-white hover:opacity-90 active:opacity-80',
+        outline: 'border-line-hairline bg-white text-ink-900 border hover:bg-surface-muted active:bg-surface-muted',
+        ghost: 'bg-transparent text-brand-blue hover:opacity-80 active:opacity-70',
       },
-      size: {
-        large: 'px-7 py-3 text-body-xl rounded-lg',
-        medium: 'py-2.5 px-5 rounded-md text-body-base',
-        small: 'px-4 py-2 text-body-sm rounded-sm',
-      },
-      disabled: {
-        true: 'bg-button-disabled-fill text-text-disabled cursor-not-allowed hover:bg-button-disabled-fill hover:text-text-disabled focus:bg-button-disabled-fill focus:text-text-disabled active:bg-button-disabled-fill active:text-text-disabled border-none',
-        false: '',
+      fullWidth: {
+        true: 'w-full',
+        false: 'w-auto self-start',
       },
     },
-    compoundVariants: [
-      {
-        variant: 'primary',
-        disabled: true,
-      },
-      {
-        variant: 'secondary',
-        disabled: true,
-      },
-      {
-        variant: 'tertiary',
-        disabled: true,
-      },
-    ],
     defaultVariants: {
       variant: 'primary',
-      size: 'medium',
-      disabled: false,
+      fullWidth: false,
     },
   },
 );
 
-interface Props extends ComponentProps<'button'>, Omit<VariantProps<typeof buttonVariants>, 'disabled'> {
+interface Props extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   leftIcon?: ReactElement;
   rightIcon?: ReactElement;
@@ -58,19 +37,21 @@ interface Props extends ComponentProps<'button'>, Omit<VariantProps<typeof butto
 export const Button = ({
   className,
   variant,
-  size,
+  fullWidth,
   children,
   disabled,
   asChild,
   leftIcon,
   rightIcon,
+  type = 'button',
   ...restProps
 }: Props) => {
   const Component = asChild ? Slot.Root : 'button';
 
   return (
     <Component
-      className={cn(buttonVariants({ variant, size, disabled }), className)}
+      type={asChild ? undefined : type}
+      className={cn(buttonVariants({ variant, fullWidth }), className)}
       disabled={disabled}
       {...restProps}
     >
