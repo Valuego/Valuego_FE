@@ -1,0 +1,19 @@
+{
+  "name": "가치가자",
+  "short_name": "가치가자",
+  "description": "수고까지 나누는 우정여행",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#3366ff",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/brand/logo-gachigaja.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import localFont from 'next/font/local';
 
 import { QueryProvider } from '@/shared/providers/query-provider';
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 import '@/styles/globals.css';
 
@@ -12,8 +12,31 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'Valuego',
-  description: 'Valuego frontend',
+  title: '가치가자',
+  description: '수고까지 나누는 우정여행',
+  applicationName: '가치가자',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '가치가자',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [{ url: '/brand/logo-gachigaja.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/brand/logo-gachigaja.svg' }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#3366ff',
 };
 
 const pretendard = localFont({
@@ -25,7 +48,7 @@ const pretendard = localFont({
 const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
     <html lang="ko" className={pretendard.variable}>
-      <body className="bg-gray-0 flex min-h-screen flex-col text-gray-900 antialiased">
+      <body className="bg-gray-0 flex min-h-dvh flex-col text-gray-900 antialiased">
         <QueryProvider>
           <main className="flex-1">{children}</main>
         </QueryProvider>

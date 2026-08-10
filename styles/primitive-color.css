@@ -105,6 +105,17 @@
   --color-success-100: #d8eedd;
   --color-success-50: #eaf6ec;
 
+  /* Brand (가치가자) */
+  --color-brand-blue: #3366ff;
+  --color-brand-purple: #6541f2;
+  --color-brand-cyan: #00bdde;
+  --color-brand-kakao: #fae100;
+  --color-ink-900: #171717;
+  --color-text-secondary-soft: rgba(55, 56, 60, 0.61);
+  --color-line-hairline: rgba(112, 115, 132, 0.16);
+  --color-auth-gradient-from: #f0f2ff;
+  --color-auth-gradient-from-soft: #f5f7ff;
+
   /* Alpha */
   --color-black-75: rgba(0, 0, 0, 0.75);
   --color-black-50: rgba(0, 0, 0, 0.5);
