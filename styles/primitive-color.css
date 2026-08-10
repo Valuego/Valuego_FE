@@ -110,11 +110,26 @@
   --color-brand-purple: #6541f2;
   --color-brand-cyan: #00bdde;
   --color-brand-kakao: #fae100;
+  --color-brand-success: #00bf40;
   --color-ink-900: #171717;
   --color-text-secondary-soft: rgba(55, 56, 60, 0.61);
+  --color-text-body: rgba(46, 47, 51, 0.88);
+  --color-text-placeholder: rgba(55, 56, 60, 0.28);
   --color-line-hairline: rgba(112, 115, 132, 0.16);
+  --color-surface-gray: #f7f7f8;
+  --color-surface-muted: rgba(112, 115, 125, 0.08);
+  --color-toggle-off: rgba(112, 115, 125, 0.22);
+  --color-handle-muted: rgba(112, 115, 125, 0.28);
   --color-auth-gradient-from: #f0f2ff;
   --color-auth-gradient-from-soft: #f5f7ff;
+  --color-member-doyeon: #3366ff;
+  --color-member-seojun: #6541f2;
+  --color-member-hayeong: #00bdde;
+  --color-member-minjae: #ff9200;
+  --color-calendar-surface: #eef2f7;
+  --color-calendar-border: #d6e0eb;
+  --color-calendar-selected: #063a74;
+  --color-calendar-today: #de3412;
 
   /* Alpha */
   --color-black-75: rgba(0, 0, 0, 0.75);
