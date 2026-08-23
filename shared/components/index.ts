@@ -9,5 +9,7 @@ export { MobileShell } from './mobile-shell';
 export { PageContainer } from './page-container';
 export { ProgressBar } from './progress-bar';
 export { Slider } from './slider';
+export { StatusPill, statusPillVariants } from './status-pill';
+export { TabBar } from './tab-bar';
 export { TextField } from './text-field';
 export { Toggle } from './toggle';
