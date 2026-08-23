@@ -5,6 +5,9 @@ import { PageContainer } from '@/shared/components/page-container';
 const LINKS = [
   { href: '/home', label: '홈 (진행 중 여행)' },
   { href: '/home?empty=1', label: '홈 (빈 상태)' },
+  { href: '/games', label: '미니게임' },
+  { href: '/games/roulette', label: '벌칙 룰렛' },
+  { href: '/games/ladder', label: '사다리타기' },
   { href: '/my', label: '마이페이지' },
   { href: '/my/personality', label: '내 성향 카드' },
   { href: '/my/notifications', label: '알림 설정' },
