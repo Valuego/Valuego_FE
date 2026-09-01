@@ -5,7 +5,6 @@ import { useState } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
-import { login } from '@/shared/session';
 
 import { ONBOARDING_STEPS } from '../onboarding.constants';
 import { StepDots } from './step-dots';
@@ -17,13 +16,11 @@ export const OnboardingScreen = () => {
   const isLastStep = stepIndex === ONBOARDING_STEPS.length - 1;
 
   const handleSkip = () => {
-    login();
     router.push('/welcome');
   };
 
   const handleNext = () => {
     if (isLastStep) {
-      login();
       router.push('/welcome');
       return;
     }

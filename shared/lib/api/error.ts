@@ -10,7 +10,7 @@ export type ApiErrorData = {
  *
  * @example
  * try {
- *   await apiRequest('/users/me');
+ *   await apiRequest('/users/profile');
  * } catch (error) {
  *   if (error instanceof ApiError && error.status === 401) {
  *     redirect('/login');
@@ -28,3 +28,15 @@ export class ApiError extends Error {
     this.errorData = errorData;
   }
 }
+
+export const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
+
+export const getErrorMessage = (error: unknown, fallback = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.') => {
+  if (isApiError(error)) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};

@@ -35,12 +35,14 @@ pnpm dev
 
 ## 환경 변수
 
-| 변수                       | 설명                                      |
-| -------------------------- | ----------------------------------------- |
-| `NEXT_PUBLIC_API_BASE_URL` | 백엔드 API 베이스 URL (끝 `/` 없이)       |
-| `NEXT_PUBLIC_API_ORIGIN`   | API origin (CORS/절대 URL용)              |
-| `NEXT_PUBLIC_SITE_URL`     | 사이트 URL (metadataBase 등)              |
-| `NEXT_PUBLIC_MSW`          | `true`면 MSW mock 사용 (handlers 추가 후) |
+| 변수                             | 설명                                      |
+| -------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_API_BASE_URL`       | 백엔드 API 베이스 URL (끝 `/` 없이)       |
+| `NEXT_PUBLIC_API_ORIGIN`         | API origin (CORS/절대 URL용)              |
+| `NEXT_PUBLIC_SITE_URL`           | 사이트 URL (metadataBase 등)              |
+| `NEXT_PUBLIC_KAKAO_CLIENT_ID`    | 카카오 OAuth 앱 REST API 키               |
+| `NEXT_PUBLIC_KAKAO_REDIRECT_URI` | 카카오 콜백 URL (`/login/kakao/callback`) |
+| `NEXT_PUBLIC_MSW`                | `true`면 MSW mock 사용 (handlers 추가 후) |
 
 `/api/v1/*` 요청은 `next.config.ts` rewrite로 백엔드로 프록시됩니다.
 

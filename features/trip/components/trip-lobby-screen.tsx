@@ -9,13 +9,17 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
-import { advanceTripPhase, useTripById } from '@/shared/session';
+import { getErrorMessage } from '@/shared/lib/api';
+import { advanceTripPhase } from '@/shared/session';
+
+import { rememberActiveTrip, useConfirmSchedule, useTripView } from '../trip.hooks';
 
 type TripLobbyScreenProps = {
   tripId: string;
 };
 
 const MENU = [
+  { key: 'schedule', label: 'AI 일정', description: '일차별 동선 확인', path: 'schedule' },
   { key: 'invite', label: '친구 초대', description: '링크 공유 · 참여 현황', path: 'invite' },
   { key: 'games', label: '미니게임', description: '룰렛 · 사다리로 30초 결정', path: 'games' },
   { key: 'roles', label: '역할 분담', description: '총무·내비·맛집 담당 정하기', path: 'roles' },
@@ -25,24 +29,65 @@ const MENU = [
 
 export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   const router = useRouter();
-  const trip = useTripById(tripId);
+  const { trip, groupId, isLoading, isError, error } = useTripView(tripId);
+  const confirmSchedule = useConfirmSchedule(groupId ?? 0);
 
   useEffect(() => {
-    if (!trip) {
+    if (!isLoading && !isError && !trip) {
       router.replace('/home');
     }
-  }, [router, trip]);
+  }, [isError, isLoading, router, trip]);
+
+  useEffect(() => {
+    if (trip) {
+      rememberActiveTrip(trip.id);
+    }
+  }, [trip]);
+
+  if (isLoading) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          그룹을 불러오는 중…
+        </div>
+      </MobileShell>
+    );
+  }
 
   if (!trip) {
-    return null;
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 text-center">
+          <p className="text-sm font-medium text-[#e08300]">
+            {isError ? getErrorMessage(error) : '그룹을 찾을 수 없어요.'}
+          </p>
+          <Button variant="outline" onClick={() => router.push('/home')}>
+            홈으로
+          </Button>
+        </div>
+      </MobileShell>
+    );
   }
 
   const doneCount = trip.members.filter((member) => member.status !== 'pending').length;
+
+  const handleStartTrip = async () => {
+    if (groupId) {
+      try {
+        await confirmSchedule.mutateAsync();
+      } catch {
+        return;
+      }
+    }
+    advanceTripPhase(tripId, 'ongoing');
+  };
 
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-4">
         <Header title="일행 대기실" onBack={() => router.push('/home')} />
+
+        {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}
 
         <section className="border-line-hairline rounded-2xl border bg-white px-5 py-5">
           <p className="text-text-secondary-soft text-xs font-bold">{trip.dDayLabel ?? trip.phase}</p>
@@ -57,6 +102,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
                   key={member.id}
                   member={member.member}
                   size="sm"
+                  initial={member.name.slice(0, 1)}
                   className={index === 0 ? '' : '-ml-2 ring-2 ring-white'}
                 />
               ))}
@@ -65,9 +111,6 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
               {doneCount}/{trip.memberCount} 참여
             </p>
           </div>
-          {trip.timeline[0] ? (
-            <p className="text-text-secondary-soft mt-3 text-xs font-medium">최근: {trip.timeline[0].label}</p>
-          ) : null}
         </section>
 
         <ul className="flex flex-col gap-2.5">
@@ -90,9 +133,17 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
         </ul>
 
         {trip.phase !== 'ongoing' && trip.phase !== 'settled' ? (
-          <Button variant="primary" fullWidth onClick={() => advanceTripPhase(tripId, 'ongoing')}>
-            여행 시작하기
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={confirmSchedule.isPending}
+            onClick={() => void handleStartTrip()}
+          >
+            {confirmSchedule.isPending ? '일정을 확정하는 중…' : '여행 시작하기'}
           </Button>
+        ) : null}
+        {confirmSchedule.isError ? (
+          <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(confirmSchedule.error)}</p>
         ) : null}
       </div>
       <TabBar />

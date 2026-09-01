@@ -7,6 +7,8 @@ import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
+import { TextField } from '@/shared/components/text-field';
+import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
 import { recordGameResult, useActiveTrip, useTripById } from '@/shared/session';
 
@@ -18,6 +20,8 @@ import {
   type MemberKey,
   type MinigameMember,
 } from '../minigame.constants';
+import { useGameMembersQuery, usePlayLadder } from '../minigame.hooks';
+import { findWinnerName, parseGroupId } from '../minigame.lib';
 import { buildParticipants, ParticipantNameFields, resizeParticipantNames } from './participant-name-fields';
 import { ParticipantStepper } from './participant-stepper';
 
@@ -156,24 +160,35 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
   const tripFromId = useTripById(tripId ?? '');
   const trip = tripId ? tripFromId : activeTrip;
   const gamesHub = trip ? `/trips/${trip.id}/games` : '/games';
+  const groupId = tripId ? parseGroupId(tripId) : null;
+  const useApi = Boolean(groupId);
+  const membersQuery = useGameMembersQuery(tripId);
+  const playLadder = usePlayLadder(groupId ?? 0);
 
   const seedNames = useMemo(() => {
+    if (useApi && membersQuery.data && membersQuery.data.length > 0) {
+      return membersQuery.data.map((member) => member.memberName);
+    }
     if (trip && trip.members.length > 0) {
       return trip.members.map((member) => member.name);
     }
     return MINIGAME_MEMBERS.map((member) => member.name);
-  }, [trip]);
+  }, [membersQuery.data, trip, useApi]);
 
   const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, seedNames.length || 4));
   const [count, setCount] = useState(defaultCount);
   const [names, setNames] = useState(() => seedNames.slice(0, defaultCount));
+  const [penalty, setPenalty] = useState('커피 쏘기');
   const [started, setStarted] = useState(false);
   const [winnerKey, setWinnerKey] = useState<MemberKey | null>(null);
   const [bangCol, setBangCol] = useState(1);
   const [path, setPath] = useState<ReturnType<typeof traceLadder> | null>(null);
   const [recorded, setRecorded] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const members = buildParticipants(count, names).map((participant) => ({
+  const resolvedCount = useApi ? seedNames.length : count;
+  const resolvedNames = useApi ? seedNames : names;
+  const members = buildParticipants(resolvedCount, resolvedNames).map((participant) => ({
     key: participant.key,
     name: participant.name,
     initial: participant.name.slice(0, 1),
@@ -195,14 +210,32 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
     handleReset();
   };
 
-  const handleStart = () => {
-    // eslint-disable-next-line react-hooks/purity -- event handler pick
-    const startCol = Math.floor(Math.random() * members.length);
-    const rungs = LADDER_RUNGS.filter((r) => r.fromCol < members.length - 1);
-    const nextPath = traceLadder(startCol, members.length, rungs);
-    const winner = members[startCol];
+  const handleStart = async () => {
+    if (members.length === 0) {
+      return;
+    }
 
-    setBangCol(nextPath.endCol);
+    setErrorMessage(null);
+    // eslint-disable-next-line react-hooks/purity -- event handler pick
+    let winnerIndex = Math.floor(Math.random() * members.length);
+
+    if (useApi && groupId) {
+      try {
+        const result = await playLadder.mutateAsync(penalty.trim() || '커피 쏘기');
+        const winnerName = findWinnerName(result.result);
+        const matchedIndex = members.findIndex((member) => member.name === winnerName);
+        winnerIndex = matchedIndex >= 0 ? matchedIndex : 0;
+      } catch (error) {
+        setErrorMessage(getErrorMessage(error, '사다리 결과를 만들지 못했어요.'));
+        return;
+      }
+    }
+
+    const rungs = LADDER_RUNGS.filter((r) => r.fromCol < members.length - 1);
+    const nextPath = traceLadder(winnerIndex, members.length, rungs);
+    const winner = members[winnerIndex];
+
+    setBangCol(useApi ? winnerIndex : nextPath.endCol);
     setWinnerKey(winner?.key ?? null);
     setPath(nextPath);
     setStarted(true);
@@ -218,7 +251,7 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
     }
   };
 
-  const winner = winnerKey ? members.find((m) => m.key === winnerKey) : null;
+  const winner = winnerKey ? members.find((member) => member.key === winnerKey) : null;
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -227,30 +260,41 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
 
         {!started ? (
           <>
-            <ParticipantStepper
-              count={count}
-              min={MIN_PARTICIPANTS}
-              max={MAX_PARTICIPANTS}
-              onChange={handleCountChange}
-              className="mt-3"
-            />
-            <ParticipantNameFields
-              names={names}
-              onChangeName={(index, value) => {
-                setNames((prev) => prev.map((item, i) => (i === index ? value : item)));
-              }}
-              className="mt-3"
+            {useApi ? (
+              <p className="text-text-secondary-soft mt-3 text-[12.5px] font-medium">
+                {membersQuery.isPending ? '멤버를 불러오는 중…' : `참여 멤버 ${members.length}명`}
+              </p>
+            ) : (
+              <>
+                <ParticipantStepper
+                  count={count}
+                  min={MIN_PARTICIPANTS}
+                  max={MAX_PARTICIPANTS}
+                  onChange={handleCountChange}
+                  className="mt-3"
+                />
+                <ParticipantNameFields
+                  names={names}
+                  onChangeName={(index, value) => {
+                    setNames((prev) => prev.map((item, i) => (i === index ? value : item)));
+                  }}
+                  className="mt-3"
+                />
+              </>
+            )}
+            <TextField
+              label="벌칙"
+              value={penalty}
+              containerClassName="mt-3"
+              onChange={(event) => setPenalty(event.target.value)}
             />
           </>
-        ) : (
-          <ParticipantStepper
-            count={count}
-            min={MIN_PARTICIPANTS}
-            max={MAX_PARTICIPANTS}
-            onChange={handleCountChange}
-            className="mt-3"
-          />
-        )}
+        ) : null}
+
+        {errorMessage ? <p className="mt-3 text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
+        {membersQuery.isError ? (
+          <p className="mt-3 text-sm font-medium text-[#e08300]">{getErrorMessage(membersQuery.error)}</p>
+        ) : null}
 
         <div className="mt-4">
           <LadderBoard members={members} bangCol={bangCol} path={started ? path : null} />
@@ -262,14 +306,25 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
             style={{ backgroundImage: 'linear-gradient(165deg, #ff9200 0%, #ff6b42 71%)' }}
           >
             <p className="text-base font-bold tracking-[-0.3px] text-white">{winner.name}님 당첨!</p>
-            <p className="text-xs font-medium text-white">사다리는 공정하니까 원망 없기 🙏</p>
+            <p className="text-xs font-medium text-white">{penalty} · 사다리는 공정하니까 원망 없기 🙏</p>
             {recorded ? <p className="text-[11px] font-medium text-white/80">타임라인에 기록됐어요</p> : null}
           </div>
         ) : null}
 
         <div className="mt-auto flex flex-col gap-2.5 pt-6">
-          <Button variant="primary" fullWidth onClick={started ? handleReset : handleStart}>
-            {started ? '다시하기' : '사다리타기 시작'}
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={playLadder.isPending || members.length === 0}
+            onClick={() => {
+              if (started) {
+                handleReset();
+                return;
+              }
+              void handleStart();
+            }}
+          >
+            {playLadder.isPending ? '결과를 만드는 중…' : started ? '다시하기' : '사다리타기 시작'}
           </Button>
           {started ? (
             <Button variant="outline" fullWidth onClick={() => router.push(gamesHub)}>

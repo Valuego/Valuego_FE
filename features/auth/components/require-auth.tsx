@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { useAppSession } from '@/shared/session';
+import { useAuthStatus } from '../auth.hooks';
 
 type RequireAuthProps = {
   children: ReactNode;
@@ -13,19 +13,22 @@ type RequireAuthProps = {
 
 export const RequireAuth = ({ children }: RequireAuthProps) => {
   const router = useRouter();
-  const session = useAppSession();
+  const { isBootstrapping, isAuthenticated, hasCompletedOnboarding } = useAuthStatus();
 
   useEffect(() => {
-    if (!session.isAuthenticated) {
+    if (isBootstrapping) {
+      return;
+    }
+    if (!isAuthenticated) {
       router.replace('/login');
       return;
     }
-    if (!session.hasCompletedOnboarding) {
+    if (!hasCompletedOnboarding) {
       router.replace('/onboarding');
     }
-  }, [router, session.hasCompletedOnboarding, session.isAuthenticated]);
+  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router]);
 
-  if (!session.isAuthenticated || !session.hasCompletedOnboarding) {
+  if (isBootstrapping || !isAuthenticated || !hasCompletedOnboarding) {
     return (
       <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
         이동 중…

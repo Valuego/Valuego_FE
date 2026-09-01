@@ -1,12 +1,21 @@
 import { ApiError, type ApiErrorData } from './error';
 
-export type ApiRequestOptions = Omit<RequestInit, 'body'> & { body?: unknown };
+export type ApiRequestOptions = Omit<RequestInit, 'body'> & {
+  body?: unknown;
+  skipAuthRetry?: boolean;
+};
 
 // 서버에서는 Next.js 프록시 rewrite를 거치지 않으므로 백엔드로 직접 절대 URL 사용
 const API_BASE =
   typeof window === 'undefined'
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080'}/api/v1`
     : '/api/v1';
+
+const AUTH_RETRY_SKIP_PREFIXES = ['/login/'];
+
+const shouldSkipAuthRetry = (path: string, skipAuthRetry?: boolean) => {
+  return Boolean(skipAuthRetry) || AUTH_RETRY_SKIP_PREFIXES.some((prefix) => path.startsWith(prefix));
+};
 
 const parseResponse = async <T>(res: Response): Promise<T> => {
   let json: unknown;
@@ -31,27 +40,41 @@ const parseResponse = async <T>(res: Response): Promise<T> => {
   return json as T;
 };
 
-export const apiRequest = async <T>(path: string, { body, headers, ...init }: ApiRequestOptions = {}): Promise<T> => {
+const buildRequestInit = ({ body, headers, ...init }: Omit<ApiRequestOptions, 'skipAuthRetry'>): RequestInit => {
   const isFormData = body instanceof FormData;
 
-  const request = new Request(`${API_BASE}${path}`, {
+  return {
     ...init,
     credentials: 'same-origin',
     headers: {
-      // FormData는 브라우저가 Content-Type + boundary를 자동 설정하므로 명시하지 않음
       ...(!isFormData && body !== undefined && { 'Content-Type': 'application/json' }),
       ...headers,
     },
     body: body === undefined ? undefined : isFormData ? body : JSON.stringify(body),
-  });
+  };
+};
+
+export const apiRequest = async <T>(path: string, options: ApiRequestOptions = {}): Promise<T> => {
+  const { skipAuthRetry, ...requestOptions } = options;
+  const init = buildRequestInit(requestOptions);
+  const url = `${API_BASE}${path}`;
 
   let res: Response;
   try {
-    res = await fetch(request);
+    res = await fetch(url, init);
   } catch (err) {
     const message =
       err instanceof Error ? err.message : '일시적으로 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.';
     throw new ApiError(503, message);
+  }
+
+  if (res.status === 401 && !shouldSkipAuthRetry(path, skipAuthRetry)) {
+    try {
+      await apiRequest('/login/reissue', { method: 'POST', skipAuthRetry: true });
+      res = await fetch(url, init);
+    } catch {
+      // 재발급 실패 시 원래 401 응답을 그대로 처리한다.
+    }
   }
 
   return parseResponse<T>(res);

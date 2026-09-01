@@ -14,7 +14,7 @@ const GamesLadderRedirectPage = () => {
       router.replace(`/trips/${activeTrip.id}/games/ladder`);
       return;
     }
-    router.replace('/trips/join');
+    router.replace('/home');
   }, [activeTrip, router]);
 
   return null;

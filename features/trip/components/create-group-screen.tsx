@@ -5,8 +5,10 @@ import { useMemo, useState } from 'react';
 
 import { DESTINATIONS } from '@/features/home/home.constants';
 import CalendarIcon from '@/shared/assets/icons/calendar.svg';
+import { BottomSheet } from '@/shared/components/bottom-sheet';
 import { Button } from '@/shared/components/button';
 import { Chip } from '@/shared/components/chip';
+import { DatePicker } from '@/shared/components/date-picker';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { ProgressBar } from '@/shared/components/progress-bar';
@@ -14,26 +16,44 @@ import { cn } from '@/shared/lib/cn';
 import { startTripDraft, useTripDraft } from '@/shared/session';
 import type { Transport } from '@/shared/session';
 
+import { formatDateRangeLabel, formatNightsLabel, getDefaultTripDates, parseIsoDate, toIsoDate } from '../trip.lib';
+
 export const CreateGroupScreen = () => {
   const router = useRouter();
   const draft = useTripDraft();
+  const defaultDates = useMemo(() => getDefaultTripDates(), []);
   const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>(
     (draft?.destination as (typeof DESTINATIONS)[number]) ?? '부산',
   );
   const [memberCount, setMemberCount] = useState(draft?.memberCount ?? 4);
   const [transport, setTransport] = useState<Transport>(draft?.transport ?? 'car');
+  const [dateOpen, setDateOpen] = useState(false);
+  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>(() => {
+    if (draft?.startDate && draft?.endDate) {
+      return { start: parseIsoDate(draft.startDate), end: parseIsoDate(draft.endDate) };
+    }
+    return { start: parseIsoDate(defaultDates.startDate), end: parseIsoDate(defaultDates.endDate) };
+  });
 
-  const canSubmit = memberCount >= 2 && memberCount <= 8;
-  const nightsLabel = useMemo(() => draft?.nightsLabel ?? '2박 3일', [draft?.nightsLabel]);
-  const dateLabel = draft?.dateLabel ?? '2026.06.20 – 06.22';
+  const start = range.start;
+  const end = range.end;
+  const hasCompleteRange = Boolean(start && end);
+  const nightsLabel = start && end ? formatNightsLabel(start, end) : '기간을 선택하세요';
+  const dateLabel = start && end ? formatDateRangeLabel(start, end) : '날짜를 선택해 주세요';
+  const canSubmit = memberCount >= 2 && memberCount <= 8 && hasCompleteRange;
 
   const handleSubmit = () => {
+    if (!start || !end) {
+      return;
+    }
     startTripDraft({
       destination,
       memberCount,
       transport,
       dateLabel,
       nightsLabel,
+      startDate: toIsoDate(start),
+      endDate: toIsoDate(end),
     });
     router.push('/trips/new/style');
   };
@@ -67,6 +87,7 @@ export const CreateGroupScreen = () => {
           <button
             type="button"
             className="bg-surface-gray flex w-full items-center justify-between rounded-[10px] px-3.5 py-3"
+            onClick={() => setDateOpen(true)}
           >
             <span className="text-ink-900 flex items-center gap-2 text-sm font-semibold">
               <CalendarIcon className="size-5" aria-hidden />
@@ -136,9 +157,28 @@ export const CreateGroupScreen = () => {
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         <Button variant="primary" fullWidth disabled={!canSubmit} onClick={handleSubmit}>
-          그룹 만들고 친구 초대하기
+          다음
         </Button>
       </div>
+
+      <BottomSheet
+        open={dateOpen}
+        title="여행 기간"
+        className="max-h-[90dvh] overflow-y-auto"
+        onOpenChange={setDateOpen}
+      >
+        <DatePicker
+          mode="period"
+          rangeValue={range}
+          onRangeSelect={setRange}
+          onCancel={() => setDateOpen(false)}
+          onConfirm={() => {
+            if (range.start && range.end) {
+              setDateOpen(false);
+            }
+          }}
+        />
+      </BottomSheet>
     </MobileShell>
   );
 };

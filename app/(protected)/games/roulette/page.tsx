@@ -14,7 +14,7 @@ const GamesRouletteRedirectPage = () => {
       router.replace(`/trips/${activeTrip.id}/games/roulette`);
       return;
     }
-    router.replace('/trips/join');
+    router.replace('/home');
   }, [activeTrip, router]);
 
   return null;
