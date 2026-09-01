@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
+import { getSessionSnapshot, login } from '@/shared/session';
 
 import { BrandLogo } from './brand-logo';
 import { KakaoLoginButton } from './kakao-login-button';
@@ -12,7 +13,9 @@ export const LoginScreen = () => {
 
   const handleKakaoLogin = () => {
     // TODO: 카카오 OAuth 연동
-    router.push('/onboarding');
+    login();
+    const session = getSessionSnapshot();
+    router.push(session.hasCompletedOnboarding ? '/home' : '/onboarding');
   };
 
   return (

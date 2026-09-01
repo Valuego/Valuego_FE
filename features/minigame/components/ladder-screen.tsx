@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
+import { recordGameResult, useActiveTrip, useTripById } from '@/shared/session';
 
 import {
   LADDER_RUNGS,
@@ -16,6 +18,7 @@ import {
   type MemberKey,
   type MinigameMember,
 } from '../minigame.constants';
+import { buildParticipants, ParticipantNameFields, resizeParticipantNames } from './participant-name-fields';
 import { ParticipantStepper } from './participant-stepper';
 
 const columnPct = (index: number, count: number) => {
@@ -147,16 +150,53 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
   );
 };
 
-export const LadderScreen = () => {
-  const [count, setCount] = useState(4);
+export const LadderScreen = ({ tripId }: { tripId?: string }) => {
+  const router = useRouter();
+  const activeTrip = useActiveTrip();
+  const tripFromId = useTripById(tripId ?? '');
+  const trip = tripId ? tripFromId : activeTrip;
+  const gamesHub = trip ? `/trips/${trip.id}/games` : '/games';
+
+  const seedNames = useMemo(() => {
+    if (trip && trip.members.length > 0) {
+      return trip.members.map((member) => member.name);
+    }
+    return MINIGAME_MEMBERS.map((member) => member.name);
+  }, [trip]);
+
+  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, seedNames.length || 4));
+  const [count, setCount] = useState(defaultCount);
+  const [names, setNames] = useState(() => seedNames.slice(0, defaultCount));
   const [started, setStarted] = useState(false);
   const [winnerKey, setWinnerKey] = useState<MemberKey | null>(null);
   const [bangCol, setBangCol] = useState(1);
   const [path, setPath] = useState<ReturnType<typeof traceLadder> | null>(null);
+  const [recorded, setRecorded] = useState(false);
 
-  const members = MINIGAME_MEMBERS.slice(0, count);
+  const members = buildParticipants(count, names).map((participant) => ({
+    key: participant.key,
+    name: participant.name,
+    initial: participant.name.slice(0, 1),
+    colorClass: `bg-member-${participant.key}`,
+    colorHex: '',
+  }));
+
+  const handleReset = () => {
+    setStarted(false);
+    setWinnerKey(null);
+    setBangCol(1);
+    setPath(null);
+    setRecorded(false);
+  };
+
+  const handleCountChange = (next: number) => {
+    setCount(next);
+    setNames((prev) => resizeParticipantNames(prev, next, seedNames));
+    handleReset();
+  };
 
   const handleStart = () => {
+    // eslint-disable-next-line react-hooks/purity -- event handler pick
     const startCol = Math.floor(Math.random() * members.length);
     const rungs = LADDER_RUNGS.filter((r) => r.fromCol < members.length - 1);
     const nextPath = traceLadder(startCol, members.length, rungs);
@@ -166,32 +206,51 @@ export const LadderScreen = () => {
     setWinnerKey(winner?.key ?? null);
     setPath(nextPath);
     setStarted(true);
+
+    if (trip && winner) {
+      recordGameResult(trip.id, {
+        game: 'ladder',
+        winnerKey: winner.key,
+        winnerName: winner.name,
+        label: `사다리타기 · ${winner.name}`,
+      });
+      setRecorded(true);
+    }
   };
 
-  const handleReset = () => {
-    setStarted(false);
-    setWinnerKey(null);
-    setBangCol(1);
-    setPath(null);
-  };
-
-  const winner = winnerKey ? MINIGAME_MEMBERS.find((m) => m.key === winnerKey) : null;
+  const winner = winnerKey ? members.find((m) => m.key === winnerKey) : null;
 
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col px-5 pt-3 pb-5">
         <Header title="사다리타기" />
 
-        <ParticipantStepper
-          count={count}
-          min={MIN_PARTICIPANTS}
-          max={MAX_PARTICIPANTS}
-          onChange={(next) => {
-            setCount(next);
-            handleReset();
-          }}
-          className="mt-3"
-        />
+        {!started ? (
+          <>
+            <ParticipantStepper
+              count={count}
+              min={MIN_PARTICIPANTS}
+              max={MAX_PARTICIPANTS}
+              onChange={handleCountChange}
+              className="mt-3"
+            />
+            <ParticipantNameFields
+              names={names}
+              onChangeName={(index, value) => {
+                setNames((prev) => prev.map((item, i) => (i === index ? value : item)));
+              }}
+              className="mt-3"
+            />
+          </>
+        ) : (
+          <ParticipantStepper
+            count={count}
+            min={MIN_PARTICIPANTS}
+            max={MAX_PARTICIPANTS}
+            onChange={handleCountChange}
+            className="mt-3"
+          />
+        )}
 
         <div className="mt-4">
           <LadderBoard members={members} bangCol={bangCol} path={started ? path : null} />
@@ -204,13 +263,19 @@ export const LadderScreen = () => {
           >
             <p className="text-base font-bold tracking-[-0.3px] text-white">{winner.name}님 당첨!</p>
             <p className="text-xs font-medium text-white">사다리는 공정하니까 원망 없기 🙏</p>
+            {recorded ? <p className="text-[11px] font-medium text-white/80">타임라인에 기록됐어요</p> : null}
           </div>
         ) : null}
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto flex flex-col gap-2.5 pt-6">
           <Button variant="primary" fullWidth onClick={started ? handleReset : handleStart}>
             {started ? '다시하기' : '사다리타기 시작'}
           </Button>
+          {started ? (
+            <Button variant="outline" fullWidth onClick={() => router.push(gamesHub)}>
+              미니게임 허브로
+            </Button>
+          ) : null}
         </div>
       </div>
     </MobileShell>

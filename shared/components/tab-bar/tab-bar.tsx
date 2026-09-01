@@ -3,15 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import BellIcon from '@/shared/assets/icons/bell.svg';
 import HomeIcon from '@/shared/assets/icons/home.svg';
 import UserCircleIcon from '@/shared/assets/icons/user-circle.svg';
 import { cn } from '@/shared/lib/cn';
 
 const TABS = [
   { href: '/home', label: '홈', Icon: HomeIcon },
-  { href: '/games', label: '미니게임', emoji: '🎮' },
-  { href: '/notifications', label: '알림', Icon: BellIcon },
   { href: '/my', label: '마이', Icon: UserCircleIcon },
 ] as const;
 
@@ -33,13 +30,7 @@ export const TabBar = () => {
                   isActive ? 'text-ink-900 opacity-100' : 'text-[#464a4d] opacity-70',
                 )}
               >
-                {'emoji' in tab ? (
-                  <span className="flex size-6 items-center justify-center text-[18px] leading-none" aria-hidden>
-                    {tab.emoji}
-                  </span>
-                ) : (
-                  <tab.Icon className="size-6" aria-hidden />
-                )}
+                <tab.Icon className="size-6" aria-hidden />
                 <span>{tab.label}</span>
               </Link>
             </li>

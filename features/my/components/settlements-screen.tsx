@@ -1,53 +1,53 @@
-import { ACTIVE_TRIP, PAST_TRIPS } from '@/features/home';
-import { Avatar } from '@/shared/components/avatar';
+'use client';
+
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-
-const SETTLEMENTS = [ACTIVE_TRIP, ...PAST_TRIPS].map((trip) => ({
-  ...trip,
-  statusLabel: '정산 완료',
-}));
+import { TabBar } from '@/shared/components/tab-bar';
+import { useSettledTrips } from '@/shared/session';
 
 export const SettlementsScreen = () => {
+  const settledTrips = useSettledTrips();
+
   return (
     <MobileShell className="bg-surface-gray">
-      <div className="flex flex-1 flex-col gap-4 px-5 pt-4 pb-8">
-        <Header title="지난 정산" />
-        <ul className="flex flex-col gap-3.5">
-          {SETTLEMENTS.map((trip) => (
-            <li key={trip.id} className="border-line-hairline rounded-[18px] border bg-white px-5 py-[18px]">
-              <div className="flex items-center gap-2">
-                <p className="text-ink-900 text-lg font-bold">{trip.title}</p>
-                <div className="flex flex-1 items-center">
-                  {trip.members.map((member, index) => (
-                    <Avatar
-                      key={member}
-                      member={member}
-                      size="sm"
-                      className={index === 0 ? '' : '-ml-2 ring-2 ring-white'}
-                    />
-                  ))}
+      <div className="flex flex-1 flex-col gap-3.5 px-5 pt-4 pb-4">
+        <Header title="지난 정산 내역" />
+        {settledTrips.length === 0 ? (
+          <div className="border-line-hairline flex h-24 items-center justify-center rounded-2xl border bg-white">
+            <p className="text-text-secondary-soft text-sm">정산 완료된 여행이 아직 없어요.</p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3.5">
+            {settledTrips.map((trip) => (
+              <li
+                key={trip.id}
+                className="border-line-hairline flex flex-col gap-2.5 rounded-2xl border bg-white px-5 py-[18px]"
+              >
+                <div className="flex items-center gap-2">
+                  <p className="text-ink-900 text-xl font-bold tracking-[-0.5px]">{trip.title}</p>
+                  <div className="min-w-0 flex-1" />
+                  <span className="bg-brand-success/13 text-brand-success shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold">
+                    정산 완료
+                  </span>
                 </div>
-                <span className="bg-brand-success/10 text-brand-success rounded-full px-2.5 py-1 text-[11px] font-bold">
-                  {trip.statusLabel}
-                </span>
-              </div>
-              <p className="text-text-secondary-soft mt-2 text-xs font-medium">{trip.dateLabel}</p>
-              <div className="bg-line-hairline my-3 h-px" />
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-text-secondary-soft text-sm">총 지출</p>
-                  <p className="text-ink-900 text-[15px] font-bold">{trip.totalAmount}</p>
+                <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">{trip.dateLabel}</p>
+                <div className="bg-line-hairline h-px" />
+                <div className="flex items-center justify-between">
+                  <div className="flex w-[140px] flex-col gap-0.5">
+                    <p className="text-text-secondary-soft text-xs font-medium">총 지출</p>
+                    <p className="text-ink-900 text-base font-bold">{trip.totalAmount ?? '-'}</p>
+                  </div>
+                  <div className="flex w-[140px] flex-col items-end gap-0.5">
+                    <p className="text-text-secondary-soft text-xs font-medium">1인당</p>
+                    <p className="text-brand-blue text-base font-bold">{trip.perPersonAmount ?? '-'}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-text-secondary-soft text-xs">1인당</p>
-                  <p className="text-ink-900 text-[15px] font-bold">{trip.perPersonAmount}</p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+      <TabBar />
     </MobileShell>
   );
 };

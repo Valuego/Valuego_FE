@@ -11,26 +11,40 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { ProgressBar } from '@/shared/components/progress-bar';
 import { cn } from '@/shared/lib/cn';
-
-type Transport = 'car' | 'transit';
+import { startTripDraft, useTripDraft } from '@/shared/session';
+import type { Transport } from '@/shared/session';
 
 export const CreateGroupScreen = () => {
   const router = useRouter();
-  const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>('부산');
-  const [memberCount, setMemberCount] = useState(4);
-  const [transport, setTransport] = useState<Transport>('car');
+  const draft = useTripDraft();
+  const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>(
+    (draft?.destination as (typeof DESTINATIONS)[number]) ?? '부산',
+  );
+  const [memberCount, setMemberCount] = useState(draft?.memberCount ?? 4);
+  const [transport, setTransport] = useState<Transport>(draft?.transport ?? 'car');
 
   const canSubmit = memberCount >= 2 && memberCount <= 8;
+  const nightsLabel = useMemo(() => draft?.nightsLabel ?? '2박 3일', [draft?.nightsLabel]);
+  const dateLabel = draft?.dateLabel ?? '2026.06.20 – 06.22';
 
-  const nightsLabel = useMemo(() => '2박 3일', []);
+  const handleSubmit = () => {
+    startTripDraft({
+      destination,
+      memberCount,
+      transport,
+      dateLabel,
+      nightsLabel,
+    });
+    router.push('/trips/new/style');
+  };
 
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
         <Header title="그룹 만들기" />
         <div className="flex items-center gap-2.5">
-          <ProgressBar value={66} className="flex-1" />
-          <span className="text-text-placeholder text-[12.5px] font-bold">2/3</span>
+          <ProgressBar value={33} className="flex-1" />
+          <span className="text-text-placeholder text-[12.5px] font-bold">1/3</span>
         </div>
 
         <section className="border-line-hairline flex flex-col gap-3.5 rounded-2xl border bg-white p-[18px]">
@@ -56,7 +70,7 @@ export const CreateGroupScreen = () => {
           >
             <span className="text-ink-900 flex items-center gap-2 text-sm font-semibold">
               <CalendarIcon className="size-5" aria-hidden />
-              2026.06.20 – 06.22
+              {dateLabel}
             </span>
             <span className="text-brand-blue text-xs font-medium">{nightsLabel}</span>
           </button>
@@ -121,7 +135,7 @@ export const CreateGroupScreen = () => {
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={() => router.push('/trips/new/style')}>
+        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={handleSubmit}>
           그룹 만들고 친구 초대하기
         </Button>
       </div>
