@@ -1,39 +1,18 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import RoulettePointerIcon from '@/shared/assets/icons/roulette-pointer.svg';
-import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { cn } from '@/shared/lib/cn';
 import { recordGameResult, useActiveTrip, useTripById } from '@/shared/session';
 
-import {
-  MAX_PARTICIPANTS,
-  MIN_PARTICIPANTS,
-  MINIGAME_MEMBERS,
-  ROULETTE_SEGMENT_ORDER,
-  type MemberKey,
-} from '../minigame.constants';
+import { MAX_PARTICIPANTS, MIN_PARTICIPANTS, MINIGAME_MEMBERS } from '../minigame.constants';
+import { buildParticipants, ParticipantNameFields, resizeParticipantNames } from './participant-name-fields';
 import { ParticipantStepper } from './participant-stepper';
-
-const SEGMENT_MID_DEG: Record<MemberKey, number> = {
-  minjae: 45,
-  doyeon: 135,
-  seojun: 225,
-  hayeong: 315,
-};
-
-const LABEL_STYLE: Record<MemberKey, string> = {
-  hayeong: 'left-[22%] top-[25%]',
-  minjae: 'left-[70%] top-[25%]',
-  seojun: 'left-[22%] top-[70%]',
-  doyeon: 'left-[70%] top-[70%]',
-};
+import { getSpinDelta, RouletteWheel } from './roulette-wheel';
 
 const SPIN_MS = 3200;
 
@@ -43,55 +22,54 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
   const tripFromId = useTripById(tripId ?? '');
   const trip = tripId ? tripFromId : activeTrip;
   const gamesHub = trip ? `/trips/${trip.id}/games` : '/games';
-  const tripMembers = useMemo(() => {
-    if (!trip || trip.members.length === 0) {
-      return MINIGAME_MEMBERS;
+
+  const seedNames = useMemo(() => {
+    if (trip && trip.members.length > 0) {
+      return trip.members.map((member) => member.name);
     }
-    return trip.members.map((member) => ({
-      key: member.member,
-      name: member.name,
-      initial: member.name.slice(0, 1),
-      colorClass: `bg-member-${member.member}`,
-      colorHex: '',
-    }));
+    return MINIGAME_MEMBERS.map((member) => member.name);
   }, [trip]);
 
-  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, tripMembers.length));
+  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, seedNames.length || 4));
   const [count, setCount] = useState(defaultCount);
+  const [names, setNames] = useState(() => seedNames.slice(0, defaultCount));
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [winnerKey, setWinnerKey] = useState<MemberKey | null>(null);
+  const [winnerIndex, setWinnerIndex] = useState<number | null>(null);
   const [recorded, setRecorded] = useState(false);
 
-  const participants = tripMembers.slice(0, count);
-  const segmentKeys = ROULETTE_SEGMENT_ORDER.filter((key) => participants.some((p) => p.key === key));
+  const participants = buildParticipants(count, names);
+
+  const handleCountChange = (next: number) => {
+    setCount(next);
+    setNames((prev) => resizeParticipantNames(prev, next, seedNames));
+    setWinnerIndex(null);
+    setRecorded(false);
+    setRotation(0);
+  };
 
   const handleSpin = () => {
-    if (spinning || segmentKeys.length === 0) {
+    if (spinning || participants.length === 0) {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/purity -- event handler pick
-    const nextWinner = segmentKeys[Math.floor(Math.random() * segmentKeys.length)] ?? segmentKeys[0];
-    const targetMid = SEGMENT_MID_DEG[nextWinner];
-    const base = rotation % 360;
-    const deltaToTarget = ((360 - targetMid - base) % 360) + 360 * 4;
+    const nextWinnerIndex = Math.floor(Math.random() * participants.length);
+    const delta = getSpinDelta(rotation, nextWinnerIndex, participants.length);
 
-    setWinnerKey(null);
+    setWinnerIndex(null);
     setRecorded(false);
     setSpinning(true);
-    setRotation(rotation + deltaToTarget);
+    setRotation(rotation + delta);
 
     window.setTimeout(() => {
-      setWinnerKey(nextWinner);
+      setWinnerIndex(nextWinnerIndex);
       setSpinning(false);
 
-      const winner =
-        participants.find((m) => m.key === nextWinner) ?? MINIGAME_MEMBERS.find((m) => m.key === nextWinner);
+      const winner = participants[nextWinnerIndex];
       if (trip && winner) {
         recordGameResult(trip.id, {
           game: 'roulette',
-          winnerKey: nextWinner,
+          winnerKey: winner.key,
           winnerName: winner.name,
           label: `벌칙 룰렛 · ${winner.name}`,
         });
@@ -100,7 +78,7 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
     }, SPIN_MS);
   };
 
-  const winner = winnerKey ? participants.find((m) => m.key === winnerKey) : null;
+  const winner = winnerIndex !== null ? participants[winnerIndex] : null;
   const showResult = Boolean(winner) && !spinning;
 
   return (
@@ -109,17 +87,24 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
         <Header title="벌칙 룰렛" />
 
         {!showResult ? (
-          <ParticipantStepper
-            count={count}
-            min={MIN_PARTICIPANTS}
-            max={Math.min(MAX_PARTICIPANTS, tripMembers.length)}
-            onChange={(next) => {
-              setCount(next);
-              setWinnerKey(null);
-              setRecorded(false);
-            }}
-            className="mt-3"
-          />
+          <>
+            <ParticipantStepper
+              count={count}
+              min={MIN_PARTICIPANTS}
+              max={MAX_PARTICIPANTS}
+              onChange={handleCountChange}
+              className="mt-3"
+            />
+            <ParticipantNameFields
+              names={names}
+              onChangeName={(index, value) => {
+                setNames((prev) => prev.map((item, i) => (i === index ? value : item)));
+                setWinnerIndex(null);
+                setRecorded(false);
+              }}
+              className="mt-3"
+            />
+          </>
         ) : null}
 
         <div className="relative mx-auto mt-6 flex h-[300px] w-full max-w-[402px] items-center justify-center">
@@ -127,42 +112,9 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
             <RoulettePointerIcon className="h-[22px] w-[26px] rotate-180" aria-hidden />
           </div>
 
-          <div
-            className="relative size-[264px] transition-transform ease-out"
-            style={{
-              transform: `rotate(${rotation}deg)`,
-              transitionDuration: spinning ? `${SPIN_MS}ms` : '0ms',
-            }}
-          >
-            <Image
-              src="/minigame/roulette-wheel.png"
-              alt=""
-              width={264}
-              height={264}
-              className="size-[264px]"
-              priority
-            />
-            {ROULETTE_SEGMENT_ORDER.map((key) => {
-              const member = participants.find((m) => m.key === key);
-              if (!member) {
-                return null;
-              }
+          <RouletteWheel participants={participants} rotation={rotation} spinning={spinning} spinMs={SPIN_MS} />
 
-              return (
-                <span
-                  key={key}
-                  className={cn(
-                    'pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-[13.5px] font-bold text-white',
-                    LABEL_STYLE[key],
-                  )}
-                >
-                  {member.name}
-                </span>
-              );
-            })}
-          </div>
-
-          <div className="pointer-events-none absolute top-1/2 left-1/2 z-10 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white">
+          <div className="pointer-events-none absolute top-1/2 left-1/2 z-10 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-[0_1px_6px_rgba(23,23,25,0.12)]">
             <span className="text-2xl" aria-hidden>
               🎯
             </span>
@@ -175,19 +127,7 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
             <p className="text-[26px] font-extrabold tracking-[-0.5px] text-white">{winner.name} 🎉</p>
             {recorded ? <p className="mt-1 text-[11px] font-medium text-white/80">타임라인에 기록됐어요</p> : null}
           </div>
-        ) : (
-          <ul className="mt-2 flex flex-wrap gap-2.5">
-            {participants.map((member) => (
-              <li
-                key={member.key}
-                className="flex h-[54px] w-[calc(50%-5px)] items-center gap-2.5 rounded-[14px] bg-white p-3"
-              >
-                <Avatar member={member.key} size="sm" className="size-[30px] text-xs" />
-                <span className="text-text-body text-[13.5px] font-bold">{member.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        ) : null}
 
         <div className="mt-auto flex flex-col gap-2.5 pt-6">
           <Button variant="primary" fullWidth disabled={spinning} onClick={handleSpin}>

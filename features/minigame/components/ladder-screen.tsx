@@ -18,6 +18,7 @@ import {
   type MemberKey,
   type MinigameMember,
 } from '../minigame.constants';
+import { buildParticipants, ParticipantNameFields, resizeParticipantNames } from './participant-name-fields';
 import { ParticipantStepper } from './participant-stepper';
 
 const columnPct = (index: number, count: number) => {
@@ -155,28 +156,44 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
   const tripFromId = useTripById(tripId ?? '');
   const trip = tripId ? tripFromId : activeTrip;
   const gamesHub = trip ? `/trips/${trip.id}/games` : '/games';
-  const tripMembers = useMemo((): MinigameMember[] => {
-    if (!trip || trip.members.length === 0) {
-      return MINIGAME_MEMBERS;
+
+  const seedNames = useMemo(() => {
+    if (trip && trip.members.length > 0) {
+      return trip.members.map((member) => member.name);
     }
-    return trip.members.map((member) => ({
-      key: member.member,
-      name: member.name,
-      initial: member.name.slice(0, 1),
-      colorClass: `bg-member-${member.member}`,
-      colorHex: '',
-    }));
+    return MINIGAME_MEMBERS.map((member) => member.name);
   }, [trip]);
 
-  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, tripMembers.length));
+  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, seedNames.length || 4));
   const [count, setCount] = useState(defaultCount);
+  const [names, setNames] = useState(() => seedNames.slice(0, defaultCount));
   const [started, setStarted] = useState(false);
   const [winnerKey, setWinnerKey] = useState<MemberKey | null>(null);
   const [bangCol, setBangCol] = useState(1);
   const [path, setPath] = useState<ReturnType<typeof traceLadder> | null>(null);
   const [recorded, setRecorded] = useState(false);
 
-  const members = tripMembers.slice(0, count);
+  const members = buildParticipants(count, names).map((participant) => ({
+    key: participant.key,
+    name: participant.name,
+    initial: participant.name.slice(0, 1),
+    colorClass: `bg-member-${participant.key}`,
+    colorHex: '',
+  }));
+
+  const handleReset = () => {
+    setStarted(false);
+    setWinnerKey(null);
+    setBangCol(1);
+    setPath(null);
+    setRecorded(false);
+  };
+
+  const handleCountChange = (next: number) => {
+    setCount(next);
+    setNames((prev) => resizeParticipantNames(prev, next, seedNames));
+    handleReset();
+  };
 
   const handleStart = () => {
     // eslint-disable-next-line react-hooks/purity -- event handler pick
@@ -201,14 +218,6 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
     }
   };
 
-  const handleReset = () => {
-    setStarted(false);
-    setWinnerKey(null);
-    setBangCol(1);
-    setPath(null);
-    setRecorded(false);
-  };
-
   const winner = winnerKey ? members.find((m) => m.key === winnerKey) : null;
 
   return (
@@ -216,16 +225,32 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
       <div className="flex flex-1 flex-col px-5 pt-3 pb-5">
         <Header title="사다리타기" />
 
-        <ParticipantStepper
-          count={count}
-          min={MIN_PARTICIPANTS}
-          max={Math.min(MAX_PARTICIPANTS, tripMembers.length)}
-          onChange={(next) => {
-            setCount(next);
-            handleReset();
-          }}
-          className="mt-3"
-        />
+        {!started ? (
+          <>
+            <ParticipantStepper
+              count={count}
+              min={MIN_PARTICIPANTS}
+              max={MAX_PARTICIPANTS}
+              onChange={handleCountChange}
+              className="mt-3"
+            />
+            <ParticipantNameFields
+              names={names}
+              onChangeName={(index, value) => {
+                setNames((prev) => prev.map((item, i) => (i === index ? value : item)));
+              }}
+              className="mt-3"
+            />
+          </>
+        ) : (
+          <ParticipantStepper
+            count={count}
+            min={MIN_PARTICIPANTS}
+            max={MAX_PARTICIPANTS}
+            onChange={handleCountChange}
+            className="mt-3"
+          />
+        )}
 
         <div className="mt-4">
           <LadderBoard members={members} bangCol={bangCol} path={started ? path : null} />

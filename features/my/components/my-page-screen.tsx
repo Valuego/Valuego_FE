@@ -24,7 +24,7 @@ export const MyPageScreen = () => {
       <div className="flex flex-1 flex-col gap-4 px-5 pt-4 pb-4">
         <h1 className="text-ink-900 text-[22px] font-bold tracking-[-0.5px]">마이페이지</h1>
 
-        <div className="border-line-hairline flex items-center gap-3.5 rounded-[18px] border bg-white p-[18px]">
+        <div className="border-line-hairline flex items-center gap-3.5 rounded-2xl border bg-white p-[18px]">
           <Avatar member={user.member} size="lg" />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <p className="text-ink-900 text-lg font-bold tracking-[-0.3px]">{user.name}</p>
@@ -37,7 +37,7 @@ export const MyPageScreen = () => {
           </div>
         </div>
 
-        <ul className="border-line-hairline overflow-hidden rounded-[18px] border bg-white">
+        <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
           {MENU_ITEMS.map((item, index) => (
             <li key={item.href} className={index < MENU_ITEMS.length - 1 ? 'border-line-hairline border-b' : ''}>
               <Link href={item.href} className="text-ink-900 flex h-[62px] items-center px-[18px] text-sm font-medium">

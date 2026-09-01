@@ -11,7 +11,7 @@ const ACCENT_EMOJI = {
 export const infoBannerVariants = cva('flex h-12 w-full items-center gap-2.5 rounded-xl px-4 py-3.5', {
   variants: {
     accent: {
-      blue: 'bg-brand-blue/7',
+      blue: 'bg-surface-secondary-subtler',
       green: 'bg-brand-success/7',
       purple: 'bg-brand-purple/7',
     },

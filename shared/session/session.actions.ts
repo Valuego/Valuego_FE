@@ -6,7 +6,7 @@ import { getSessionSnapshot, resetSessionStore, setSession } from './session.sto
 const FRIEND_POOL: Omit<TripMember, 'id'>[] = [
   { name: '서준', role: '친구', member: 'seojun', status: 'done', statusLabel: '완료' },
   { name: '하영', role: '친구', member: 'hayeong', status: 'done', statusLabel: '완료' },
-  { name: '민재', role: '친구', member: 'minjae', status: 'pending', statusLabel: '대기중' },
+  { name: '민재', role: '친구', member: 'minjae', status: 'pending', statusLabel: '대기 중' },
 ];
 
 const slugifyDestination = (destination: string) => {
@@ -32,7 +32,7 @@ const hostMember = (greetingName: string, member: MemberKey): TripMember => ({
   role: '나 · 호스트',
   member,
   status: 'host',
-  statusLabel: '성향 완료',
+  statusLabel: '성향 입력 전',
 });
 
 export const normalizeInviteInput = (raw: string) => {

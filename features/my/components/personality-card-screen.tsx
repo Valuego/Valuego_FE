@@ -2,6 +2,7 @@
 
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
+import { TabBar } from '@/shared/components/tab-bar';
 import { useAppSession, useTripDraft } from '@/shared/session';
 
 const activityLabel = (activity: number) => {
@@ -19,50 +20,51 @@ export const PersonalityCardScreen = () => {
   const draft = useTripDraft();
   const user = session.user;
   const budget = draft?.budget ?? '적당히';
-  const foods = draft?.foods?.join(' · ') ?? '한식 · 카페';
+  const foods = draft?.foods?.length ? draft.foods.join(' · ') : '한식 · 카페';
   const activity = draft?.activity ?? 52;
 
   const rows = [
-    { label: '활동 강도', value: activityLabel(activity) },
-    { label: '예산 감각', value: budget },
-    { label: '선호 음식', value: foods },
+    { label: '활동 강도', value: activityLabel(activity), valueClassName: 'text-brand-blue' },
+    { label: '예산 감각', value: budget, valueClassName: 'text-brand-success' },
+    { label: '선호 음식', value: foods, valueClassName: 'text-member-minjae' },
   ] as const;
 
   return (
     <MobileShell className="bg-surface-gray">
-      <div className="flex flex-1 flex-col gap-4 px-5 pt-4">
+      <div className="flex flex-1 flex-col gap-4 px-5 pt-4 pb-4">
         <Header title="내 성향 카드" />
 
-        <section className="border-line-hairline rounded-2xl border bg-white px-6 py-7">
-          <p className="text-text-secondary-soft text-[12.5px] font-bold">나의 여행 DNA</p>
-          <h2 className="text-ink-900 mt-2 text-[22px] font-bold tracking-[-0.5px]">{user.personalityTitle}</h2>
-          <p className="text-text-body mt-3 text-sm font-medium">{user.personalityDescription}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
+        <section
+          className="flex flex-col gap-3 rounded-2xl px-6 py-7"
+          style={{
+            backgroundImage: 'linear-gradient(140deg, #3366ff 2%, #4b93ff 82%)',
+          }}
+        >
+          <p className="text-[12.5px] font-bold tracking-[1px] text-white/80">나의 여행 DNA</p>
+          <h2 className="text-[26px] font-extrabold tracking-[-0.5px] text-white">{user.personalityTitle}</h2>
+          <p className="text-sm font-medium text-white/85">{user.personalityDescription}</p>
+          <div className="flex flex-wrap gap-2">
             {user.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-brand-blue/10 text-brand-blue rounded-full px-2.5 py-1.5 text-xs font-semibold"
-              >
+              <span key={tag} className="rounded-full bg-white/20 px-[11px] py-1.5 text-[11.5px] font-bold text-white">
                 {tag}
               </span>
             ))}
           </div>
         </section>
 
-        <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
-          {rows.map((row, index) => (
+        <ul className="flex flex-col gap-3">
+          {rows.map((row) => (
             <li
               key={row.label}
-              className={`flex h-[62px] items-center justify-between px-[18px] ${
-                index < rows.length - 1 ? 'border-line-hairline border-b' : ''
-              }`}
+              className="border-line-hairline flex h-[62px] items-center justify-between rounded-xl border bg-white px-[18px]"
             >
-              <span className="text-ink-900 text-sm font-medium">{row.label}</span>
-              <span className="text-ink-900 text-sm font-bold">{row.value}</span>
+              <span className="text-text-secondary-soft text-sm font-medium">{row.label}</span>
+              <span className={`text-sm font-medium ${row.valueClassName}`}>{row.value}</span>
             </li>
           ))}
         </ul>
       </div>
+      <TabBar />
     </MobileShell>
   );
 };

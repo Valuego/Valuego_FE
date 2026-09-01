@@ -10,11 +10,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-brand-blue text-white hover:opacity-90 active:opacity-80',
+        primary:
+          'bg-button-primary-fill text-white shadow-[0px_1px_4px_rgba(23,23,25,0.08)] hover:bg-button-primary-fill-hover active:bg-button-primary-fill-pressed',
         dark: 'bg-ink-900 text-white hover:opacity-90 active:opacity-80',
         success: 'bg-brand-success text-white hover:opacity-90 active:opacity-80',
         outline: 'border-line-hairline bg-white text-ink-900 border hover:bg-surface-muted active:bg-surface-muted',
         ghost: 'bg-transparent text-brand-blue hover:opacity-80 active:opacity-70',
+        soft: 'bg-button-secondary-fill text-brand-blue hover:opacity-90 active:opacity-80',
       },
       fullWidth: {
         true: 'w-full',
