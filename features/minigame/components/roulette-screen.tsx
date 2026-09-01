@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 import RoulettePointerIcon from '@/shared/assets/icons/roulette-pointer.svg';
 import { Avatar } from '@/shared/components/avatar';
@@ -9,6 +10,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
+import { recordGameResult, useActiveTrip } from '@/shared/session';
 
 import {
   MAX_PARTICIPANTS,
@@ -19,7 +21,6 @@ import {
 } from '../minigame.constants';
 import { ParticipantStepper } from './participant-stepper';
 
-/** 세그먼트 중심 각도(12시=0, 시계방향). PNG 4등분 기준 */
 const SEGMENT_MID_DEG: Record<MemberKey, number> = {
   minjae: 45,
   doyeon: 135,
@@ -37,12 +38,29 @@ const LABEL_STYLE: Record<MemberKey, string> = {
 const SPIN_MS = 3200;
 
 export const RouletteScreen = () => {
-  const [count, setCount] = useState(4);
+  const router = useRouter();
+  const activeTrip = useActiveTrip();
+  const tripMembers = useMemo(() => {
+    if (!activeTrip || activeTrip.members.length === 0) {
+      return MINIGAME_MEMBERS;
+    }
+    return activeTrip.members.map((member) => ({
+      key: member.member,
+      name: member.name,
+      initial: member.name.slice(0, 1),
+      colorClass: `bg-member-${member.member}`,
+      colorHex: '',
+    }));
+  }, [activeTrip]);
+
+  const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, tripMembers.length));
+  const [count, setCount] = useState(defaultCount);
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winnerKey, setWinnerKey] = useState<MemberKey | null>(null);
+  const [recorded, setRecorded] = useState(false);
 
-  const participants = MINIGAME_MEMBERS.slice(0, count);
+  const participants = tripMembers.slice(0, count);
   const segmentKeys = ROULETTE_SEGMENT_ORDER.filter((key) => participants.some((p) => p.key === key));
 
   const handleSpin = () => {
@@ -50,22 +68,36 @@ export const RouletteScreen = () => {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/purity -- event handler pick
     const nextWinner = segmentKeys[Math.floor(Math.random() * segmentKeys.length)] ?? segmentKeys[0];
     const targetMid = SEGMENT_MID_DEG[nextWinner];
     const base = rotation % 360;
     const deltaToTarget = ((360 - targetMid - base) % 360) + 360 * 4;
 
     setWinnerKey(null);
+    setRecorded(false);
     setSpinning(true);
     setRotation(rotation + deltaToTarget);
 
     window.setTimeout(() => {
       setWinnerKey(nextWinner);
       setSpinning(false);
+
+      const winner =
+        participants.find((m) => m.key === nextWinner) ?? MINIGAME_MEMBERS.find((m) => m.key === nextWinner);
+      if (activeTrip && winner) {
+        recordGameResult(activeTrip.id, {
+          game: 'roulette',
+          winnerKey: nextWinner,
+          winnerName: winner.name,
+          label: `벌칙 룰렛 · ${winner.name}`,
+        });
+        setRecorded(true);
+      }
     }, SPIN_MS);
   };
 
-  const winner = winnerKey ? MINIGAME_MEMBERS.find((m) => m.key === winnerKey) : null;
+  const winner = winnerKey ? participants.find((m) => m.key === winnerKey) : null;
   const showResult = Boolean(winner) && !spinning;
 
   return (
@@ -77,10 +109,11 @@ export const RouletteScreen = () => {
           <ParticipantStepper
             count={count}
             min={MIN_PARTICIPANTS}
-            max={MAX_PARTICIPANTS}
+            max={Math.min(MAX_PARTICIPANTS, tripMembers.length)}
             onChange={(next) => {
               setCount(next);
               setWinnerKey(null);
+              setRecorded(false);
             }}
             className="mt-3"
           />
@@ -107,8 +140,8 @@ export const RouletteScreen = () => {
               priority
             />
             {ROULETTE_SEGMENT_ORDER.map((key) => {
-              const member = MINIGAME_MEMBERS.find((m) => m.key === key);
-              if (!member || !participants.some((p) => p.key === key)) {
+              const member = participants.find((m) => m.key === key);
+              if (!member) {
                 return null;
               }
 
@@ -137,6 +170,7 @@ export const RouletteScreen = () => {
           <div className="mt-2 flex flex-col items-center gap-1 rounded-[18px] bg-gradient-to-r from-[#ff9200] to-[#ff6b42] py-[18px]">
             <p className="text-[13px] font-bold text-white/90">오늘의 당첨자</p>
             <p className="text-[26px] font-extrabold tracking-[-0.5px] text-white">{winner.name} 🎉</p>
+            {recorded ? <p className="mt-1 text-[11px] font-medium text-white/80">타임라인에 기록됐어요</p> : null}
           </div>
         ) : (
           <ul className="mt-2 flex flex-wrap gap-2.5">
@@ -152,10 +186,15 @@ export const RouletteScreen = () => {
           </ul>
         )}
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto flex flex-col gap-2.5 pt-6">
           <Button variant="primary" fullWidth disabled={spinning} onClick={handleSpin}>
             {showResult ? '다시 돌리기' : '돌리기'}
           </Button>
+          {showResult ? (
+            <Button variant="outline" fullWidth onClick={() => router.push('/games')}>
+              미니게임 허브로
+            </Button>
+          ) : null}
         </div>
       </div>
     </MobileShell>

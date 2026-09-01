@@ -1,11 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { useAppSession } from '@/shared/session';
 
-const HomeEntryPage = () => {
+type RequireAuthProps = {
+  children: ReactNode;
+};
+
+export const RequireAuth = ({ children }: RequireAuthProps) => {
   const router = useRouter();
   const session = useAppSession();
 
@@ -16,16 +22,16 @@ const HomeEntryPage = () => {
     }
     if (!session.hasCompletedOnboarding) {
       router.replace('/onboarding');
-      return;
     }
-    router.replace('/home');
   }, [router, session.hasCompletedOnboarding, session.isAuthenticated]);
 
-  return (
-    <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
-      가치가자로 이동 중…
-    </div>
-  );
-};
+  if (!session.isAuthenticated || !session.hasCompletedOnboarding) {
+    return (
+      <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+        이동 중…
+      </div>
+    );
+  }
 
-export default HomeEntryPage;
+  return children;
+};

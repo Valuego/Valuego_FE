@@ -1,24 +1,42 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
+import { useActiveTrip } from '@/shared/session';
 
 import { GAMES } from '../minigame.constants';
 
 export const MinigameHubScreen = () => {
+  const router = useRouter();
+  const activeTrip = useActiveTrip();
+  const recent = activeTrip?.timeline[0];
+
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-3 px-5 pt-3 pb-4">
-        <Header title="미니게임" />
+        <Header title="미니게임" onBack={() => router.push('/home')} />
 
         <div className="flex items-start rounded-xl bg-[rgba(101,65,242,0.06)] px-3.5 py-3">
           <p className="text-brand-purple flex-1 text-[12.5px] font-semibold">
             🎮 애매한 결정, 눈치 게임 대신 30초 만에 정해요.
           </p>
         </div>
+
+        {!activeTrip ? (
+          <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">
+            <p className="text-ink-900 text-sm font-bold">진행 중인 여행이 없어요</p>
+            <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
+              그룹을 만들면 게임 결과가 타임라인에 쌓여요.
+            </p>
+            <Link href="/trips/new" className="text-brand-blue mt-3 inline-block text-sm font-bold">
+              새 여행 만들기 →
+            </Link>
+          </div>
+        ) : null}
 
         <ul className="flex flex-col gap-3">
           {GAMES.map((game) => (
@@ -45,7 +63,9 @@ export const MinigameHubScreen = () => {
           ))}
         </ul>
 
-        <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">게임 결과는 타임라인에 자동 기록돼요.</p>
+        <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">
+          {recent ? `최근 기록: ${recent.label}` : '게임 결과는 타임라인에 자동 기록돼요.'}
+        </p>
       </div>
       <TabBar />
     </MobileShell>

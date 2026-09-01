@@ -10,15 +10,24 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { ProgressBar } from '@/shared/components/progress-bar';
 import { Slider } from '@/shared/components/slider';
+import { updateTripDraft, useTripDraft } from '@/shared/session';
 
 export const StyleInputScreen = () => {
   const router = useRouter();
-  const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>('적당히');
-  const [foods, setFoods] = useState<string[]>(['한식', '중식']);
-  const [activity, setActivity] = useState(52);
+  const draft = useTripDraft();
+  const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>(
+    (draft?.budget as (typeof BUDGET_OPTIONS)[number]) ?? '적당히',
+  );
+  const [foods, setFoods] = useState<string[]>(draft?.foods ?? ['한식', '중식']);
+  const [activity, setActivity] = useState(draft?.activity ?? 52);
 
   const toggleFood = (food: string) => {
     setFoods((prev) => (prev.includes(food) ? prev.filter((item) => item !== food) : [...prev, food]));
+  };
+
+  const handleSubmit = () => {
+    updateTripDraft({ budget, foods, activity });
+    router.push('/trips/new/confirm');
   };
 
   return (
@@ -71,7 +80,7 @@ export const StyleInputScreen = () => {
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth onClick={() => router.push('/trips/new/confirm')}>
+        <Button variant="primary" fullWidth onClick={handleSubmit}>
           AI 일정 조건 확인하기
         </Button>
       </div>

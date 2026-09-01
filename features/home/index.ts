@@ -1,7 +1,5 @@
-import type { MemberKey } from './home.constants';
-
 import { HomeScreen } from './components/home-screen';
-import { ACTIVE_TRIP, CURRENT_USER, PAST_TRIPS } from './home.constants';
+import { CURRENT_USER, DESTINATIONS, BUDGET_OPTIONS, FOOD_OPTIONS } from './home.constants';
 
-export type { MemberKey };
-export { ACTIVE_TRIP, CURRENT_USER, HomeScreen, PAST_TRIPS };
+export type { MemberKey, TripSummary } from './home.constants';
+export { BUDGET_OPTIONS, CURRENT_USER, DESTINATIONS, FOOD_OPTIONS, HomeScreen };

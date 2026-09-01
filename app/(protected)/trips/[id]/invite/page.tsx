@@ -1,13 +1,13 @@
 import { InviteScreen } from '@/features/trip';
 
 type InvitePageProps = {
-  searchParams: Promise<{ empty?: string }>;
+  params: Promise<{ id: string }>;
 };
 
-const InvitePage = async ({ searchParams }: InvitePageProps) => {
-  const params = await searchParams;
+const InvitePage = async ({ params }: InvitePageProps) => {
+  const { id } = await params;
 
-  return <InviteScreen empty={params.empty === '1'} />;
+  return <InviteScreen tripId={id} />;
 };
 
 export default InvitePage;
