@@ -1,2 +1,2 @@
 export { apiRequest, type ApiRequestOptions } from './client';
-export { ApiError, type ApiErrorData } from './error';
+export { ApiError, getErrorMessage, isApiError, type ApiErrorData } from './error';

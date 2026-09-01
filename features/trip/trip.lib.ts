@@ -1,0 +1,215 @@
+import { formatDateDot, startOfDay } from '@/shared/components/date-picker';
+import type { MemberKey, Transport, Trip, TripMember, TripPhase } from '@/shared/session';
+
+import type {
+  BudgetType,
+  CreateTripPayload,
+  Destination,
+  FoodType,
+  GroupInfo,
+  GroupMemberInfo,
+  GroupStatus,
+  MemberColor,
+  TransportType,
+} from './trip.types';
+
+const DESTINATION_LABEL: Record<Destination, string> = {
+  BUSAN: '부산',
+  GANGNEUNG: '강릉',
+  GYEONGJU: '경주',
+  YEOSU: '여수',
+  JEONJU: '전주',
+  SOKCHO: '속초',
+};
+
+const DESTINATION_FROM_LABEL: Record<string, Destination> = {
+  부산: 'BUSAN',
+  강릉: 'GANGNEUNG',
+  경주: 'GYEONGJU',
+  여수: 'YEOSU',
+  전주: 'JEONJU',
+  속초: 'SOKCHO',
+};
+
+const BUDGET_FROM_LABEL: Record<string, BudgetType> = {
+  알뜰하게: 'ECONOMICAL',
+  적당히: 'MODERATE',
+  플렉스: 'LUXURY',
+};
+
+const FOOD_FROM_LABEL: Record<string, FoodType> = {
+  한식: 'KOREAN',
+  일식: 'JAPANESE',
+  중식: 'CHINESE',
+};
+
+const MEMBER_COLOR_TO_KEY: Record<MemberColor, MemberKey> = {
+  BLUE: 'doyeon',
+  PURPLE: 'seojun',
+  SKYBLUE: 'hayeong',
+  ORANGE: 'minjae',
+};
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export const parseGroupId = (tripId: string): number | null => {
+  if (!/^\d+$/.test(tripId)) {
+    return null;
+  }
+  const groupId = Number(tripId);
+  return Number.isSafeInteger(groupId) ? groupId : null;
+};
+
+export const parseIsoDate = (value: string) => {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+};
+
+export const toIsoDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const toLocalDateTime = (isoDate: string, endOfDay = false) => {
+  return `${isoDate}T${endOfDay ? '23:59:59' : '00:00:00'}`;
+};
+
+export const formatDateRangeLabel = (start: Date, end: Date) => {
+  const startLabel = formatDateDot(start);
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const endLabel = sameYear
+    ? `${String(end.getMonth() + 1).padStart(2, '0')}.${String(end.getDate()).padStart(2, '0')}`
+    : formatDateDot(end);
+  return `${startLabel} – ${endLabel}`;
+};
+
+export const formatNightsLabel = (start: Date, end: Date) => {
+  const nights = Math.max(0, Math.round((startOfDay(end).getTime() - startOfDay(start).getTime()) / MS_PER_DAY));
+  return `${nights}박 ${nights + 1}일`;
+};
+
+export const getDefaultTripDates = () => {
+  const start = startOfDay(new Date());
+  start.setDate(start.getDate() + 1);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 2);
+  return {
+    startDate: toIsoDate(start),
+    endDate: toIsoDate(end),
+    dateLabel: formatDateRangeLabel(start, end),
+    nightsLabel: formatNightsLabel(start, end),
+  };
+};
+
+export const destinationFromLabel = (label: string): Destination => {
+  return DESTINATION_FROM_LABEL[label] ?? 'BUSAN';
+};
+
+export const destinationToLabel = (destination: Destination) => DESTINATION_LABEL[destination];
+
+export const transportFromUi = (transport: Transport): TransportType => {
+  return transport === 'transit' ? 'PUBLIC' : 'RENT';
+};
+
+export const transportToUi = (transportType: TransportType): Transport => {
+  return transportType === 'PUBLIC' ? 'transit' : 'car';
+};
+
+export const budgetFromLabel = (label: string): BudgetType => {
+  return BUDGET_FROM_LABEL[label] ?? 'MODERATE';
+};
+
+export const foodFromLabels = (labels: string[]): FoodType => {
+  const first = labels[0];
+  return (first ? FOOD_FROM_LABEL[first] : undefined) ?? 'KOREAN';
+};
+
+export const activityToIntensity = (slider: number) => {
+  return Math.min(5, Math.max(1, Math.round((slider / 100) * 4) + 1));
+};
+
+const groupStatusToPhase = (status: GroupStatus): TripPhase => {
+  if (status === 'CONFIRMED') {
+    return 'ongoing';
+  }
+  if (status === 'COMPLETED') {
+    return 'settled';
+  }
+  return 'planning';
+};
+
+const toTripMember = (member: GroupMemberInfo): TripMember => {
+  const isLeader = member.memberRole === 'LEADER';
+  const isDone = member.memberStatus === 'COMPLETED';
+
+  return {
+    id: String(member.groupMemberId),
+    name: member.memberName,
+    role: isLeader ? '나 · 호스트' : '친구',
+    member: MEMBER_COLOR_TO_KEY[member.memberColor],
+    status: isLeader ? 'host' : isDone ? 'done' : 'pending',
+    statusLabel: isDone ? '완료' : isLeader ? '성향 입력 전' : '대기 중',
+  };
+};
+
+const startDateDday = (startDate: string) => {
+  const start = startOfDay(parseIsoDate(startDate));
+  const today = startOfDay(new Date());
+  const days = Math.round((start.getTime() - today.getTime()) / MS_PER_DAY);
+
+  if (days > 0) {
+    return `D-${days}`;
+  }
+  if (days === 0) {
+    return 'D-Day';
+  }
+  return `D+${Math.abs(days)}`;
+};
+
+export const groupToTrip = (group: GroupInfo): Trip => {
+  const start = parseIsoDate(group.startDate);
+  const end = parseIsoDate(group.endDate);
+  const phase = groupStatusToPhase(group.groupStatus);
+
+  return {
+    id: String(group.groupId),
+    title: group.title,
+    destination: destinationToLabel(group.destination),
+    dateLabel: formatDateRangeLabel(start, end),
+    nightsLabel: formatNightsLabel(start, end),
+    phase,
+    dDayLabel: phase === 'settled' ? undefined : startDateDday(group.startDate),
+    memberCount: group.memberCount,
+    transport: transportToUi(group.transportType),
+    budget: '적당히',
+    foods: [],
+    activity: 50,
+    members: group.members.map(toTripMember),
+    inviteCode: group.groupLink,
+    timeline: [],
+    roles: [],
+    todos: [],
+    expenses: [],
+  };
+};
+
+export const toCreateGroupRequest = (payload: CreateTripPayload) => {
+  return {
+    title: payload.title,
+    destination: destinationFromLabel(payload.destinationLabel),
+    startDate: toLocalDateTime(payload.startDate),
+    endDate: toLocalDateTime(payload.endDate, true),
+    memberCount: payload.memberCount,
+    transportType: transportFromUi(payload.transport),
+  };
+};
+
+export const toCreateStyleRequest = (payload: CreateTripPayload) => {
+  return {
+    budgetType: budgetFromLabel(payload.budgetLabel),
+    foodType: foodFromLabels(payload.foodLabels),
+    activityIntensity: activityToIntensity(payload.activitySlider),
+  };
+};

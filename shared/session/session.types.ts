@@ -69,10 +69,19 @@ export type Trip = {
   perPersonAmount?: string;
 };
 
+export type NotificationAgree = {
+  notifyComments: boolean;
+  notifyReminders: boolean;
+  notifySettlement: boolean;
+  notifyMarketing: boolean;
+};
+
 export type TripDraft = {
   destination: string;
   dateLabel: string;
   nightsLabel: string;
+  startDate: string;
+  endDate: string;
   memberCount: number;
   transport: Transport;
   budget: string;
@@ -88,6 +97,7 @@ export type UserProfile = {
   personalityTitle: string;
   personalityDescription: string;
   tags: string[];
+  notificationAgree?: NotificationAgree;
 };
 
 export type AppSession = {

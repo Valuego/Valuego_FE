@@ -3,23 +3,26 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { useAppSession } from '@/shared/session';
+import { useAuthStatus } from '@/features/auth';
 
 const HomeEntryPage = () => {
   const router = useRouter();
-  const session = useAppSession();
+  const { isBootstrapping, isAuthenticated, hasCompletedOnboarding } = useAuthStatus();
 
   useEffect(() => {
-    if (!session.isAuthenticated) {
+    if (isBootstrapping) {
+      return;
+    }
+    if (!isAuthenticated) {
       router.replace('/login');
       return;
     }
-    if (!session.hasCompletedOnboarding) {
+    if (!hasCompletedOnboarding) {
       router.replace('/onboarding');
       return;
     }
     router.replace('/home');
-  }, [router, session.hasCompletedOnboarding, session.isAuthenticated]);
+  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router]);
 
   return (
     <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">

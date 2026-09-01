@@ -1,6 +1,6 @@
 import type { AppSession } from './session.types';
 
-import { createInitialSession, SESSION_STORAGE_KEY, withTripDefaults } from './session.seed';
+import { createInitialSession, DEFAULT_DRAFT, SESSION_STORAGE_KEY, withTripDefaults } from './session.seed';
 
 let memorySession: AppSession = createInitialSession();
 let hydrated = false;
@@ -15,6 +15,7 @@ const notify = () => {
 
 const migrateSession = (parsed: AppSession): AppSession => ({
   ...parsed,
+  draft: parsed.draft ? { ...DEFAULT_DRAFT, ...parsed.draft } : parsed.draft,
   trips: parsed.trips.map((trip) => withTripDefaults(trip)),
 });
 

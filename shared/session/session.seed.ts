@@ -14,8 +14,10 @@ export const DEFAULT_USER: UserProfile = {
 
 export const DEFAULT_DRAFT: TripDraft = {
   destination: '부산',
-  dateLabel: '2026.06.20 – 06.22',
-  nightsLabel: '2박 3일',
+  dateLabel: '날짜를 선택해 주세요',
+  nightsLabel: '기간 미정',
+  startDate: '',
+  endDate: '',
   memberCount: 4,
   transport: 'car',
   budget: '적당히',

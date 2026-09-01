@@ -10,6 +10,7 @@ export {
   addTripExpense,
   addTripTodo,
   advanceTripPhase,
+  applyAuthenticatedUser,
   assignTripRole,
   completeOnboarding,
   createTripFromDraft,
@@ -20,9 +21,12 @@ export {
   normalizeInviteInput,
   recordGameResult,
   resetDemo,
+  setActiveTripId,
+  signOutSession,
   startTripDraft,
   toggleTripTodo,
   updateTripDraft,
+  upsertLocalTrip,
 } from './session.actions';
 export { useActiveTrip, useAppSession, useSettledTrips, useTripById, useTripDraft } from './session.hooks';
 export { DEFAULT_DRAFT, DEFAULT_USER, SESSION_STORAGE_KEY } from './session.seed';
@@ -30,6 +34,7 @@ export type {
   AppSession,
   GameResult,
   MemberKey,
+  NotificationAgree,
   Transport,
   Trip,
   TripDraft,

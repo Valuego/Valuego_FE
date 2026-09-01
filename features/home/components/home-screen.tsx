@@ -2,18 +2,22 @@
 
 import Link from 'next/link';
 
+import { groupToTrip, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
 import BellIcon from '@/shared/assets/icons/bell.svg';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
-import { useActiveTrip, useAppSession, useSettledTrips } from '@/shared/session';
+import { getErrorMessage } from '@/shared/lib/api';
+import { useAppSession } from '@/shared/session';
 
 export const HomeScreen = () => {
   const session = useAppSession();
-  const activeTrip = useActiveTrip();
-  const settledTrips = useSettledTrips();
-  const hasActiveTrip = Boolean(activeTrip && activeTrip.phase !== 'settled');
+  const groupsQuery = useMyGroupsQuery();
+  const ongoingTrips = (groupsQuery.data?.ongoingGroups ?? []).map(groupToTrip);
+  const pastTrips = (groupsQuery.data?.pastGroups ?? []).map(groupToTrip);
+  const activeTrip = ongoingTrips[0] ?? null;
+  const hasActiveTrip = Boolean(activeTrip);
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -32,11 +36,20 @@ export const HomeScreen = () => {
           </Link>
         </div>
 
+        {groupsQuery.isPending ? (
+          <p className="text-text-secondary-soft text-sm font-medium">여행 목록을 불러오는 중…</p>
+        ) : null}
+
+        {groupsQuery.isError ? (
+          <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(groupsQuery.error)}</p>
+        ) : null}
+
         {hasActiveTrip && activeTrip ? (
           <>
             <Link
               href={`/trips/${activeTrip.id}`}
               className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white px-6 pt-5 pb-7 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
+              onClick={() => rememberActiveTrip(activeTrip.id)}
             >
               <span className="border-line-hairline inline-flex h-5 w-fit items-center gap-1.5 rounded-2xl border bg-white px-2">
                 <span className="bg-brand-success size-2 shrink-0 rounded-full" />
@@ -52,6 +65,7 @@ export const HomeScreen = () => {
                       key={member.id}
                       member={member.member}
                       size="sm"
+                      initial={member.name.slice(0, 1)}
                       className={index === 0 ? 'size-7 text-[10px]' : '-ml-2 size-7 text-[10px] ring-2 ring-white'}
                     />
                   ))}
@@ -86,19 +100,19 @@ export const HomeScreen = () => {
 
         <p className="text-[13px] font-bold tracking-[0.3px] text-[rgba(55,56,60,0.28)]">지난 여행</p>
 
-        {settledTrips.length > 0 ? (
+        {pastTrips.length > 0 ? (
           <ul className="flex flex-col gap-3">
-            {settledTrips.slice(0, 2).map((trip) => (
+            {pastTrips.slice(0, 2).map((trip) => (
               <li key={trip.id}>
                 <Link
-                  href={`/trips/${trip.id}/settlement`}
+                  href={`/trips/${trip.id}`}
                   className="border-line-hairline flex h-20 items-center gap-3 rounded-xl border bg-white px-4 py-3.5 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <p className="text-ink-900 text-base font-bold tracking-[-0.2px]">{trip.title}</p>
                     <p className="text-text-secondary-soft text-xs font-medium">{trip.dateLabel}</p>
                   </div>
-                  <span className="text-brand-success shrink-0 text-[12.5px] font-bold">정산 완료</span>
+                  <span className="text-brand-success shrink-0 text-[12.5px] font-bold">종료</span>
                 </Link>
               </li>
             ))}

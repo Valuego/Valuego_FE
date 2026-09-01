@@ -1,6 +1,15 @@
-import type { GameResult, MemberKey, Trip, TripDraft, TripExpense, TripMember, TripPhase } from './session.types';
+import type {
+  GameResult,
+  MemberKey,
+  Trip,
+  TripDraft,
+  TripExpense,
+  TripMember,
+  TripPhase,
+  UserProfile,
+} from './session.types';
 
-import { DEFAULT_DRAFT, DEFAULT_ROLES, DEFAULT_TODOS, withTripDefaults } from './session.seed';
+import { createInitialSession, DEFAULT_DRAFT, DEFAULT_ROLES, DEFAULT_TODOS, withTripDefaults } from './session.seed';
 import { getSessionSnapshot, resetSessionStore, setSession } from './session.store';
 
 const FRIEND_POOL: Omit<TripMember, 'id'>[] = [
@@ -49,6 +58,36 @@ export const login = () => {
   setSession((prev) => ({
     ...prev,
     isAuthenticated: true,
+  }));
+};
+
+export const applyAuthenticatedUser = (user: UserProfile) => {
+  setSession((prev) => ({
+    ...prev,
+    isAuthenticated: true,
+    user,
+  }));
+};
+
+export const signOutSession = () => {
+  setSession((prev) => ({
+    ...createInitialSession(),
+    hasCompletedOnboarding: prev.hasCompletedOnboarding,
+  }));
+};
+
+export const setActiveTripId = (tripId: string | null) => {
+  setSession((prev) => ({
+    ...prev,
+    activeTripId: tripId,
+  }));
+};
+
+export const upsertLocalTrip = (trip: Trip) => {
+  setSession((prev) => ({
+    ...prev,
+    activeTripId: trip.id,
+    trips: [trip, ...prev.trips.filter((item) => item.id !== trip.id)],
   }));
 };
 

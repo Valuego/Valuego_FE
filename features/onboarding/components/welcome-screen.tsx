@@ -2,7 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 
-import { BrandLogo, KakaoLoginButton } from '@/features/auth';
+import { BrandLogo } from '@/features/auth';
+import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
 import { completeOnboarding } from '@/shared/session';
@@ -12,8 +13,7 @@ import { WELCOME_FEATURES } from '../onboarding.constants';
 export const WelcomeScreen = () => {
   const router = useRouter();
 
-  const handleKakaoLogin = () => {
-    // TODO: 카카오 OAuth 연동
+  const handleStart = () => {
     completeOnboarding();
     router.push('/home');
   };
@@ -58,7 +58,9 @@ export const WelcomeScreen = () => {
         </ul>
 
         <div className="mt-auto pt-8 pb-6">
-          <KakaoLoginButton onClick={handleKakaoLogin} />
+          <Button variant="primary" fullWidth onClick={handleStart}>
+            여행 시작하기
+          </Button>
         </div>
       </div>
     </MobileShell>
