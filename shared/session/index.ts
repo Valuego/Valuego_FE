@@ -7,15 +7,21 @@ export {
   subscribeSession,
 } from './session.store';
 export {
+  addTripExpense,
+  addTripTodo,
   advanceTripPhase,
+  assignTripRole,
   completeOnboarding,
   createTripFromDraft,
   getTripById,
   joinMembersDemo,
+  joinTripByCode,
   login,
+  normalizeInviteInput,
   recordGameResult,
   resetDemo,
   startTripDraft,
+  toggleTripTodo,
   updateTripDraft,
 } from './session.actions';
 export { useActiveTrip, useAppSession, useSettledTrips, useTripById, useTripDraft } from './session.hooks';
@@ -27,7 +33,10 @@ export type {
   Transport,
   Trip,
   TripDraft,
+  TripExpense,
   TripMember,
   TripPhase,
+  TripRoleItem,
+  TripTodoItem,
   UserProfile,
 } from './session.types';

@@ -1,4 +1,4 @@
-import type { AppSession, Trip, TripDraft, UserProfile } from './session.types';
+import type { AppSession, Trip, TripDraft, TripRoleItem, TripTodoItem, UserProfile } from './session.types';
 
 export const SESSION_STORAGE_KEY = 'valuego.session.v1';
 
@@ -23,8 +23,32 @@ export const DEFAULT_DRAFT: TripDraft = {
   activity: 52,
 };
 
+export const DEFAULT_ROLES: TripRoleItem[] = [
+  { id: 'role-host', title: '총무', description: '예약·정산·공지', assigneeId: null, assigneeName: null },
+  { id: 'role-nav', title: '내비', description: '이동·동선', assigneeId: null, assigneeName: null },
+  { id: 'role-food', title: '맛집 리서치', description: '식사 후보', assigneeId: null, assigneeName: null },
+  { id: 'role-bag', title: '짐 담당', description: '공용 짐·체크', assigneeId: null, assigneeName: null },
+];
+
+export const DEFAULT_TODOS: TripTodoItem[] = [
+  { id: 'todo-1', title: '숙소 예약 확인', done: false },
+  { id: 'todo-2', title: '이동 수단 확정', done: false },
+  { id: 'todo-3', title: '공통 짐 목록 공유', done: false },
+];
+
+type TripInput = Omit<Trip, 'roles' | 'todos' | 'expenses' | 'timeline'> &
+  Partial<Pick<Trip, 'roles' | 'todos' | 'expenses' | 'timeline'>>;
+
+export const withTripDefaults = (trip: TripInput): Trip => ({
+  ...trip,
+  timeline: trip.timeline ?? [],
+  roles: trip.roles ?? DEFAULT_ROLES.map((role) => ({ ...role })),
+  todos: trip.todos ?? DEFAULT_TODOS.map((todo) => ({ ...todo })),
+  expenses: trip.expenses ?? [],
+});
+
 export const SEED_PAST_TRIPS: Trip[] = [
-  {
+  withTripDefaults({
     id: 'gangneung-2026',
     title: '강릉 우정여행',
     destination: '강릉',
@@ -39,7 +63,10 @@ export const SEED_PAST_TRIPS: Trip[] = [
     inviteCode: 'gachigachi.app/j/gn26',
     totalAmount: '248,000원',
     perPersonAmount: '62,000원',
-    timeline: [],
+    expenses: [
+      { id: 'exp-1', title: '숙소', amount: 180000, payerName: '도연', createdAt: '2026-05-04T10:00:00.000Z' },
+      { id: 'exp-2', title: '식비', amount: 68000, payerName: '서준', createdAt: '2026-05-04T12:00:00.000Z' },
+    ],
     members: [
       {
         id: '1',
@@ -53,8 +80,8 @@ export const SEED_PAST_TRIPS: Trip[] = [
       { id: '3', name: '하영', role: '친구', member: 'hayeong', status: 'done', statusLabel: '완료' },
       { id: '4', name: '민재', role: '친구', member: 'minjae', status: 'done', statusLabel: '완료' },
     ],
-  },
-  {
+  }),
+  withTripDefaults({
     id: 'jeju-2026',
     title: '제주 한 달 살기',
     destination: '제주',
@@ -69,7 +96,6 @@ export const SEED_PAST_TRIPS: Trip[] = [
     inviteCode: 'gachigachi.app/j/jj26',
     totalAmount: '512,000원',
     perPersonAmount: '170,600원',
-    timeline: [],
     members: [
       {
         id: '1',
@@ -82,7 +108,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
       { id: '2', name: '서준', role: '친구', member: 'seojun', status: 'done', statusLabel: '완료' },
       { id: '3', name: '하영', role: '친구', member: 'hayeong', status: 'done', statusLabel: '완료' },
     ],
-  },
+  }),
 ];
 
 export const createInitialSession = (): AppSession => ({
@@ -94,3 +120,5 @@ export const createInitialSession = (): AppSession => ({
   trips: SEED_PAST_TRIPS,
   activeTripId: null,
 });
+
+export const normalizeTrip = (trip: Trip): Trip => withTripDefaults(trip);

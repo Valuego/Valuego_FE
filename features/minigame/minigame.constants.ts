@@ -23,14 +23,14 @@ export const MAX_PARTICIPANTS = 4;
 
 export const GAMES = [
   {
-    href: '/games/roulette',
+    slug: 'roulette',
     title: '벌칙 룰렛',
     description: '커피 쏘기 · 짐 들기 — 꽝 1명 뽑기',
     emoji: '🎯',
     iconBg: 'bg-[#edf0fa]',
   },
   {
-    href: '/games/ladder',
+    slug: 'ladder',
     title: '사다리타기',
     description: '인원 골라서 꽝 1명 · 순서 정하기',
     emoji: '🪜',

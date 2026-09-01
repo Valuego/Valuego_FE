@@ -8,7 +8,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
-import { recordGameResult, useActiveTrip } from '@/shared/session';
+import { recordGameResult, useActiveTrip, useTripById } from '@/shared/session';
 
 import {
   LADDER_RUNGS,
@@ -149,21 +149,24 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
   );
 };
 
-export const LadderScreen = () => {
+export const LadderScreen = ({ tripId }: { tripId?: string }) => {
   const router = useRouter();
   const activeTrip = useActiveTrip();
+  const tripFromId = useTripById(tripId ?? '');
+  const trip = tripId ? tripFromId : activeTrip;
+  const gamesHub = trip ? `/trips/${trip.id}/games` : '/games';
   const tripMembers = useMemo((): MinigameMember[] => {
-    if (!activeTrip || activeTrip.members.length === 0) {
+    if (!trip || trip.members.length === 0) {
       return MINIGAME_MEMBERS;
     }
-    return activeTrip.members.map((member) => ({
+    return trip.members.map((member) => ({
       key: member.member,
       name: member.name,
       initial: member.name.slice(0, 1),
       colorClass: `bg-member-${member.member}`,
       colorHex: '',
     }));
-  }, [activeTrip]);
+  }, [trip]);
 
   const defaultCount = Math.min(MAX_PARTICIPANTS, Math.max(MIN_PARTICIPANTS, tripMembers.length));
   const [count, setCount] = useState(defaultCount);
@@ -187,8 +190,8 @@ export const LadderScreen = () => {
     setPath(nextPath);
     setStarted(true);
 
-    if (activeTrip && winner) {
-      recordGameResult(activeTrip.id, {
+    if (trip && winner) {
+      recordGameResult(trip.id, {
         game: 'ladder',
         winnerKey: winner.key,
         winnerName: winner.name,
@@ -244,7 +247,7 @@ export const LadderScreen = () => {
             {started ? '다시하기' : '사다리타기 시작'}
           </Button>
           {started ? (
-            <Button variant="outline" fullWidth onClick={() => router.push('/games')}>
+            <Button variant="outline" fullWidth onClick={() => router.push(gamesHub)}>
               미니게임 허브로
             </Button>
           ) : null}

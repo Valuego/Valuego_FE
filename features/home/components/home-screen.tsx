@@ -30,7 +30,7 @@ export const HomeScreen = () => {
 
         {hasActiveTrip && activeTrip ? (
           <Link
-            href={`/trips/${activeTrip.id}/invite`}
+            href={`/trips/${activeTrip.id}`}
             className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white px-6 pt-5 pb-7 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
           >
             <span className="border-line-hairline inline-flex h-5 w-fit items-center gap-1.5 rounded-2xl border bg-white px-2">
@@ -49,9 +49,7 @@ export const HomeScreen = () => {
                   />
                 ))}
               </div>
-              <span className="text-text-body text-sm font-medium">
-                {activeTrip.phase === 'inviting' ? '초대 보기 →' : '일정 보기 →'}
-              </span>
+              <span className="text-text-body text-sm font-medium">대기실 열기 →</span>
             </div>
             {activeTrip.timeline[0] ? (
               <p className="text-text-secondary-soft text-xs font-medium">최근: {activeTrip.timeline[0].label}</p>
@@ -62,20 +60,24 @@ export const HomeScreen = () => {
             <div className="flex size-[74px] items-center justify-center rounded-full bg-[#edf0fa] text-[40px]">✈️</div>
             <p className="text-ink-900 text-base font-bold">아직 여행이 없어요</p>
             <p className="text-text-subtle text-center text-sm leading-[1.5]">
-              날짜와 도시만 정해도 시작할 수 있어요.
-              <br />
-              나머지는 친구들과 채워 가면 돼요.
+              여행을 만들거나, 참여 코드로 일행에 합류하세요.
             </p>
             <Button asChild variant="primary" fullWidth className="mt-2">
               <Link href="/trips/new">새 여행 계획 만들기</Link>
             </Button>
+            <Button asChild variant="outline" fullWidth>
+              <Link href="/trips/join">참여 코드로 합류</Link>
+            </Button>
           </div>
         )}
 
-        {hasActiveTrip ? (
+        {hasActiveTrip && activeTrip ? (
           <div className="flex flex-col gap-2.5">
             <Button asChild variant="primary" fullWidth>
-              <Link href="/games">미니게임 하러 가기</Link>
+              <Link href={`/trips/${activeTrip.id}/games`}>미니게임 하러 가기</Link>
+            </Button>
+            <Button asChild variant="outline" fullWidth>
+              <Link href="/trips/join">참여 코드로 합류</Link>
             </Button>
             <Button asChild variant="outline" fullWidth>
               <Link href="/trips/new">새 여행 계획 만들기</Link>
@@ -90,7 +92,7 @@ export const HomeScreen = () => {
             {settledTrips.slice(0, 2).map((trip) => (
               <li key={trip.id}>
                 <Link
-                  href="/my/settlements"
+                  href={`/trips/${trip.id}/settlement`}
                   className="border-line-hairline flex h-20 items-center gap-3 rounded-xl border bg-white px-4 py-3.5 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

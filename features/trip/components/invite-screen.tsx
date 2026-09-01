@@ -50,11 +50,11 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
 
   const handleContinue = () => {
     if (isEmpty) {
-      router.push('/home');
+      router.push(`/trips/${tripId}`);
       return;
     }
-    advanceTripPhase(tripId, 'ongoing');
-    router.push('/home');
+    advanceTripPhase(tripId, 'planning');
+    router.push(`/trips/${tripId}`);
   };
 
   return (
@@ -120,7 +120,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         <Button variant="primary" fullWidth onClick={handleContinue}>
-          {isEmpty ? '홈으로 돌아가기' : '일정 만들러 가기'}
+          {isEmpty ? '대기실로 돌아가기' : '일행 대기실로 가기'}
         </Button>
       </div>
     </MobileShell>

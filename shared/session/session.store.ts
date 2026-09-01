@@ -1,6 +1,6 @@
 import type { AppSession } from './session.types';
 
-import { createInitialSession, SESSION_STORAGE_KEY } from './session.seed';
+import { createInitialSession, SESSION_STORAGE_KEY, withTripDefaults } from './session.seed';
 
 let memorySession: AppSession = createInitialSession();
 let hydrated = false;
@@ -13,6 +13,11 @@ const notify = () => {
   listeners.forEach((listener) => listener());
 };
 
+const migrateSession = (parsed: AppSession): AppSession => ({
+  ...parsed,
+  trips: parsed.trips.map((trip) => withTripDefaults(trip)),
+});
+
 const parseSession = (raw: string | null): AppSession | null => {
   if (!raw) {
     return null;
@@ -23,7 +28,7 @@ const parseSession = (raw: string | null): AppSession | null => {
     if (parsed?.version !== 1) {
       return null;
     }
-    return parsed;
+    return migrateSession(parsed);
   } catch {
     return null;
   }

@@ -1,6 +1,6 @@
-import type { GameResult, MemberKey, Trip, TripDraft, TripMember, TripPhase } from './session.types';
+import type { GameResult, MemberKey, Trip, TripDraft, TripExpense, TripMember, TripPhase } from './session.types';
 
-import { DEFAULT_DRAFT } from './session.seed';
+import { DEFAULT_DRAFT, DEFAULT_ROLES, DEFAULT_TODOS, withTripDefaults } from './session.seed';
 import { getSessionSnapshot, resetSessionStore, setSession } from './session.store';
 
 const FRIEND_POOL: Omit<TripMember, 'id'>[] = [
@@ -34,6 +34,16 @@ const hostMember = (greetingName: string, member: MemberKey): TripMember => ({
   status: 'host',
   statusLabel: '성향 완료',
 });
+
+export const normalizeInviteInput = (raw: string) => {
+  const trimmed = raw.trim().toLowerCase();
+  if (!trimmed) {
+    return '';
+  }
+  const withoutProtocol = trimmed.replace(/^https?:\/\//, '');
+  const parts = withoutProtocol.split('/');
+  return parts[parts.length - 1] ?? withoutProtocol;
+};
 
 export const login = () => {
   setSession((prev) => ({
@@ -75,7 +85,7 @@ export const createTripFromDraft = (): Trip => {
   const draft = session.draft ?? DEFAULT_DRAFT;
   const id = `${slugifyDestination(draft.destination)}-${Date.now().toString(36)}`;
 
-  const trip: Trip = {
+  const trip = withTripDefaults({
     id,
     title: `${draft.destination} 우정여행`,
     destination: draft.destination,
@@ -89,9 +99,13 @@ export const createTripFromDraft = (): Trip => {
     foods: draft.foods,
     activity: draft.activity,
     inviteCode: createInviteCode(),
-    timeline: [],
     members: [hostMember(session.user.greetingName, session.user.member)],
-  };
+    roles: DEFAULT_ROLES.map((role) =>
+      role.id === 'role-host' ? { ...role, assigneeId: 'host', assigneeName: session.user.greetingName } : { ...role },
+    ),
+    todos: DEFAULT_TODOS.map((todo) => ({ ...todo })),
+    expenses: [],
+  });
 
   setSession((prev) => ({
     ...prev,
@@ -104,7 +118,8 @@ export const createTripFromDraft = (): Trip => {
 };
 
 export const getTripById = (tripId: string) => {
-  return getSessionSnapshot().trips.find((trip) => trip.id === tripId);
+  const trip = getSessionSnapshot().trips.find((item) => item.id === tripId);
+  return trip ? withTripDefaults(trip) : undefined;
 };
 
 export const joinMembersDemo = (tripId: string) => {
@@ -120,14 +135,61 @@ export const joinMembersDemo = (tripId: string) => {
         id: `friend-${index + 1}`,
       }));
 
-      return {
+      return withTripDefaults({
         ...trip,
         members: [hostMember(prev.user.greetingName, prev.user.member), ...friends],
-        phase: 'planning' as TripPhase,
+        phase: 'planning',
         dDayLabel: '일정 준비 중',
-      };
+      });
     }),
   }));
+};
+
+export const joinTripByCode = (rawCode: string): { ok: true; trip: Trip } | { ok: false; reason: string } => {
+  const token = normalizeInviteInput(rawCode);
+  if (!token) {
+    return { ok: false, reason: '참여 코드를 입력해 주세요.' };
+  }
+
+  const session = getSessionSnapshot();
+  const matched = session.trips.find((trip) => normalizeInviteInput(trip.inviteCode) === token);
+
+  if (!matched) {
+    return { ok: false, reason: '코드를 찾을 수 없어요. 다시 확인해 주세요.' };
+  }
+
+  const alreadyJoined = matched.members.some(
+    (member) => member.member === session.user.member || member.name === session.user.greetingName,
+  );
+
+  const nextMembers = alreadyJoined
+    ? matched.members
+    : [
+        ...matched.members,
+        {
+          id: `member-${session.user.member}`,
+          name: session.user.greetingName,
+          role: '친구',
+          member: session.user.member,
+          status: 'done' as const,
+          statusLabel: '완료',
+        },
+      ];
+
+  const nextTrip = withTripDefaults({
+    ...matched,
+    members: nextMembers,
+    phase: matched.phase === 'settled' ? matched.phase : 'planning',
+    dDayLabel: matched.phase === 'settled' ? matched.dDayLabel : '일행 대기 중',
+  });
+
+  setSession((prev) => ({
+    ...prev,
+    activeTripId: nextTrip.id,
+    trips: prev.trips.map((trip) => (trip.id === nextTrip.id ? nextTrip : trip)),
+  }));
+
+  return { ok: true, trip: nextTrip };
 };
 
 export const advanceTripPhase = (tripId: string, phase: TripPhase) => {
@@ -139,7 +201,7 @@ export const advanceTripPhase = (tripId: string, phase: TripPhase) => {
         return trip;
       }
 
-      const next: Trip = {
+      const next = withTripDefaults({
         ...trip,
         phase,
         dDayLabel:
@@ -152,11 +214,13 @@ export const advanceTripPhase = (tripId: string, phase: TripPhase) => {
                 : phase === 'settling'
                   ? '정산 중'
                   : undefined,
-      };
+      });
 
       if (phase === 'settled' && !next.totalAmount) {
-        next.totalAmount = '330,000원';
-        next.perPersonAmount = '82,500원';
+        const sum = next.expenses.reduce((acc, item) => acc + item.amount, 0);
+        const per = next.members.length > 0 ? Math.round(sum / next.members.length) : 0;
+        next.totalAmount = sum > 0 ? `${sum.toLocaleString('ko-KR')}원` : '330,000원';
+        next.perPersonAmount = sum > 0 ? `${per.toLocaleString('ko-KR')}원` : '82,500원';
       }
 
       return next;
@@ -177,14 +241,107 @@ export const recordGameResult = (tripId: string, result: Omit<GameResult, 'id' |
       if (trip.id !== tripId) {
         return trip;
       }
-      return {
+      return withTripDefaults({
         ...trip,
         timeline: [entry, ...trip.timeline],
-      };
+      });
     }),
   }));
 
   return entry;
+};
+
+export const assignTripRole = (tripId: string, roleId: string, memberId: string | null) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      const assignee = trip.members.find((member) => member.id === memberId);
+      return withTripDefaults({
+        ...trip,
+        roles: trip.roles.map((role) =>
+          role.id === roleId
+            ? {
+                ...role,
+                assigneeId: memberId,
+                assigneeName: assignee?.name ?? null,
+              }
+            : role,
+        ),
+      });
+    }),
+  }));
+};
+
+export const toggleTripTodo = (tripId: string, todoId: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        todos: trip.todos.map((todo) => (todo.id === todoId ? { ...todo, done: !todo.done } : todo)),
+      });
+    }),
+  }));
+};
+
+export const addTripTodo = (tripId: string, title: string) => {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        todos: [...trip.todos, { id: `todo-${Date.now().toString(36)}`, title: trimmed, done: false }],
+      });
+    }),
+  }));
+};
+
+export const addTripExpense = (tripId: string, input: { title: string; amount: number; payerName: string }) => {
+  const expense: TripExpense = {
+    id: `exp-${Date.now().toString(36)}`,
+    title: input.title.trim(),
+    amount: input.amount,
+    payerName: input.payerName,
+    createdAt: new Date().toISOString(),
+  };
+
+  if (!expense.title || expense.amount <= 0) {
+    return;
+  }
+
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      const expenses = [expense, ...trip.expenses];
+      const sum = expenses.reduce((acc, item) => acc + item.amount, 0);
+      const per = trip.members.length > 0 ? Math.round(sum / trip.members.length) : 0;
+      return withTripDefaults({
+        ...trip,
+        expenses,
+        phase: trip.phase === 'settled' ? trip.phase : 'settling',
+        dDayLabel: trip.phase === 'settled' ? trip.dDayLabel : '정산 중',
+        totalAmount: `${sum.toLocaleString('ko-KR')}원`,
+        perPersonAmount: `${per.toLocaleString('ko-KR')}원`,
+      });
+    }),
+  }));
 };
 
 export const resetDemo = () => {

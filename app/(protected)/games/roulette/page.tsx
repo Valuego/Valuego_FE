@@ -1,7 +1,23 @@
-import { RouletteScreen } from '@/features/minigame';
+'use client';
 
-const RoulettePage = () => {
-  return <RouletteScreen />;
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+import { useActiveTrip } from '@/shared/session';
+
+const GamesRouletteRedirectPage = () => {
+  const router = useRouter();
+  const activeTrip = useActiveTrip();
+
+  useEffect(() => {
+    if (activeTrip) {
+      router.replace(`/trips/${activeTrip.id}/games/roulette`);
+      return;
+    }
+    router.replace('/trips/join');
+  }, [activeTrip, router]);
+
+  return null;
 };
 
-export default RoulettePage;
+export default GamesRouletteRedirectPage;

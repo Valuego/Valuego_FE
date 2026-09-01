@@ -24,6 +24,28 @@ export type GameResult = {
   label: string;
 };
 
+export type TripRoleItem = {
+  id: string;
+  title: string;
+  description: string;
+  assigneeId: string | null;
+  assigneeName: string | null;
+};
+
+export type TripTodoItem = {
+  id: string;
+  title: string;
+  done: boolean;
+};
+
+export type TripExpense = {
+  id: string;
+  title: string;
+  amount: number;
+  payerName: string;
+  createdAt: string;
+};
+
 export type Trip = {
   id: string;
   title: string;
@@ -40,6 +62,9 @@ export type Trip = {
   members: TripMember[];
   inviteCode: string;
   timeline: GameResult[];
+  roles: TripRoleItem[];
+  todos: TripTodoItem[];
+  expenses: TripExpense[];
   totalAmount?: string;
   perPersonAmount?: string;
 };

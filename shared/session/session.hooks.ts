@@ -4,6 +4,7 @@ import { useSyncExternalStore } from 'react';
 
 import type { AppSession, Trip } from './session.types';
 
+import { withTripDefaults } from './session.seed';
 import { getServerSnapshot, getSessionSnapshot, subscribeSession } from './session.store';
 
 export const useAppSession = (): AppSession => {
@@ -15,7 +16,8 @@ export const useActiveTrip = (): Trip | null => {
   if (!session.activeTripId) {
     return null;
   }
-  return session.trips.find((trip) => trip.id === session.activeTripId) ?? null;
+  const trip = session.trips.find((item) => item.id === session.activeTripId);
+  return trip ? withTripDefaults(trip) : null;
 };
 
 export const useTripDraft = () => {
@@ -25,10 +27,11 @@ export const useTripDraft = () => {
 
 export const useTripById = (tripId: string): Trip | null => {
   const session = useAppSession();
-  return session.trips.find((trip) => trip.id === tripId) ?? null;
+  const trip = session.trips.find((item) => item.id === tripId);
+  return trip ? withTripDefaults(trip) : null;
 };
 
 export const useSettledTrips = (): Trip[] => {
   const session = useAppSession();
-  return session.trips.filter((trip) => trip.phase === 'settled');
+  return session.trips.filter((trip) => trip.phase === 'settled').map((trip) => withTripDefaults(trip));
 };
