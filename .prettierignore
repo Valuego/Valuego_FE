@@ -13,3 +13,6 @@ node_modules
 *.log
 .env
 .env.*
+
+# 자동 생성 (openapi-typescript)
+shared/lib/api/schema.d.ts

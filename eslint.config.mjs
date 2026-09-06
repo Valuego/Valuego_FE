@@ -105,6 +105,7 @@ const eslintConfig = defineConfig([
     'postcss.config.mjs',
     'commitlint.config.mjs',
     'public/mockServiceWorker.js',
+    'shared/lib/api/schema.d.ts',
   ]),
 ]);
 

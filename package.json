@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "generate:api-types": "openapi-typescript https://valuegg.shop/v3/api-docs -o shared/lib/api/schema.d.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -43,6 +44,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.3.1",
     "msw": "^2.14.2",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4",

@@ -21,6 +21,19 @@ pnpm format     # Run Prettier on entire codebase
 
 No test suite is configured yet.
 
+## Backend API / Swagger
+
+백엔드 Swagger UI: https://valuegg.shop/swagger-ui/index.html — OpenAPI 스펙은 https://valuegg.shop/v3/api-docs.
+
+```bash
+pnpm generate:api-types   # 운영 백엔드 스펙에서 타입 재생성 -> shared/lib/api/schema.d.ts
+```
+
+- 생성된 `shared/lib/api/schema.d.ts`는 자동 생성 파일이므로 직접 수정하지 않는다 (lint/prettier ignore 대상).
+- 백엔드 API 계약이 바뀌면 (엔드포인트/필드 추가·변경) 위 스크립트를 다시 실행해 타입을 동기화한다.
+- 로컬 백엔드 대신 운영 백엔드로 직접 붙여 테스트하려면 `.env.local`의 `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_ORIGIN`을 `https://valuegg.shop`으로 바꾼다 (`.env.example` 주석 참고).
+- 실제 요청 함수(`features/*/[domain].api.ts`)와 검증(`[domain].schemas.ts`)은 기존처럼 zod로 손으로 작성한다. `schema.d.ts`는 백엔드 응답/요청 타입을 참고하거나 대조하는 용도로 쓴다.
+
 ## Architecture
 
 **Stack**: Next.js 16 App Router, React 19, TypeScript 5 (strict), Tailwind CSS 4, TanStack Query v5, CVA
