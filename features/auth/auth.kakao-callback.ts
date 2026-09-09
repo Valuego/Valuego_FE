@@ -21,15 +21,16 @@ const toUserFacingKakaoError = (raw: string) => {
 };
 
 const readBackendErrorMessage = async (response: Response) => {
+  const fallback = `카카오 로그인에 실패했어요. (HTTP ${response.status})`;
   try {
     const json = (await response.json()) as { message?: string };
     if (json.message?.trim()) {
-      return json.message;
+      return `${json.message} (HTTP ${response.status})`;
     }
   } catch {
-    return '카카오 로그인에 실패했어요.';
+    return fallback;
   }
-  return '카카오 로그인에 실패했어요.';
+  return fallback;
 };
 
 const redirectToLogin = (origin: string, message: string) => {
