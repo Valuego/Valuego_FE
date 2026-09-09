@@ -4,19 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [],
   },
-  async rewrites() {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
-
-    return {
-      // App Router 라우트 핸들러(`/api/v1/login/kakao`)가 백엔드 프록시보다 먼저 매칭되도록 fallback 사용
-      fallback: [
-        {
-          source: '/api/v1/:path*',
-          destination: `${apiBase}/api/v1/:path*`,
-        },
-      ],
-    };
-  },
+  // /api/v1 은 app/api/v1/[...path] 라우트 핸들러가 쿠키를 붙여 백엔드로 프록시한다.
   turbopack: {
     // Project root must be this app directory; `..` breaks `@/` and `shared/...` resolution on Linux CI.
     root: __dirname,
