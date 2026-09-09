@@ -1,5 +1,6 @@
 import { HomeScreen } from './components/home-screen';
-import { CURRENT_USER, DESTINATIONS, BUDGET_OPTIONS, FOOD_OPTIONS } from './home.constants';
+import { SearchScreen } from './components/search-screen';
+import { BUDGET_OPTIONS, CURRENT_USER, DESTINATIONS, FOOD_OPTIONS } from './home.constants';
 
 export type { MemberKey, TripSummary } from './home.constants';
-export { BUDGET_OPTIONS, CURRENT_USER, DESTINATIONS, FOOD_OPTIONS, HomeScreen };
+export { BUDGET_OPTIONS, CURRENT_USER, DESTINATIONS, FOOD_OPTIONS, HomeScreen, SearchScreen };

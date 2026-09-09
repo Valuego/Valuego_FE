@@ -13,6 +13,7 @@ import { TabBar } from '@/shared/components/tab-bar';
 import { useAppSession } from '@/shared/session';
 
 const MENU_ITEMS = [
+  { href: '/my/profile', label: '내 정보 수정' },
   { href: '/my/personality', label: '내 성향 카드' },
   { href: '/my/notifications', label: '알림 설정' },
   { href: '/my/settlements', label: '지난 정산 내역' },

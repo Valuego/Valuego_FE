@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { getQueryClient } from '@/shared/lib/get-query-client';
 import { applyAuthenticatedUser, signOutSession, useAppSession } from '@/shared/session';
 
-import type { UserAgreeUpdateRequest, UserProfileResponse } from './auth.types';
+import type { UserAgreeUpdateRequest, UserInfoUpdateRequest, UserProfileResponse } from './auth.types';
 
 import {
   authQueryKeys,
@@ -15,6 +15,7 @@ import {
   loginWithTestAccount,
   logoutRequest,
   updateUserAgree,
+  updateUserProfile,
   userProfileQueryOptions,
 } from './auth.api';
 import { toSessionUser } from './auth.lib';
@@ -104,6 +105,18 @@ export const useLogout = () => {
     onSettled: () => {
       signOutSession();
       queryClient.clear();
+    },
+  });
+};
+
+export const useUpdateUserProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: UserInfoUpdateRequest) => updateUserProfile(body),
+    onSuccess: (profile) => {
+      queryClient.setQueryData(authQueryKeys.profile(), profile);
+      applyAuthenticatedUser(toSessionUser(profile));
     },
   });
 };

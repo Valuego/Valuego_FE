@@ -54,7 +54,18 @@ export const useTripView = (tripId: string) => {
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
   const groupQuery = useGroupDetailQuery(tripId, !session.isGuest);
-  const trip = groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : localTrip;
+  const tripFromGroup = groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : null;
+  const trip = tripFromGroup
+    ? {
+        ...tripFromGroup,
+        expenses: localTrip?.expenses?.length ? localTrip.expenses : tripFromGroup.expenses,
+        timeline: localTrip?.timeline?.length ? localTrip.timeline : tripFromGroup.timeline,
+        todos: localTrip?.todos?.length ? localTrip.todos : tripFromGroup.todos,
+        roles: localTrip?.roles?.length ? localTrip.roles : tripFromGroup.roles,
+        phase:
+          localTrip?.phase === 'settling' || localTrip?.phase === 'settled' ? localTrip.phase : tripFromGroup.phase,
+      }
+    : localTrip;
 
   return {
     trip,
