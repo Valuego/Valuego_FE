@@ -8,7 +8,8 @@ const nextConfig: NextConfig = {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
 
     return {
-      afterFiles: [
+      // App Router 라우트 핸들러(`/api/v1/login/kakao`)가 백엔드 프록시보다 먼저 매칭되도록 fallback 사용
+      fallback: [
         {
           source: '/api/v1/:path*',
           destination: `${apiBase}/api/v1/:path*`,
