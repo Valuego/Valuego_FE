@@ -44,7 +44,7 @@ pnpm dev
 | `NEXT_PUBLIC_KAKAO_REDIRECT_URI` | 카카오 콜백 URL (`/api/v1/login/kakao`, 카카오 콘솔 Redirect URI와 동일) |
 | `NEXT_PUBLIC_MSW`                | `true`면 MSW mock 사용 (handlers 추가 후)                                |
 
-`/api/v1/*` 요청은 `next.config.ts` rewrite로 백엔드로 프록시됩니다. 카카오 로그인은 `/api/v1/login/kakao`를 Next가 가로채 쿠키를 심은 뒤 홈으로 보냅니다. 백엔드 `KAKAO_REDIRECT_URI`도 같은 주소여야 토큰 교환이 됩니다.
+`/api/v1/*` 요청은 App Router 프록시가 쿠키를 붙여 백엔드로 전달합니다. 카카오 로그인은 `/api/v1/login/kakao`에서 쿠키를 심은 뒤 홈으로 보냅니다. 백엔드 `KAKAO_REDIRECT_URI`도 같은 주소여야 토큰 교환이 됩니다.
 
 ## 폴더 구조
 

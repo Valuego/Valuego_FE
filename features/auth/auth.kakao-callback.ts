@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 
+import { adaptSetCookieForBrowser, getBackendApiBase, readSetCookies } from '@/shared/lib/api/backend-proxy';
+
 const LOGIN_PATH = '/login';
 
 const KAKAO_ERROR_MESSAGES: Record<string, string> = {
   access_denied: '카카오 로그인을 취소했어요.',
-};
-
-const getBackendApiBase = () => {
-  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '');
 };
 
 const toUserFacingKakaoError = (raw: string) => {
@@ -31,30 +29,6 @@ const redirectToLogin = (origin: string, message: string) => {
   const loginUrl = new URL(LOGIN_PATH, origin);
   loginUrl.searchParams.set('kakaoError', toUserFacingKakaoError(message));
   return NextResponse.redirect(loginUrl);
-};
-
-const readSetCookies = (response: Response) => {
-  if (typeof response.headers.getSetCookie === 'function') {
-    const cookies = response.headers.getSetCookie();
-    if (cookies.length > 0) {
-      return cookies;
-    }
-  }
-
-  const combined = response.headers.get('set-cookie');
-  return combined ? [combined] : [];
-};
-
-const toBrowserCookie = (setCookie: string, isHttps: boolean) => {
-  if (isHttps) {
-    return setCookie;
-  }
-
-  let cookie = setCookie.replace(/;\s*Secure/gi, '');
-  if (/SameSite=None/i.test(cookie)) {
-    cookie = cookie.replace(/SameSite=None/gi, 'SameSite=Lax');
-  }
-  return cookie;
 };
 
 export const handleKakaoOAuthCallback = async (request: Request) => {
@@ -93,7 +67,7 @@ export const handleKakaoOAuthCallback = async (request: Request) => {
   const isHttps = requestUrl.protocol === 'https:';
   const redirectResponse = NextResponse.redirect(new URL('/', requestUrl.origin));
   cookies.forEach((cookie) => {
-    redirectResponse.headers.append('Set-Cookie', toBrowserCookie(cookie, isHttps));
+    redirectResponse.headers.append('Set-Cookie', adaptSetCookieForBrowser(cookie, isHttps));
   });
 
   return redirectResponse;
