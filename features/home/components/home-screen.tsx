@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { groupToTrip, mergeTripWithLocal, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
+import { buildTripHref, groupToTrip, mergeTripWithLocal, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
 import BellIcon from '@/shared/assets/icons/bell.svg';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
@@ -19,14 +19,19 @@ export const HomeScreen = () => {
   const groupsQuery = useMyGroupsQuery(!session.isGuest);
   const remoteOngoing = (groupsQuery.data?.ongoingGroups ?? []).map((group) => groupToTrip(group));
   const remotePast = (groupsQuery.data?.pastGroups ?? []).map((group) => groupToTrip(group));
-  const ongoingTrips = remoteOngoing
-    .map((trip) =>
+  const remoteIds = new Set([...remoteOngoing, ...remotePast].map((trip) => trip.id));
+  const localOnlyTrips = session.trips.filter(
+    (trip) => !remoteIds.has(trip.id) && trip.phase !== 'settled' && trip.phase !== 'drafting',
+  );
+  const ongoingTrips = [
+    ...remoteOngoing.map((trip) =>
       mergeTripWithLocal(
         trip,
         session.trips.find((item) => item.id === trip.id),
       ),
-    )
-    .filter((trip) => trip.phase !== 'settled');
+    ),
+    ...localOnlyTrips,
+  ].filter((trip) => trip.phase !== 'settled');
   const pastTrips = [
     ...remotePast.map((trip) =>
       mergeTripWithLocal(
@@ -48,7 +53,7 @@ export const HomeScreen = () => {
 
   useEffect(() => {
     if (session.isGuest && session.activeTripId) {
-      router.replace(`/trips/${session.activeTripId}`);
+      router.replace(buildTripHref(session.activeTripId));
     }
   }, [router, session.activeTripId, session.isGuest]);
 
@@ -80,7 +85,7 @@ export const HomeScreen = () => {
         {hasActiveTrip && activeTrip ? (
           <>
             <Link
-              href={`/trips/${activeTrip.id}`}
+              href={buildTripHref(activeTrip.id, 'schedule')}
               className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white px-6 pt-5 pb-7 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
               onClick={() => rememberActiveTrip(activeTrip.id)}
             >
@@ -138,7 +143,7 @@ export const HomeScreen = () => {
             {pastTrips.slice(0, 2).map((trip) => (
               <li key={trip.id}>
                 <Link
-                  href={`/trips/${trip.id}`}
+                  href={buildTripHref(trip.id, 'schedule')}
                   className="border-line-hairline flex h-20 items-center gap-3 rounded-xl border bg-white px-4 py-3.5 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">

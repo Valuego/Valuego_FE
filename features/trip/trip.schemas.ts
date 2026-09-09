@@ -10,7 +10,7 @@ const budgetTypeSchema = z.enum(['ECONOMICAL', 'MODERATE', 'LUXURY']);
 const foodTypeSchema = z.enum(['KOREAN', 'JAPANESE', 'CHINESE']);
 
 export const groupMemberInfoSchema = z.object({
-  groupMemberId: z.number(),
+  groupMemberId: z.coerce.number(),
   memberName: z.string(),
   memberColor: memberColorSchema,
   memberRole: memberRoleSchema,
@@ -18,17 +18,17 @@ export const groupMemberInfoSchema = z.object({
 });
 
 export const groupInfoSchema = z.object({
-  groupId: z.number(),
+  groupId: z.coerce.number(),
   title: z.string(),
   destination: destinationSchema,
   startDate: z.string(),
   endDate: z.string(),
-  currentMemberCount: z.number(),
-  memberCount: z.number(),
+  currentMemberCount: z.coerce.number().optional().default(0),
+  memberCount: z.coerce.number(),
   transportType: transportTypeSchema,
   groupLink: z.string(),
-  dDay: z.string(),
-  members: z.array(groupMemberInfoSchema),
+  dDay: z.string().optional().default(''),
+  members: z.array(groupMemberInfoSchema).optional().default([]),
   groupStatus: groupStatusSchema,
 });
 
@@ -47,7 +47,7 @@ export const styleInfoSchema = z.object({
 });
 
 export const schedulePlaceSchema = z.object({
-  travelPlaceId: z.number(),
+  travelPlaceId: z.coerce.number(),
   contentId: z.string().nullable().optional(),
   visitTime: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
@@ -63,13 +63,13 @@ export const schedulePlaceSchema = z.object({
 });
 
 export const scheduleDaySchema = z.object({
-  dayNumber: z.number(),
+  dayNumber: z.coerce.number(),
   totalDistanceKm: z.number().nullable().optional(),
   places: z.array(schedulePlaceSchema),
 });
 
 export const travelScheduleSchema = z.object({
-  travelId: z.number(),
+  travelId: z.coerce.number(),
   days: z.array(scheduleDaySchema),
 });
 

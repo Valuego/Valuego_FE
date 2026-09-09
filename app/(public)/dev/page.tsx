@@ -12,7 +12,7 @@ const LINKS = [
   { href: '/my/personality', label: '내 성향 카드' },
   { href: '/my/notifications', label: '알림 설정' },
   { href: '/my/settlements', label: '지난 정산 내역' },
-  { href: '/trips/join', label: '참여 코드 합류' },
+  { href: '/join', label: '참여 코드 합류' },
   { href: '/trips/new', label: '그룹 만들기' },
   { href: '/trips/new/style', label: '성향 입력' },
   { href: '/trips/new/confirm', label: 'AI 조건 확인' },

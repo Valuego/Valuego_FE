@@ -10,6 +10,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { createTripFromDraft, DEFAULT_DRAFT, useTripDraft } from '@/shared/session';
 
 import { useCreateTripWithAiSchedule } from '../trip.hooks';
+import { buildTripHref } from '../trip.lib';
 
 export const ConditionConfirmScreen = () => {
   const router = useRouter();
@@ -53,10 +54,10 @@ export const ConditionConfirmScreen = () => {
         foodLabels: summary.foods,
         activitySlider: summary.activity,
       });
-      router.push(`/trips/${group.groupId}/schedule`);
+      router.push(buildTripHref(String(group.groupId), 'schedule'));
     } catch {
       const trip = createTripFromDraft();
-      router.push(`/trips/${trip.id}/schedule`);
+      router.push(buildTripHref(trip.id, 'schedule'));
     }
   };
 

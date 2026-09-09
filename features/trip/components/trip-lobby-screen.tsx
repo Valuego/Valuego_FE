@@ -13,6 +13,7 @@ import { getErrorMessage } from '@/shared/lib/api';
 import { advanceTripPhase } from '@/shared/session';
 
 import { rememberActiveTrip, useConfirmSchedule, useTripView } from '../trip.hooks';
+import { buildTripHref } from '../trip.lib';
 import { OngoingTripHomeScreen } from './ongoing-trip-home-screen';
 
 type TripLobbyScreenProps = {
@@ -38,7 +39,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
 
   useEffect(() => {
     if (!isLoading && !isError && !trip) {
-      router.replace(isGuest ? '/trips/join' : '/home');
+      router.replace(isGuest ? '/join' : '/home');
     }
   }, [isError, isGuest, isLoading, router, trip]);
 
@@ -65,7 +66,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
           <p className="text-sm font-medium text-[#e08300]">
             {isError ? getErrorMessage(error) : '그룹을 찾을 수 없어요.'}
           </p>
-          <Button variant="outline" onClick={() => router.push(isGuest ? '/trips/join' : '/home')}>
+          <Button variant="outline" onClick={() => router.push(isGuest ? '/join' : '/home')}>
             {isGuest ? '초대 링크로' : '홈으로'}
           </Button>
         </div>
@@ -126,7 +127,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
           {menu.map((item) => (
             <li key={item.key}>
               <Link
-                href={`/trips/${tripId}/${item.path}`}
+                href={buildTripHref(tripId, item.path)}
                 className="border-line-hairline flex items-center justify-between rounded-2xl border bg-white px-[18px] py-4"
               >
                 <span className="flex flex-col gap-0.5">

@@ -13,7 +13,7 @@ import { advanceTripPhase } from '@/shared/session';
 import type { SchedulePlace } from '../trip.types';
 
 import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
+import { buildTripHref, formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
 
 type OngoingTripHomeScreenProps = {
   tripId: string;
@@ -64,7 +64,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
           <p className="text-sm font-medium text-[#e08300]">
             {isError ? getErrorMessage(error) : '여행을 찾을 수 없어요.'}
           </p>
-          <Button variant="outline" onClick={() => router.push(isGuest ? '/trips/join' : '/home')}>
+          <Button variant="outline" onClick={() => router.push(isGuest ? '/join' : '/home')}>
             {isGuest ? '초대 링크로' : '홈으로'}
           </Button>
         </div>
@@ -127,7 +127,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
 
           <div className="flex items-center justify-between">
             <p className="text-text-secondary-soft text-sm font-bold">오늘 남은 일정</p>
-            <Link href={`/trips/${tripId}/schedule`} className="text-brand-blue text-sm font-bold">
+            <Link href={buildTripHref(tripId, 'schedule')} className="text-brand-blue text-sm font-bold">
               전체 일정 보기 →
             </Link>
           </div>
@@ -141,7 +141,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
                 return (
                   <li key={place.travelPlaceId} className={index === 0 ? '' : 'border-line-hairline border-t'}>
                     <Link
-                      href={`/trips/${tripId}/schedule/${place.travelPlaceId}`}
+                      href={buildTripHref(tripId, 'schedule', String(place.travelPlaceId))}
                       className="flex items-center gap-3 px-3.5 py-3"
                     >
                       <span className="text-text-secondary-soft w-9 text-xs font-medium">

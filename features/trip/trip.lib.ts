@@ -55,11 +55,28 @@ const MEMBER_COLOR_TO_KEY: Record<MemberColor, MemberKey> = {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export const parseGroupId = (tripId: string): number | null => {
-  if (!/^\d+$/.test(tripId)) {
+  const normalized = decodeTripId(tripId);
+  if (!/^\d+$/.test(normalized)) {
     return null;
   }
-  const groupId = Number(tripId);
+  const groupId = Number(normalized);
   return Number.isSafeInteger(groupId) ? groupId : null;
+};
+
+export const decodeTripId = (tripId: string) => {
+  try {
+    return decodeURIComponent(tripId);
+  } catch {
+    return tripId;
+  }
+};
+
+export const buildTripHref = (tripId: string, ...segments: string[]) => {
+  const encodedId = encodeURIComponent(decodeTripId(tripId));
+  if (segments.length === 0) {
+    return `/trips/${encodedId}`;
+  }
+  return `/trips/${encodedId}/${segments.map((segment) => encodeURIComponent(segment)).join('/')}`;
 };
 
 export const parseIsoDate = (value: string) => {

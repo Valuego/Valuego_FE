@@ -38,19 +38,8 @@ export const useAuthStatus = () => {
     applyAuthenticatedUser(toSessionUser(profileQuery.data));
   }, [profileQuery.data]);
 
-  useEffect(() => {
-    if (!profileQuery.isError) {
-      return;
-    }
-    if (session.isAuthenticated) {
-      signOutSession();
-    }
-  }, [profileQuery.isError, session.isAuthenticated]);
-
   const isBootstrapping = session.isGuest ? false : profileQuery.isLoading && !profileQuery.data;
-  const isAuthenticated = session.isGuest
-    ? false
-    : Boolean(profileQuery.data) || (session.isAuthenticated && !profileQuery.isError);
+  const isAuthenticated = session.isGuest ? false : Boolean(profileQuery.data) || session.isAuthenticated;
 
   return {
     isBootstrapping,

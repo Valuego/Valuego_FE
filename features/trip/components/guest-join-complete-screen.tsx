@@ -10,7 +10,7 @@ import { isApiError } from '@/shared/lib/api';
 import { useAppSession } from '@/shared/session';
 
 import { useScheduleQuery } from '../trip.hooks';
-import { buildInvitePath } from '../trip.lib';
+import { buildInvitePath, buildTripHref } from '../trip.lib';
 import { GuestMemberBadge, GuestUrlBar } from './guest-invite-chrome';
 
 type GuestJoinCompleteScreenProps = {
@@ -39,7 +39,7 @@ export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) 
     if (!trip || !canViewSchedule) {
       return;
     }
-    router.push(`/trips/${trip.id}/schedule`);
+    router.push(buildTripHref(trip.id, 'schedule'));
   };
 
   return (

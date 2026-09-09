@@ -51,7 +51,7 @@ export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
           {GAMES.map((game) => (
             <li key={game.slug}>
               <Link
-                href={basePath ? `${basePath}/${game.slug}` : '/trips/join'}
+                href={basePath ? `${basePath}/${game.slug}` : '/join'}
                 className="border-line-hairline flex items-center gap-3.5 overflow-hidden rounded-2xl border bg-white p-[18px]"
               >
                 <span

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
-import type { CreateTripPayload, GuestJoinRequest, PlaceVoteStatus } from './trip.types';
+import type { CreateTripPayload, GroupInfo, GuestJoinRequest, PlaceVoteStatus } from './trip.types';
 
 import {
   confirmSchedule,
@@ -21,7 +21,7 @@ import {
   tripQueryKeys,
 } from './trip.api';
 import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
-import { groupToTrip, mergeTripWithLocal, parseGroupId } from './trip.lib';
+import { decodeTripId, groupToTrip, mergeTripWithLocal, parseGroupId } from './trip.lib';
 
 export const useMyGroupsQuery = (enabled = true) => {
   return useQuery({
@@ -62,14 +62,36 @@ export const usePlaceCommentsQuery = (placeId: number) => {
   return useQuery(placeCommentsQueryOptions(placeId));
 };
 
+const findGroupByTripId = (groups: GroupInfo[] | undefined, tripId: string) => {
+  if (!groups?.length) {
+    return null;
+  }
+  const decoded = decodeTripId(tripId);
+  return (
+    groups.find(
+      (group) =>
+        String(group.groupId) === tripId ||
+        String(group.groupId) === decoded ||
+        group.groupLink === tripId ||
+        group.groupLink === decoded,
+    ) ?? null
+  );
+};
+
 export const useTripView = (tripId: string) => {
   const session = useAppSession();
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
   const groupQuery = useGroupDetailQuery(tripId, !session.isGuest);
+  const listQuery = useMyGroupsQuery(!session.isGuest);
+  const groupFromList = useMemo(() => {
+    const groups = [...(listQuery.data?.ongoingGroups ?? []), ...(listQuery.data?.pastGroups ?? [])];
+    return findGroupByTripId(groups, tripId);
+  }, [listQuery.data, tripId]);
+  const resolvedGroup = groupQuery.data ?? groupFromList;
   const tripFromGroup = useMemo(
-    () => (groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : null),
-    [groupQuery.data, session.isGuest],
+    () => (resolvedGroup ? groupToTrip(resolvedGroup, { viewerIsGuest: session.isGuest }) : null),
+    [resolvedGroup, session.isGuest],
   );
   const trip = useMemo(
     () => (tripFromGroup ? mergeTripWithLocal(tripFromGroup, localTrip) : localTrip),
@@ -86,13 +108,15 @@ export const useTripView = (tripId: string) => {
     upsertLocalTrip(trip);
   }, [persistedKey, trip]);
 
+  const waitingForRemote = Boolean(groupId) && !session.isGuest && groupQuery.isPending && listQuery.isPending && !trip;
+
   return {
     trip,
-    group: groupQuery.data,
+    group: resolvedGroup,
     groupId,
     isGuest: session.isGuest,
-    isLoading: Boolean(groupId) && !session.isGuest && groupQuery.isPending,
-    isError: Boolean(groupId) && !session.isGuest && groupQuery.isError && !localTrip,
+    isLoading: waitingForRemote,
+    isError: Boolean(groupId) && !session.isGuest && groupQuery.isError && !trip,
     error: groupQuery.error,
     refetch: groupQuery.refetch,
   };

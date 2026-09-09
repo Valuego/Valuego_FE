@@ -3,7 +3,7 @@
 import { useQueries } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
@@ -15,7 +15,7 @@ import type { ScheduleDay } from '../trip.types';
 
 import { placeVoteQueryOptions } from '../trip.api';
 import { rememberActiveTrip, useGenerateAiSchedule, useScheduleQuery, useTripView } from '../trip.hooks';
-import { formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
+import { buildTripHref, formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
 
 const EMPTY_DAYS: ScheduleDay[] = [];
 
@@ -30,21 +30,33 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const groupId = parseGroupId(tripId) ?? 0;
   const generateSchedule = useGenerateAiSchedule(groupId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const autoGenerateRef = useRef(false);
 
   useEffect(() => {
     rememberActiveTrip(tripId);
   }, [tripId]);
 
-  const days = scheduleQuery.data?.days ?? EMPTY_DAYS;
+  const days = scheduleQuery.data?.days ?? generateSchedule.data?.days ?? EMPTY_DAYS;
   const activeDayNumber = selectedDay ?? days[0]?.dayNumber ?? 1;
   const activeDay = days.find((day) => day.dayNumber === activeDayNumber) ?? days[0];
   const voteQueries = useQueries({
     queries: (activeDay?.places ?? []).map((place) => placeVoteQueryOptions(place.travelPlaceId)),
   });
 
-  const notFound = isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
+  const notFound =
+    days.length === 0 && isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
   const errorMessage = scheduleQuery.isError && !notFound ? getErrorMessage(scheduleQuery.error) : null;
   const totalDistance = activeDay?.totalDistanceKm;
+
+  useEffect(() => {
+    if (autoGenerateRef.current || isGuest || !groupId || !notFound) {
+      return;
+    }
+    autoGenerateRef.current = true;
+    void generateSchedule.mutateAsync().catch(() => {
+      // 생성 실패는 아래 재시도 UI에서 보여 줍니다.
+    });
+  }, [generateSchedule, groupId, isGuest, notFound]);
 
   const handleRetry = async () => {
     if (!groupId) {
@@ -72,7 +84,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
         <Header
           title={trip ? `${trip.destination} 일정 초안` : 'AI 일정'}
-          onBack={() => router.push(trip ? `/trips/${trip.id}` : '/home')}
+          onBack={() => router.push(trip ? buildTripHref(trip.id) : '/home')}
         />
 
         {days.length > 0 ? (
@@ -110,7 +122,9 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
 
         {notFound ? (
           <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">
-            <p className="text-ink-900 text-sm font-bold">아직 생성된 일정이 없어요</p>
+            <p className="text-ink-900 text-sm font-bold">
+              {generateSchedule.isPending ? '일정을 만드는 중…' : '아직 생성된 일정이 없어요'}
+            </p>
             <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
               {isGuest ? '호스트가 일정을 만들면 여기서 구경할 수 있어요.' : 'AI 일정 생성을 다시 시도할 수 있어요.'}
             </p>
@@ -146,7 +160,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                   <button
                     type="button"
                     className="border-line-hairline flex min-w-0 flex-1 gap-3 rounded-[14px] border bg-white px-3.5 py-3 text-left"
-                    onClick={() => router.push(`/trips/${tripId}/schedule/${place.travelPlaceId}`)}
+                    onClick={() => router.push(buildTripHref(tripId, 'schedule', String(place.travelPlaceId)))}
                   >
                     {place.imageUrl ? (
                       <Image
@@ -205,15 +219,15 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {isGuest ? (
-          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}`)}>
+          <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId))}>
             대기실로
           </Button>
         ) : trip?.phase === 'ongoing' || trip?.phase === 'settling' ? (
-          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}`)}>
+          <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId))}>
             여행 중 홈으로
           </Button>
         ) : (
-          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/invite`)}>
+          <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId, 'invite'))}>
             친구 초대하기
           </Button>
         )}

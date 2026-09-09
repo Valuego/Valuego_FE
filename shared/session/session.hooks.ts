@@ -27,7 +27,16 @@ export const useTripDraft = () => {
 
 export const useTripById = (tripId: string): Trip | null => {
   const session = useAppSession();
-  const trip = session.trips.find((item) => item.id === tripId);
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(tripId);
+    } catch {
+      return tripId;
+    }
+  })();
+  const trip = session.trips.find(
+    (item) => item.id === tripId || item.id === decoded || item.inviteCode === tripId || item.inviteCode === decoded,
+  );
   return trip ? withTripDefaults(trip) : null;
 };
 

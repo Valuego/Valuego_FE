@@ -15,7 +15,7 @@ const GamesRedirectPage = () => {
       router.replace(`/trips/${activeTrip.id}/games`);
       return;
     }
-    router.replace(session.isGuest ? '/trips/join' : '/home');
+    router.replace(session.isGuest ? '/join' : '/home');
   }, [activeTrip, router, session.isGuest]);
 
   return (

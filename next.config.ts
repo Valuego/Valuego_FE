@@ -2,7 +2,19 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
+    ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/trips/join',
+        destination: '/join',
+        permanent: false,
+      },
+    ];
   },
   // /api/v1 은 app/api/v1/[...path] 라우트 핸들러가 쿠키를 붙여 백엔드로 프록시한다.
   turbopack: {
