@@ -2,28 +2,38 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { setActiveTripId, upsertLocalTrip, useTripById } from '@/shared/session';
+import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
-import type { CreateTripPayload } from './trip.types';
+import type { CreateTripPayload, GuestJoinRequest, PlaceVoteStatus } from './trip.types';
 
 import {
   confirmSchedule,
   createTripWithAiSchedule,
   generateAiSchedule,
   groupDetailQueryOptions,
+  joinGroupAsGuest,
   myGroupsQueryOptions,
+  placeCommentsQueryOptions,
+  placeVoteQueryOptions,
   scheduleQueryOptions,
+  togglePlaceVote,
   tripQueryKeys,
 } from './trip.api';
 import { groupToTrip, parseGroupId } from './trip.lib';
 
-export const useMyGroupsQuery = () => {
-  return useQuery(myGroupsQueryOptions);
+export const useMyGroupsQuery = (enabled = true) => {
+  return useQuery({
+    ...myGroupsQueryOptions,
+    enabled,
+  });
 };
 
-export const useGroupDetailQuery = (tripId: string) => {
+export const useGroupDetailQuery = (tripId: string, enabled = true) => {
   const groupId = parseGroupId(tripId) ?? 0;
-  return useQuery(groupDetailQueryOptions(groupId));
+  return useQuery({
+    ...groupDetailQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
 };
 
 export const useScheduleQuery = (tripId: string) => {
@@ -31,18 +41,28 @@ export const useScheduleQuery = (tripId: string) => {
   return useQuery(scheduleQueryOptions(groupId));
 };
 
+export const usePlaceVoteQuery = (placeId: number) => {
+  return useQuery(placeVoteQueryOptions(placeId));
+};
+
+export const usePlaceCommentsQuery = (placeId: number) => {
+  return useQuery(placeCommentsQueryOptions(placeId));
+};
+
 export const useTripView = (tripId: string) => {
+  const session = useAppSession();
   const localTrip = useTripById(tripId);
-  const groupQuery = useGroupDetailQuery(tripId);
   const groupId = parseGroupId(tripId);
-  const trip = groupQuery.data ? groupToTrip(groupQuery.data) : groupId ? null : localTrip;
+  const groupQuery = useGroupDetailQuery(tripId, !session.isGuest);
+  const trip = groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : localTrip;
 
   return {
     trip,
     group: groupQuery.data,
     groupId,
-    isLoading: Boolean(groupId) && groupQuery.isPending,
-    isError: Boolean(groupId) && groupQuery.isError,
+    isGuest: session.isGuest,
+    isLoading: Boolean(groupId) && !session.isGuest && groupQuery.isPending,
+    isError: Boolean(groupId) && !session.isGuest && groupQuery.isError && !localTrip,
     error: groupQuery.error,
     refetch: groupQuery.refetch,
   };
@@ -84,6 +104,31 @@ export const useConfirmSchedule = (groupId: number) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(groupId) });
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
+    },
+  });
+};
+
+export const useJoinGroupAsGuest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ groupLink, body }: { groupLink: string; body: GuestJoinRequest }) =>
+      joinGroupAsGuest(groupLink, body),
+    onSuccess: (result) => {
+      queryClient.setQueryData(tripQueryKeys.detail(result.group.groupId), result.group);
+      const trip = groupToTrip(result.group, { viewerIsGuest: true });
+      enterGuestSession(trip);
+    },
+  });
+};
+
+export const useTogglePlaceVote = (placeId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (voteStatus: PlaceVoteStatus) => togglePlaceVote(placeId, voteStatus),
+    onSuccess: (vote) => {
+      queryClient.setQueryData(tripQueryKeys.vote(placeId), vote);
     },
   });
 };

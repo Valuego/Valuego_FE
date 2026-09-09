@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { useActiveTrip } from '@/shared/session';
+import { useActiveTrip, useAppSession } from '@/shared/session';
 
 const GamesRedirectPage = () => {
   const router = useRouter();
+  const session = useAppSession();
   const activeTrip = useActiveTrip();
 
   useEffect(() => {
@@ -14,8 +15,8 @@ const GamesRedirectPage = () => {
       router.replace(`/trips/${activeTrip.id}/games`);
       return;
     }
-    router.replace('/home');
-  }, [activeTrip, router]);
+    router.replace(session.isGuest ? '/trips/join' : '/home');
+  }, [activeTrip, router, session.isGuest]);
 
   return (
     <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">

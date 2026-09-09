@@ -28,7 +28,7 @@ export const useUserProfileQuery = (enabled = true) => {
 
 export const useAuthStatus = () => {
   const session = useAppSession();
-  const profileQuery = useUserProfileQuery();
+  const profileQuery = useUserProfileQuery(!session.isGuest);
 
   useEffect(() => {
     if (!profileQuery.data) {
@@ -46,12 +46,15 @@ export const useAuthStatus = () => {
     }
   }, [profileQuery.isError, session.isAuthenticated]);
 
-  const isBootstrapping = profileQuery.isPending || profileQuery.isFetching;
-  const isAuthenticated = Boolean(profileQuery.data) || (session.isAuthenticated && !profileQuery.isError);
+  const isBootstrapping = session.isGuest ? false : profileQuery.isLoading && !profileQuery.data;
+  const isAuthenticated = session.isGuest
+    ? false
+    : Boolean(profileQuery.data) || (session.isAuthenticated && !profileQuery.isError);
 
   return {
-    isBootstrapping: isBootstrapping && !profileQuery.data,
+    isBootstrapping,
     isAuthenticated,
+    isGuest: session.isGuest,
     hasCompletedOnboarding: session.hasCompletedOnboarding,
     profile: profileQuery.data,
     session,

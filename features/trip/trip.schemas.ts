@@ -72,3 +72,32 @@ export const travelScheduleSchema = z.object({
   travelId: z.number(),
   days: z.array(scheduleDaySchema),
 });
+
+export const guestJoinResultSchema = z.object({
+  groupMemberId: z.number(),
+  memberName: z.string(),
+  memberColor: memberColorSchema,
+  group: groupInfoSchema,
+});
+
+export const placeVoteSchema = z.object({
+  likeCount: z.number(),
+  likePercentage: z.number(),
+  dislikeCount: z.number(),
+  dislikePercentage: z.number(),
+  totalParticipantCount: z.number(),
+  totalGroupMemberCount: z.number(),
+  voteStatus: z.enum(['LIKE', 'DISLIKE']).nullable().optional(),
+});
+
+export const placeCommentSchema = z.object({
+  commentId: z.number(),
+  nickname: z.string().nullable().optional(),
+  content: z.string(),
+  createdAt: z.string(),
+});
+
+export const placeCommentListSchema = z.object({
+  commentCount: z.number(),
+  comments: z.array(placeCommentSchema),
+});

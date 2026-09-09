@@ -5,6 +5,8 @@ import type { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { useAppSession } from '@/shared/session';
+
 import { useAuthStatus } from '../auth.hooks';
 
 type RequireAuthProps = {
@@ -13,9 +15,13 @@ type RequireAuthProps = {
 
 export const RequireAuth = ({ children }: RequireAuthProps) => {
   const router = useRouter();
+  const session = useAppSession();
   const { isBootstrapping, isAuthenticated, hasCompletedOnboarding } = useAuthStatus();
 
   useEffect(() => {
+    if (session.isGuest) {
+      return;
+    }
     if (isBootstrapping) {
       return;
     }
@@ -26,7 +32,11 @@ export const RequireAuth = ({ children }: RequireAuthProps) => {
     if (!hasCompletedOnboarding) {
       router.replace('/onboarding');
     }
-  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router]);
+  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router, session.isGuest]);
+
+  if (session.isGuest) {
+    return children;
+  }
 
   if (isBootstrapping || !isAuthenticated || !hasCompletedOnboarding) {
     return (

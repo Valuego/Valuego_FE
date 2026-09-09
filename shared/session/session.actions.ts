@@ -65,7 +65,18 @@ export const applyAuthenticatedUser = (user: UserProfile) => {
   setSession((prev) => ({
     ...prev,
     isAuthenticated: true,
+    isGuest: false,
     user,
+  }));
+};
+
+export const enterGuestSession = (trip: Trip) => {
+  setSession((prev) => ({
+    ...prev,
+    isGuest: true,
+    isAuthenticated: false,
+    activeTripId: trip.id,
+    trips: [trip, ...prev.trips.filter((item) => item.id !== trip.id)],
   }));
 };
 

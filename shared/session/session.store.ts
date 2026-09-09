@@ -15,6 +15,7 @@ const notify = () => {
 
 const migrateSession = (parsed: AppSession): AppSession => ({
   ...parsed,
+  isGuest: parsed.isGuest ?? false,
   draft: parsed.draft ? { ...DEFAULT_DRAFT, ...parsed.draft } : parsed.draft,
   trips: parsed.trips.map((trip) => withTripDefaults(trip)),
 });
