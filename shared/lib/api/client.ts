@@ -68,12 +68,15 @@ export const apiRequest = async <T>(path: string, options: ApiRequestOptions = {
     throw new ApiError(503, message);
   }
 
-  if (res.status === 401 && !shouldSkipAuthRetry(path, skipAuthRetry)) {
+  // 백엔드가 accessToken 쿠키 자체가 없는 미인증 요청에 401 대신 403을 내려주는 경우가 있어
+  // (Spring Security 기본 AuthenticationEntryPoint) 401과 동일하게 재발급을 시도한다.
+  // refreshToken도 없거나 진짜 권한 없음(403)이면 재발급이 실패해 원래 응답이 그대로 유지된다.
+  if ((res.status === 401 || res.status === 403) && !shouldSkipAuthRetry(path, skipAuthRetry)) {
     try {
       await apiRequest('/login/reissue', { method: 'POST', skipAuthRetry: true });
       res = await fetch(url, init);
     } catch {
-      // 재발급 실패 시 원래 401 응답을 그대로 처리한다.
+      // 재발급 실패 시 원래 401/403 응답을 그대로 처리한다.
     }
   }
 
