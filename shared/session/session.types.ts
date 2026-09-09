@@ -103,6 +103,7 @@ export type UserProfile = {
 export type AppSession = {
   version: 1;
   isAuthenticated: boolean;
+  isGuest: boolean;
   hasCompletedOnboarding: boolean;
   user: UserProfile;
   draft: TripDraft | null;

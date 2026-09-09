@@ -12,11 +12,15 @@ import { startKakaoLogin, useAuthStatus, useLoginWithTestAccount } from '../auth
 import { BrandLogo } from './brand-logo';
 import { KakaoLoginButton } from './kakao-login-button';
 
-export const LoginScreen = () => {
+type LoginScreenProps = {
+  kakaoErrorFromCallback?: string | null;
+};
+
+export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps) => {
   const router = useRouter();
   const { isAuthenticated, hasCompletedOnboarding, isBootstrapping } = useAuthStatus();
   const testLogin = useLoginWithTestAccount();
-  const [kakaoError, setKakaoError] = useState<string | null>(null);
+  const [kakaoError, setKakaoError] = useState<string | null>(kakaoErrorFromCallback);
   const kakaoReady = Boolean(getKakaoAuthorizeUrl());
 
   useEffect(() => {

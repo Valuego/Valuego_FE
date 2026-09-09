@@ -14,6 +14,7 @@ export {
   assignTripRole,
   completeOnboarding,
   createTripFromDraft,
+  enterGuestSession,
   getTripById,
   joinMembersDemo,
   joinTripByCode,

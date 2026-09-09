@@ -9,19 +9,37 @@ import { cn } from '@/shared/lib/cn';
 import { ONBOARDING_STEPS } from '../onboarding.constants';
 import { StepDots } from './step-dots';
 
-export const OnboardingScreen = () => {
+type OnboardingScreenProps = {
+  lastCtaLabel?: string;
+  onSkip?: () => void;
+  onComplete?: () => void;
+};
+
+export const OnboardingScreen = ({ lastCtaLabel, onSkip, onComplete }: OnboardingScreenProps) => {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const step = ONBOARDING_STEPS[stepIndex];
   const isLastStep = stepIndex === ONBOARDING_STEPS.length - 1;
 
-  const handleSkip = () => {
+  const finish = () => {
+    if (onComplete) {
+      onComplete();
+      return;
+    }
     router.push('/welcome');
+  };
+
+  const handleSkip = () => {
+    if (onSkip) {
+      onSkip();
+      return;
+    }
+    finish();
   };
 
   const handleNext = () => {
     if (isLastStep) {
-      router.push('/welcome');
+      finish();
       return;
     }
     setStepIndex((prev) => prev + 1);
@@ -64,7 +82,7 @@ export const OnboardingScreen = () => {
               'transition-opacity hover:opacity-90 active:opacity-80',
             )}
           >
-            {step.ctaLabel}
+            {isLastStep && lastCtaLabel ? lastCtaLabel : step.ctaLabel}
           </button>
         </div>
       </div>

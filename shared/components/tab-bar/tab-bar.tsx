@@ -6,23 +6,29 @@ import { usePathname } from 'next/navigation';
 import HomeIcon from '@/shared/assets/icons/home.svg';
 import UserCircleIcon from '@/shared/assets/icons/user-circle.svg';
 import { cn } from '@/shared/lib/cn';
-
-const TABS = [
-  { href: '/home', label: '홈', Icon: HomeIcon },
-  { href: '/my', label: '마이', Icon: UserCircleIcon },
-] as const;
+import { useAppSession } from '@/shared/session';
 
 export const TabBar = () => {
   const pathname = usePathname();
+  const session = useAppSession();
+  const homeHref = session.isGuest && session.activeTripId ? `/trips/${session.activeTripId}` : '/home';
+
+  const tabs = [
+    { href: homeHref, label: '홈', Icon: HomeIcon, match: homeHref },
+    { href: '/my', label: '마이', Icon: UserCircleIcon, match: '/my' },
+  ] as const;
 
   return (
     <nav className="border-divider-1 sticky bottom-0 z-20 w-full border-t bg-white pb-[env(safe-area-inset-bottom)]">
       <ul className="flex h-[49px] items-stretch">
-        {TABS.map((tab) => {
-          const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+        {tabs.map((tab) => {
+          const isActive =
+            tab.label === '홈'
+              ? pathname === tab.href || pathname.startsWith('/trips/')
+              : pathname === tab.match || pathname.startsWith(`${tab.match}/`);
 
           return (
-            <li key={tab.href} className="flex-1">
+            <li key={tab.label} className="flex-1">
               <Link
                 href={tab.href}
                 className={cn(

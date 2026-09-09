@@ -4,6 +4,7 @@ import { apiRequest } from '@/shared/lib/api';
 
 import type { LoginInfo, UserAgreeUpdateRequest, UserProfileResponse } from './auth.types';
 
+import { getKakaoRedirectUri } from './auth.lib';
 import { loginInfoSchema, userProfileSchema } from './auth.schemas';
 
 export const authQueryKeys = {
@@ -49,9 +50,7 @@ export const userProfileQueryOptions = queryOptions({
 
 export const getKakaoAuthorizeUrl = () => {
   const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID?.trim();
-  const redirectUri =
-    process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim() ||
-    `${process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'}/login/kakao/callback`;
+  const redirectUri = getKakaoRedirectUri();
 
   if (!clientId) {
     return null;

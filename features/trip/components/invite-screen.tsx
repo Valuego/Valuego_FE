@@ -12,6 +12,7 @@ import { StatusPill } from '@/shared/components/status-pill';
 import { getErrorMessage } from '@/shared/lib/api';
 
 import { rememberActiveTrip, useTripView } from '../trip.hooks';
+import { buildInviteUrl } from '../trip.lib';
 
 type InviteScreenProps = {
   tripId: string;
@@ -61,7 +62,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
 
   const completedCount = trip.members.filter((member) => member.status !== 'pending').length;
   const inviteUrl =
-    typeof window === 'undefined' ? trip.inviteCode : `${window.location.origin}/trips/join?code=${trip.inviteCode}`;
+    typeof window === 'undefined' ? trip.inviteCode : buildInviteUrl(window.location.origin, trip.inviteCode);
 
   const handleCopy = async () => {
     try {
@@ -79,7 +80,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
         <Header title="친구 초대하기" />
         <InfoBanner
           accent="blue"
-          message="링크를 복사해 단톡방에 공유하세요. 게스트 참여 API는 백엔드 개방 후 연동됩니다."
+          message="링크를 복사해 단톡방에 공유하세요. 친구는 설치·회원가입 없이 바로 참여할 수 있어요."
         />
 
         {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}

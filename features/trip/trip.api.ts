@@ -7,13 +7,26 @@ import type {
   GroupCreateRequest,
   GroupInfo,
   GroupList,
+  GuestJoinRequest,
+  GuestJoinResult,
+  PlaceCommentList,
+  PlaceVote,
+  PlaceVoteStatus,
   StyleCreateRequest,
   StyleInfo,
   TravelSchedule,
 } from './trip.types';
 
 import { toCreateGroupRequest, toCreateStyleRequest } from './trip.lib';
-import { groupInfoSchema, groupListSchema, styleInfoSchema, travelScheduleSchema } from './trip.schemas';
+import {
+  groupInfoSchema,
+  groupListSchema,
+  guestJoinResultSchema,
+  placeCommentListSchema,
+  placeVoteSchema,
+  styleInfoSchema,
+  travelScheduleSchema,
+} from './trip.schemas';
 
 export const AI_SCHEDULE_TIMEOUT_MS = 120_000;
 
@@ -24,6 +37,19 @@ export const tripQueryKeys = {
   detail: (groupId: number) => [...tripQueryKeys.details(), groupId] as const,
   schedules: () => [...tripQueryKeys.all(), 'schedule'] as const,
   schedule: (groupId: number) => [...tripQueryKeys.schedules(), groupId] as const,
+  votes: () => [...tripQueryKeys.all(), 'vote'] as const,
+  vote: (placeId: number) => [...tripQueryKeys.votes(), placeId] as const,
+  comments: () => [...tripQueryKeys.all(), 'comment'] as const,
+  comment: (placeId: number) => [...tripQueryKeys.comments(), placeId] as const,
+};
+
+export const joinGroupAsGuest = async (groupLink: string, body: GuestJoinRequest): Promise<GuestJoinResult> => {
+  const data = await apiRequest<GuestJoinResult>(`/groups/invite?groupLink=${encodeURIComponent(groupLink)}`, {
+    method: 'POST',
+    body,
+    skipAuthRetry: true,
+  });
+  return guestJoinResultSchema.parse(data);
 };
 
 export const getMyGroups = async (): Promise<GroupList> => {
@@ -64,6 +90,24 @@ export const getSchedule = async (groupId: number): Promise<TravelSchedule> => {
 
 export const confirmSchedule = async (groupId: number) => {
   await apiRequest(`/schedules/confirm?groupId=${groupId}`, { method: 'PATCH' });
+};
+
+export const getPlaceVote = async (travelPlaceId: number): Promise<PlaceVote> => {
+  const data = await apiRequest<PlaceVote>(`/places/vote?travelPlaceId=${travelPlaceId}`);
+  return placeVoteSchema.parse(data);
+};
+
+export const togglePlaceVote = async (travelPlaceId: number, voteStatus: PlaceVoteStatus): Promise<PlaceVote> => {
+  const data = await apiRequest<PlaceVote>(`/places/vote?travelPlaceId=${travelPlaceId}`, {
+    method: 'POST',
+    body: { voteStatus },
+  });
+  return placeVoteSchema.parse(data);
+};
+
+export const getPlaceComments = async (travelPlaceId: number): Promise<PlaceCommentList> => {
+  const data = await apiRequest<PlaceCommentList>(`/comments?travelPlaceId=${travelPlaceId}`);
+  return placeCommentListSchema.parse(data);
 };
 
 export const createGroupWithStyle = async (payload: CreateTripPayload): Promise<GroupInfo> => {
@@ -110,6 +154,24 @@ export const scheduleQueryOptions = (groupId: number) =>
     queryKey: tripQueryKeys.schedule(groupId),
     queryFn: () => getSchedule(groupId),
     enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const placeVoteQueryOptions = (placeId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.vote(placeId),
+    queryFn: () => getPlaceVote(placeId),
+    enabled: Number.isFinite(placeId) && placeId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const placeCommentsQueryOptions = (placeId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.comment(placeId),
+    queryFn: () => getPlaceComments(placeId),
+    enabled: Number.isFinite(placeId) && placeId > 0,
     retry: 0,
     throwOnError: false,
   });

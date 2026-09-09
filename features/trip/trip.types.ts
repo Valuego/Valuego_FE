@@ -106,3 +106,39 @@ export type CreateTripPayload = {
   foodLabels: string[];
   activitySlider: number;
 };
+
+export type GuestJoinRequest = {
+  memberName: string;
+  memberColor: MemberColor;
+};
+
+export type GuestJoinResult = {
+  groupMemberId: number;
+  memberName: string;
+  memberColor: MemberColor;
+  group: GroupInfo;
+};
+
+export type PlaceVoteStatus = 'LIKE' | 'DISLIKE';
+
+export type PlaceVote = {
+  likeCount: number;
+  likePercentage: number;
+  dislikeCount: number;
+  dislikePercentage: number;
+  totalParticipantCount: number;
+  totalGroupMemberCount: number;
+  voteStatus?: PlaceVoteStatus | null;
+};
+
+export type PlaceComment = {
+  commentId: number;
+  nickname?: string | null;
+  content: string;
+  createdAt: string;
+};
+
+export type PlaceCommentList = {
+  commentCount: number;
+  comments: PlaceComment[];
+};

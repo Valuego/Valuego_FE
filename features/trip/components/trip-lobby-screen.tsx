@@ -18,7 +18,7 @@ type TripLobbyScreenProps = {
   tripId: string;
 };
 
-const MENU = [
+const HOST_MENU = [
   { key: 'schedule', label: 'AI 일정', description: '일차별 동선 확인', path: 'schedule' },
   { key: 'invite', label: '친구 초대', description: '링크 공유 · 참여 현황', path: 'invite' },
   { key: 'games', label: '미니게임', description: '룰렛 · 사다리로 30초 결정', path: 'games' },
@@ -27,16 +27,19 @@ const MENU = [
   { key: 'settlement', label: '정산하기', description: '지출 기록 · 1인당 금액', path: 'settlement' },
 ] as const;
 
+const GUEST_MENU = HOST_MENU.filter((item) => item.key !== 'invite');
+
 export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   const router = useRouter();
-  const { trip, groupId, isLoading, isError, error } = useTripView(tripId);
+  const { trip, groupId, isGuest, isLoading, isError, error } = useTripView(tripId);
   const confirmSchedule = useConfirmSchedule(groupId ?? 0);
+  const menu = isGuest ? GUEST_MENU : HOST_MENU;
 
   useEffect(() => {
     if (!isLoading && !isError && !trip) {
-      router.replace('/home');
+      router.replace(isGuest ? '/trips/join' : '/home');
     }
-  }, [isError, isLoading, router, trip]);
+  }, [isError, isGuest, isLoading, router, trip]);
 
   useEffect(() => {
     if (trip) {
@@ -61,8 +64,8 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
           <p className="text-sm font-medium text-[#e08300]">
             {isError ? getErrorMessage(error) : '그룹을 찾을 수 없어요.'}
           </p>
-          <Button variant="outline" onClick={() => router.push('/home')}>
-            홈으로
+          <Button variant="outline" onClick={() => router.push(isGuest ? '/trips/join' : '/home')}>
+            {isGuest ? '초대 링크로' : '홈으로'}
           </Button>
         </div>
       </MobileShell>
@@ -85,7 +88,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-4">
-        <Header title="일행 대기실" onBack={() => router.push('/home')} />
+        <Header title="일행 대기실" onBack={isGuest ? undefined : () => router.push('/home')} />
 
         {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}
 
@@ -114,7 +117,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
         </section>
 
         <ul className="flex flex-col gap-2.5">
-          {MENU.map((item) => (
+          {menu.map((item) => (
             <li key={item.key}>
               <Link
                 href={`/trips/${tripId}/${item.path}`}
@@ -132,7 +135,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
           ))}
         </ul>
 
-        {trip.phase !== 'ongoing' && trip.phase !== 'settled' ? (
+        {!isGuest && trip.phase !== 'ongoing' && trip.phase !== 'settled' ? (
           <Button
             variant="primary"
             fullWidth

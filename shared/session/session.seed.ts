@@ -116,6 +116,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
 export const createInitialSession = (): AppSession => ({
   version: 1,
   isAuthenticated: false,
+  isGuest: false,
   hasCompletedOnboarding: false,
   user: DEFAULT_USER,
   draft: null,

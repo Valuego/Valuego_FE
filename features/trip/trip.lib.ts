@@ -13,6 +13,8 @@ import type {
   TransportType,
 } from './trip.types';
 
+import { DEFAULT_PLACE_TYPE_STYLE, PLACE_TYPE_STYLE } from './trip.constants';
+
 const DESTINATION_LABEL: Record<Destination, string> = {
   BUSAN: '부산',
   GANGNEUNG: '강릉',
@@ -140,14 +142,18 @@ const groupStatusToPhase = (status: GroupStatus): TripPhase => {
   return 'planning';
 };
 
-const toTripMember = (member: GroupMemberInfo): TripMember => {
+type GroupToTripOptions = {
+  viewerIsGuest?: boolean;
+};
+
+const toTripMember = (member: GroupMemberInfo, viewerIsGuest = false): TripMember => {
   const isLeader = member.memberRole === 'LEADER';
   const isDone = member.memberStatus === 'COMPLETED';
 
   return {
     id: String(member.groupMemberId),
     name: member.memberName,
-    role: isLeader ? '나 · 호스트' : '친구',
+    role: isLeader ? (viewerIsGuest ? '호스트' : '나 · 호스트') : '친구',
     member: MEMBER_COLOR_TO_KEY[member.memberColor],
     status: isLeader ? 'host' : isDone ? 'done' : 'pending',
     statusLabel: isDone ? '완료' : isLeader ? '성향 입력 전' : '대기 중',
@@ -168,10 +174,11 @@ const startDateDday = (startDate: string) => {
   return `D+${Math.abs(days)}`;
 };
 
-export const groupToTrip = (group: GroupInfo): Trip => {
+export const groupToTrip = (group: GroupInfo, options?: GroupToTripOptions): Trip => {
   const start = parseIsoDate(group.startDate);
   const end = parseIsoDate(group.endDate);
   const phase = groupStatusToPhase(group.groupStatus);
+  const viewerIsGuest = options?.viewerIsGuest ?? false;
 
   return {
     id: String(group.groupId),
@@ -186,13 +193,41 @@ export const groupToTrip = (group: GroupInfo): Trip => {
     budget: '적당히',
     foods: [],
     activity: 50,
-    members: group.members.map(toTripMember),
+    members: group.members.map((member) => toTripMember(member, viewerIsGuest)),
     inviteCode: group.groupLink,
     timeline: [],
     roles: [],
     todos: [],
     expenses: [],
   };
+};
+
+export const getGroupLeader = (group: GroupInfo) => {
+  return group.members.find((member) => member.memberRole === 'LEADER') ?? group.members[0] ?? null;
+};
+
+export const formatInviteDateBadge = (startDate: string, endDate: string) => {
+  const start = parseIsoDate(startDate);
+  const end = parseIsoDate(endDate);
+  const startPart = `${start.getMonth() + 1}.${start.getDate()}`;
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const endPart = sameMonth ? String(end.getDate()) : `${end.getMonth() + 1}.${end.getDate()}`;
+  return `${startPart}–${endPart} · ${formatNightsLabel(start, end)}`;
+};
+
+export const formatVisitTime = (visitTime?: string | null) => {
+  if (!visitTime) {
+    return '시간 미정';
+  }
+  return visitTime.slice(0, 5);
+};
+
+export const buildInvitePath = (groupLink: string) => {
+  return `/invite/${encodeURIComponent(groupLink)}`;
+};
+
+export const buildInviteUrl = (origin: string, groupLink: string) => {
+  return `${origin}${buildInvitePath(groupLink)}`;
 };
 
 export const toCreateGroupRequest = (payload: CreateTripPayload) => {
@@ -212,4 +247,11 @@ export const toCreateStyleRequest = (payload: CreateTripPayload) => {
     foodType: foodFromLabels(payload.foodLabels),
     activityIntensity: activityToIntensity(payload.activitySlider),
   };
+};
+
+export const getPlaceTypeStyle = (placeType?: string | null) => {
+  if (!placeType) {
+    return DEFAULT_PLACE_TYPE_STYLE;
+  }
+  return PLACE_TYPE_STYLE[placeType] ?? { ...DEFAULT_PLACE_TYPE_STYLE, label: placeType };
 };
