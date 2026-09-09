@@ -6,7 +6,9 @@ import { useEffect } from 'react';
 import { Avatar } from '@/shared/components/avatar';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { assignTripRole, useTripById } from '@/shared/session';
+import { assignTripRole } from '@/shared/session';
+
+import { rememberActiveTrip, useTripView } from '../trip.hooks';
 
 type RolesScreenProps = {
   tripId: string;
@@ -14,16 +16,28 @@ type RolesScreenProps = {
 
 export const RolesScreen = ({ tripId }: RolesScreenProps) => {
   const router = useRouter();
-  const trip = useTripById(tripId);
+  const { trip, isLoading } = useTripView(tripId);
 
   useEffect(() => {
-    if (!trip) {
+    if (trip) {
+      rememberActiveTrip(trip.id);
+    }
+  }, [trip]);
+
+  useEffect(() => {
+    if (!isLoading && !trip) {
       router.replace('/home');
     }
-  }, [router, trip]);
+  }, [isLoading, router, trip]);
 
-  if (!trip) {
-    return null;
+  if (isLoading || !trip) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          역할을 불러오는 중…
+        </div>
+      </MobileShell>
+    );
   }
 
   return (

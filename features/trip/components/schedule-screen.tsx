@@ -208,6 +208,10 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
           <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}`)}>
             대기실로
           </Button>
+        ) : trip?.phase === 'ongoing' || trip?.phase === 'settling' ? (
+          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}`)}>
+            여행 중 홈으로
+          </Button>
         ) : (
           <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/invite`)}>
             친구 초대하기

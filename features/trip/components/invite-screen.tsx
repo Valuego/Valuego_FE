@@ -63,6 +63,9 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   const completedCount = trip.members.filter((member) => member.status !== 'pending').length;
   const inviteUrl =
     typeof window === 'undefined' ? trip.inviteCode : buildInviteUrl(window.location.origin, trip.inviteCode);
+  const friends = trip.members.filter((member) => member.status !== 'host');
+  const nextPath = trip.phase === 'ongoing' || trip.phase === 'settling' ? `/trips/${tripId}` : `/trips/${tripId}`;
+  const nextLabel = trip.phase === 'ongoing' || trip.phase === 'settling' ? '여행 중 홈으로' : '대기실로 돌아가기';
 
   const handleCopy = async () => {
     try {
@@ -74,14 +77,28 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
     }
   };
 
+  const handleKakaoInvite = async () => {
+    const shareData = {
+      title: `${trip.title} 초대`,
+      text: '링크로 들어오면 바로 그룹에 참여할 수 있어요.',
+      url: inviteUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch {
+      // fall through to copy
+    }
+    await handleCopy();
+  };
+
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-5 px-5 pt-3 pb-28">
         <Header title="친구 초대하기" />
-        <InfoBanner
-          accent="blue"
-          message="링크를 복사해 단톡방에 공유하세요. 친구는 설치·회원가입 없이 바로 참여할 수 있어요."
-        />
+        <InfoBanner accent="blue" message="링크로 초대하면 자동으로 그룹에 참여해요" />
 
         {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}
 
@@ -92,7 +109,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
             onClick={() => void handleCopy()}
             className="text-brand-blue shrink-0 rounded-lg bg-[rgba(51,102,255,0.08)] px-3 py-[7px] text-[12.5px] font-bold"
           >
-            {copied ? '복사됨' : 'URL 복사'}
+            URL 복사
           </button>
         </div>
 
@@ -120,12 +137,34 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
               </li>
             ))}
           </ul>
+          {friends.length === 0 ? (
+            <div className="border-line-hairline flex flex-col items-center gap-3 border-t px-6 pt-5 pb-7">
+              <div className="flex size-[74px] items-center justify-center rounded-full bg-[rgba(0,0,0,0.1)] text-[40px] font-bold text-[rgba(55,56,60,0.28)]">
+                ?
+              </div>
+              <p className="text-ink-900 text-center text-base font-bold">아직 친구가 참여하기 전이에요</p>
+              <p className="text-text-subtle text-center text-sm leading-[1.5]">
+                친구가 초대를 수락하면 목록에 나타나요.
+                <br />
+                성향 입력까지 마치면 완료로 표시돼요.
+              </p>
+              <Button variant="soft" onClick={() => void handleKakaoInvite()}>
+                카카오톡으로 초대하기
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
 
+      {copied ? (
+        <div className="pointer-events-none fixed bottom-[92px] left-1/2 z-20 -translate-x-1/2 rounded-xl bg-[rgba(23,23,25,0.92)] px-4 py-3 text-[13.5px] text-white shadow-[0px_8px_14px_rgba(23,23,26,0.3)]">
+          <span className="font-bold">✓</span> 링크를 복사했어요
+        </div>
+      ) : null}
+
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}`)}>
-          대기실로 돌아가기
+        <Button variant="primary" fullWidth onClick={() => router.push(nextPath)}>
+          {nextLabel}
         </Button>
       </div>
     </MobileShell>

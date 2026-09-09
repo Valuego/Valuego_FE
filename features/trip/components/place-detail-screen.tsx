@@ -162,13 +162,16 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
           )}
         </section>
       </div>
-      <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
+      <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/games`)}>
+          게임 하러가기
+        </Button>
         <Button
           variant="outline"
           fullWidth
           onClick={() => router.push(trip ? `/trips/${trip.id}` : `/trips/${tripId}`)}
         >
-          대기실로
+          {trip?.phase === 'ongoing' || trip?.phase === 'settling' ? '여행 중 홈으로' : '대기실로'}
         </Button>
       </div>
     </MobileShell>

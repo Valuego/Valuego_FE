@@ -10,6 +10,7 @@ export const statusPillVariants = cva(
         done: 'bg-brand-success/10 text-brand-success',
         pending: 'bg-surface-muted text-text-secondary-soft',
         host: 'bg-brand-blue/10 text-brand-blue',
+        warning: 'bg-[rgba(255,146,0,0.1)] text-[#ff9200]',
       },
     },
     defaultVariants: {

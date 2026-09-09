@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
+import { completeOnboarding } from '@/shared/session';
 
 import { ONBOARDING_STEPS } from '../onboarding.constants';
 import { StepDots } from './step-dots';
@@ -34,7 +35,8 @@ export const OnboardingScreen = ({ lastCtaLabel, onSkip, onComplete }: Onboardin
       onSkip();
       return;
     }
-    finish();
+    completeOnboarding();
+    router.push('/home');
   };
 
   const handleNext = () => {

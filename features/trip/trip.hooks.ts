@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
@@ -10,16 +11,17 @@ import {
   confirmSchedule,
   createTripWithAiSchedule,
   generateAiSchedule,
+  getSchedule,
   groupDetailQueryOptions,
   joinGroupAsGuest,
   myGroupsQueryOptions,
   placeCommentsQueryOptions,
   placeVoteQueryOptions,
-  scheduleQueryOptions,
   togglePlaceVote,
   tripQueryKeys,
 } from './trip.api';
-import { groupToTrip, parseGroupId } from './trip.lib';
+import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
+import { groupToTrip, mergeTripWithLocal, parseGroupId } from './trip.lib';
 
 export const useMyGroupsQuery = (enabled = true) => {
   return useQuery({
@@ -38,7 +40,18 @@ export const useGroupDetailQuery = (tripId: string, enabled = true) => {
 
 export const useScheduleQuery = (tripId: string) => {
   const groupId = parseGroupId(tripId) ?? 0;
-  return useQuery(scheduleQueryOptions(groupId));
+  const isRemote = groupId > 0;
+  return useQuery({
+    queryKey: isRemote ? tripQueryKeys.schedule(groupId) : (['trips', 'schedule', 'local', tripId] as const),
+    queryFn: async () => {
+      if (isRemote) {
+        return getSchedule(groupId);
+      }
+      return LOCAL_DEMO_SCHEDULE;
+    },
+    retry: 0,
+    throwOnError: false,
+  });
 };
 
 export const usePlaceVoteQuery = (placeId: number) => {
@@ -54,18 +67,24 @@ export const useTripView = (tripId: string) => {
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
   const groupQuery = useGroupDetailQuery(tripId, !session.isGuest);
-  const tripFromGroup = groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : null;
-  const trip = tripFromGroup
-    ? {
-        ...tripFromGroup,
-        expenses: localTrip?.expenses?.length ? localTrip.expenses : tripFromGroup.expenses,
-        timeline: localTrip?.timeline?.length ? localTrip.timeline : tripFromGroup.timeline,
-        todos: localTrip?.todos?.length ? localTrip.todos : tripFromGroup.todos,
-        roles: localTrip?.roles?.length ? localTrip.roles : tripFromGroup.roles,
-        phase:
-          localTrip?.phase === 'settling' || localTrip?.phase === 'settled' ? localTrip.phase : tripFromGroup.phase,
-      }
-    : localTrip;
+  const tripFromGroup = useMemo(
+    () => (groupQuery.data ? groupToTrip(groupQuery.data, { viewerIsGuest: session.isGuest }) : null),
+    [groupQuery.data, session.isGuest],
+  );
+  const trip = useMemo(
+    () => (tripFromGroup ? mergeTripWithLocal(tripFromGroup, localTrip) : localTrip),
+    [localTrip, tripFromGroup],
+  );
+  const persistedKey = trip ? `${trip.id}:${trip.phase}` : null;
+  const persistedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!trip || persistedRef.current === persistedKey) {
+      return;
+    }
+    persistedRef.current = persistedKey;
+    upsertLocalTrip(trip);
+  }, [persistedKey, trip]);
 
   return {
     trip,

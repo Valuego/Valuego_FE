@@ -7,7 +7,9 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
-import { addTripTodo, toggleTripTodo, useTripById } from '@/shared/session';
+import { addTripTodo, toggleTripTodo } from '@/shared/session';
+
+import { rememberActiveTrip, useTripView } from '../trip.hooks';
 
 type TodosScreenProps = {
   tripId: string;
@@ -15,17 +17,29 @@ type TodosScreenProps = {
 
 export const TodosScreen = ({ tripId }: TodosScreenProps) => {
   const router = useRouter();
-  const trip = useTripById(tripId);
+  const { trip, isLoading } = useTripView(tripId);
   const [title, setTitle] = useState('');
 
   useEffect(() => {
-    if (!trip) {
+    if (trip) {
+      rememberActiveTrip(trip.id);
+    }
+  }, [trip]);
+
+  useEffect(() => {
+    if (!isLoading && !trip) {
       router.replace('/home');
     }
-  }, [router, trip]);
+  }, [isLoading, router, trip]);
 
-  if (!trip) {
-    return null;
+  if (isLoading || !trip) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          할일을 불러오는 중…
+        </div>
+      </MobileShell>
+    );
   }
 
   const doneCount = trip.todos.filter((todo) => todo.done).length;

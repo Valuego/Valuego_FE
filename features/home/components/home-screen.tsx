@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { groupToTrip, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
+import { groupToTrip, mergeTripWithLocal, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
 import BellIcon from '@/shared/assets/icons/bell.svg';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
@@ -17,8 +17,32 @@ export const HomeScreen = () => {
   const router = useRouter();
   const session = useAppSession();
   const groupsQuery = useMyGroupsQuery(!session.isGuest);
-  const ongoingTrips = (groupsQuery.data?.ongoingGroups ?? []).map((group) => groupToTrip(group));
-  const pastTrips = (groupsQuery.data?.pastGroups ?? []).map((group) => groupToTrip(group));
+  const remoteOngoing = (groupsQuery.data?.ongoingGroups ?? []).map((group) => groupToTrip(group));
+  const remotePast = (groupsQuery.data?.pastGroups ?? []).map((group) => groupToTrip(group));
+  const ongoingTrips = remoteOngoing
+    .map((trip) =>
+      mergeTripWithLocal(
+        trip,
+        session.trips.find((item) => item.id === trip.id),
+      ),
+    )
+    .filter((trip) => trip.phase !== 'settled');
+  const pastTrips = [
+    ...remotePast.map((trip) =>
+      mergeTripWithLocal(
+        trip,
+        session.trips.find((item) => item.id === trip.id),
+      ),
+    ),
+    ...remoteOngoing
+      .map((trip) =>
+        mergeTripWithLocal(
+          trip,
+          session.trips.find((item) => item.id === trip.id),
+        ),
+      )
+      .filter((trip) => trip.phase === 'settled'),
+  ];
   const activeTrip = ongoingTrips[0] ?? null;
   const hasActiveTrip = Boolean(activeTrip);
 

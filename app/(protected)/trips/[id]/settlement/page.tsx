@@ -1,4 +1,4 @@
-import { SettlementBoardScreen } from '@/features/trip';
+import { SettlementStartScreen } from '@/features/trip';
 
 type SettlementPageProps = {
   params: Promise<{ id: string }>;
@@ -6,7 +6,7 @@ type SettlementPageProps = {
 
 const SettlementPage = async ({ params }: SettlementPageProps) => {
   const { id } = await params;
-  return <SettlementBoardScreen tripId={id} />;
+  return <SettlementStartScreen tripId={id} />;
 };
 
 export default SettlementPage;

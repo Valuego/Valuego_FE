@@ -46,6 +46,18 @@ export type TripExpense = {
   createdAt: string;
 };
 
+export type TripLaborCategory = {
+  id: string;
+  title: string;
+  assigneeId: string | null;
+};
+
+export type TripLaborValue = {
+  memberId: string;
+  amount: number;
+  note: string;
+};
+
 export type Trip = {
   id: string;
   title: string;
@@ -65,6 +77,9 @@ export type Trip = {
   roles: TripRoleItem[];
   todos: TripTodoItem[];
   expenses: TripExpense[];
+  laborCategories: TripLaborCategory[];
+  laborValues: TripLaborValue[];
+  settlementConfirmed: boolean;
   totalAmount?: string;
   perPersonAmount?: string;
 };

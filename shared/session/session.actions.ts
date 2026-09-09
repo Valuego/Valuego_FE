@@ -9,7 +9,14 @@ import type {
   UserProfile,
 } from './session.types';
 
-import { createInitialSession, DEFAULT_DRAFT, DEFAULT_ROLES, DEFAULT_TODOS, withTripDefaults } from './session.seed';
+import {
+  createInitialSession,
+  DEFAULT_DRAFT,
+  DEFAULT_LABOR_CATEGORIES,
+  DEFAULT_ROLES,
+  DEFAULT_TODOS,
+  withTripDefaults,
+} from './session.seed';
 import { getSessionSnapshot, resetSessionStore, setSession } from './session.store';
 
 const FRIEND_POOL: Omit<TripMember, 'id'>[] = [
@@ -385,10 +392,96 @@ export const addTripExpense = (tripId: string, input: { title: string; amount: n
       return withTripDefaults({
         ...trip,
         expenses,
-        phase: trip.phase === 'settled' ? trip.phase : 'settling',
-        dDayLabel: trip.phase === 'settled' ? trip.dDayLabel : '정산 중',
         totalAmount: `${sum.toLocaleString('ko-KR')}원`,
         perPersonAmount: `${per.toLocaleString('ko-KR')}원`,
+      });
+    }),
+  }));
+};
+
+export const assignLaborMember = (tripId: string, categoryId: string, memberId: string | null) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      const categories = trip.laborCategories.length
+        ? trip.laborCategories
+        : DEFAULT_LABOR_CATEGORIES.map((item) => ({ ...item }));
+      return withTripDefaults({
+        ...trip,
+        laborCategories: categories.map((item) => (item.id === categoryId ? { ...item, assigneeId: memberId } : item)),
+      });
+    }),
+  }));
+};
+
+export const addLaborCategory = (tripId: string, title: string) => {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        laborCategories: [
+          ...trip.laborCategories,
+          { id: `labor-${Date.now().toString(36)}`, title: trimmed, assigneeId: null },
+        ],
+      });
+    }),
+  }));
+};
+
+export const removeLaborCategory = (tripId: string, categoryId: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        laborCategories: trip.laborCategories.filter((item) => item.id !== categoryId),
+      });
+    }),
+  }));
+};
+
+export const saveLaborValue = (tripId: string, memberId: string, amount: number, note: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      const nextValues = trip.laborValues.filter((item) => item.memberId !== memberId);
+      nextValues.push({ memberId, amount, note });
+      return withTripDefaults({
+        ...trip,
+        laborValues: nextValues,
+      });
+    }),
+  }));
+};
+
+export const confirmSettlementBoard = (tripId: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        settlementConfirmed: true,
       });
     }),
   }));

@@ -85,7 +85,7 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
       try {
         await confirmSchedule.mutateAsync();
       } catch {
-        return;
+        // 일정 확정 API가 실패해도 여행 중 홈으로 이어지게 로컬 상태를 진행합니다.
       }
     }
     advanceTripPhase(tripId, 'ongoing');

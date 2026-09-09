@@ -8,7 +8,7 @@ import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
 import { getErrorMessage } from '@/shared/lib/api';
-import { advanceTripPhase, upsertLocalTrip } from '@/shared/session';
+import { advanceTripPhase } from '@/shared/session';
 
 import type { SchedulePlace } from '../trip.types';
 
@@ -44,7 +44,6 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
   useEffect(() => {
     if (trip) {
       rememberActiveTrip(trip.id);
-      upsertLocalTrip(trip);
     }
   }, [trip]);
 
@@ -161,7 +160,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
           </ul>
 
           <Link
-            href={`/trips/${tripId}/settlement`}
+            href={`/trips/${tripId}/expenses?view=list`}
             className="flex h-[60px] items-center justify-between rounded-[14px] bg-[rgba(51,102,255,0.06)] px-3.5"
           >
             <span className="flex flex-col gap-0.5">

@@ -7,8 +7,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { InfoBanner } from '@/shared/components/info-banner';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { getErrorMessage } from '@/shared/lib/api';
-import { DEFAULT_DRAFT, useTripDraft } from '@/shared/session';
+import { createTripFromDraft, DEFAULT_DRAFT, useTripDraft } from '@/shared/session';
 
 import { useCreateTripWithAiSchedule } from '../trip.hooks';
 
@@ -55,8 +54,9 @@ export const ConditionConfirmScreen = () => {
         activitySlider: summary.activity,
       });
       router.push(`/trips/${group.groupId}/schedule`);
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'AI 일정을 만들지 못했어요. 잠시 후 다시 시도해 주세요.'));
+    } catch {
+      const trip = createTripFromDraft();
+      router.push(`/trips/${trip.id}/schedule`);
     }
   };
 

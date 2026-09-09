@@ -1,4 +1,12 @@
-import type { AppSession, Trip, TripDraft, TripRoleItem, TripTodoItem, UserProfile } from './session.types';
+import type {
+  AppSession,
+  Trip,
+  TripDraft,
+  TripLaborCategory,
+  TripRoleItem,
+  TripTodoItem,
+  UserProfile,
+} from './session.types';
 
 export const SESSION_STORAGE_KEY = 'valuego.session.v1';
 
@@ -38,8 +46,20 @@ export const DEFAULT_TODOS: TripTodoItem[] = [
   { id: 'todo-3', title: '공통 짐 목록 공유', done: false },
 ];
 
-type TripInput = Omit<Trip, 'roles' | 'todos' | 'expenses' | 'timeline'> &
-  Partial<Pick<Trip, 'roles' | 'todos' | 'expenses' | 'timeline'>>;
+export const DEFAULT_LABOR_CATEGORIES: TripLaborCategory[] = [
+  { id: 'labor-plan', title: '여행계획', assigneeId: null },
+  { id: 'labor-treasury', title: '총무', assigneeId: null },
+  { id: 'labor-photo', title: '사진', assigneeId: null },
+  { id: 'labor-mood', title: '분위기', assigneeId: null },
+];
+
+type TripInput = Omit<
+  Trip,
+  'roles' | 'todos' | 'expenses' | 'timeline' | 'laborCategories' | 'laborValues' | 'settlementConfirmed'
+> &
+  Partial<
+    Pick<Trip, 'roles' | 'todos' | 'expenses' | 'timeline' | 'laborCategories' | 'laborValues' | 'settlementConfirmed'>
+  >;
 
 export const withTripDefaults = (trip: TripInput): Trip => ({
   ...trip,
@@ -47,6 +67,11 @@ export const withTripDefaults = (trip: TripInput): Trip => ({
   roles: trip.roles ?? DEFAULT_ROLES.map((role) => ({ ...role })),
   todos: trip.todos ?? DEFAULT_TODOS.map((todo) => ({ ...todo })),
   expenses: trip.expenses ?? [],
+  laborCategories: trip.laborCategories?.length
+    ? trip.laborCategories
+    : DEFAULT_LABOR_CATEGORIES.map((item) => ({ ...item })),
+  laborValues: trip.laborValues ?? [],
+  settlementConfirmed: trip.settlementConfirmed ?? false,
 });
 
 export const SEED_PAST_TRIPS: Trip[] = [

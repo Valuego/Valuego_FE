@@ -1,6 +1,6 @@
 import type { MemberKey } from '@/shared/session';
 
-import type { MemberColor } from './trip.types';
+import type { MemberColor, TravelSchedule } from './trip.types';
 
 export const GUEST_COLOR_OPTIONS: {
   color: MemberColor;
@@ -49,3 +49,39 @@ export const INVITE_HIGHLIGHTS = [
   { id: 'game', label: '애매한 결정은 게임으로' },
   { id: 'settle', label: '보이지 않는 수고까지 정산' },
 ] as const;
+
+export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {
+  travelId: 0,
+  days: [
+    {
+      dayNumber: 1,
+      totalDistanceKm: 32.2,
+      places: [
+        {
+          travelPlaceId: 9001,
+          visitTime: '10:00:00',
+          name: '해운대 해수욕장',
+          address: '부산 해운대구',
+          placeType: '관광',
+          reason: '첫날 바다를 보고 숨을 고르는 코스',
+        },
+        {
+          travelPlaceId: 9002,
+          visitTime: '12:30:00',
+          name: '광안리 밀면',
+          address: '부산 수영구',
+          placeType: '식사',
+          reason: '이동이 짧고 다 같이 먹기 좋은 점심',
+        },
+        {
+          travelPlaceId: 9003,
+          visitTime: '16:00:00',
+          name: '감천문화마을',
+          address: '부산 사하구',
+          placeType: '관광',
+          reason: '사진 찍기 좋은 골목 산책',
+        },
+      ],
+    },
+  ],
+};

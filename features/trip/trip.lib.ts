@@ -199,6 +199,9 @@ export const groupToTrip = (group: GroupInfo, options?: GroupToTripOptions): Tri
     roles: [],
     todos: [],
     expenses: [],
+    laborCategories: [],
+    laborValues: [],
+    settlementConfirmed: false,
   };
 };
 
@@ -249,9 +252,52 @@ export const toCreateStyleRequest = (payload: CreateTripPayload) => {
   };
 };
 
+const PHASE_RANK: Record<TripPhase, number> = {
+  drafting: 0,
+  inviting: 1,
+  planning: 2,
+  ongoing: 3,
+  settling: 4,
+  settled: 5,
+};
+
+export const mergeTripWithLocal = (remote: Trip, local?: Trip | null): Trip => {
+  if (!local) {
+    return remote;
+  }
+
+  return {
+    ...remote,
+    expenses: local.expenses.length ? local.expenses : remote.expenses,
+    timeline: local.timeline.length ? local.timeline : remote.timeline,
+    todos: local.todos.length ? local.todos : remote.todos,
+    roles: local.roles.length ? local.roles : remote.roles,
+    laborCategories: local.laborCategories.length ? local.laborCategories : remote.laborCategories,
+    laborValues: local.laborValues.length ? local.laborValues : remote.laborValues,
+    settlementConfirmed: local.settlementConfirmed || remote.settlementConfirmed,
+    totalAmount: local.totalAmount ?? remote.totalAmount,
+    perPersonAmount: local.perPersonAmount ?? remote.perPersonAmount,
+    phase: PHASE_RANK[local.phase] > PHASE_RANK[remote.phase] ? local.phase : remote.phase,
+    dDayLabel:
+      PHASE_RANK[local.phase] > PHASE_RANK[remote.phase] ? (local.dDayLabel ?? remote.dDayLabel) : remote.dDayLabel,
+  };
+};
+
 export const getPlaceTypeStyle = (placeType?: string | null) => {
   if (!placeType) {
     return DEFAULT_PLACE_TYPE_STYLE;
   }
   return PLACE_TYPE_STYLE[placeType] ?? { ...DEFAULT_PLACE_TYPE_STYLE, label: placeType };
+};
+
+export const laborRewardFor = (trip: Trip, memberId: string) => {
+  const saved = trip.laborValues.find((item) => item.memberId === memberId);
+  if (saved) {
+    return saved.amount;
+  }
+  const assignedCount = trip.laborCategories.filter((item) => item.assigneeId === memberId).length;
+  if (assignedCount > 0) {
+    return assignedCount * 15000;
+  }
+  return 15000;
 };

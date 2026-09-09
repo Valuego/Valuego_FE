@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { advanceTripPhase, upsertLocalTrip } from '@/shared/session';
+import { advanceTripPhase } from '@/shared/session';
 
 import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
 import { formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
@@ -26,7 +26,7 @@ type TimelineItem = {
 
 export const TimelineScreen = ({ tripId }: TimelineScreenProps) => {
   const router = useRouter();
-  const { trip, isGuest } = useTripView(tripId);
+  const { trip, isGuest, isLoading } = useTripView(tripId);
   const scheduleQuery = useScheduleQuery(tripId);
   const firstDay = scheduleQuery.data?.days[0];
   const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
@@ -34,15 +34,24 @@ export const TimelineScreen = ({ tripId }: TimelineScreenProps) => {
   useEffect(() => {
     if (trip) {
       rememberActiveTrip(trip.id);
-      upsertLocalTrip(trip);
     }
   }, [trip]);
 
   useEffect(() => {
-    if (!trip) {
+    if (!isLoading && !trip) {
       router.replace('/home');
     }
-  }, [router, trip]);
+  }, [isLoading, router, trip]);
+
+  if (isLoading) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          타임라인을 불러오는 중…
+        </div>
+      </MobileShell>
+    );
+  }
 
   if (!trip) {
     return null;
