@@ -37,7 +37,7 @@ export const HomeScreen = () => {
             <h1 className="text-ink-900 text-[22px] font-bold tracking-[-0.5px]">이번엔 어디로 떠나볼까요?</h1>
           </div>
           <Link
-            href="/my/notifications"
+            href="/notifications"
             aria-label="알림"
             className="relative flex size-11 shrink-0 items-center justify-center"
           >

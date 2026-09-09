@@ -21,6 +21,11 @@ export type UserProfileResponse = {
 
 export type UserAgreeUpdateRequest = UserNotificationAgree;
 
+export type UserInfoUpdateRequest = {
+  nickname: string;
+  memberColor: MemberColor;
+};
+
 export const MEMBER_COLOR_TO_KEY: Record<MemberColor, MemberKey> = {
   BLUE: 'doyeon',
   PURPLE: 'seojun',

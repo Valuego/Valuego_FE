@@ -13,6 +13,7 @@ import { getErrorMessage } from '@/shared/lib/api';
 import { advanceTripPhase } from '@/shared/session';
 
 import { rememberActiveTrip, useConfirmSchedule, useTripView } from '../trip.hooks';
+import { OngoingTripHomeScreen } from './ongoing-trip-home-screen';
 
 type TripLobbyScreenProps = {
   tripId: string;
@@ -73,6 +74,11 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   }
 
   const doneCount = trip.members.filter((member) => member.status !== 'pending').length;
+  const isOngoing = trip.phase === 'ongoing' || trip.phase === 'settling';
+
+  if (isOngoing) {
+    return <OngoingTripHomeScreen tripId={tripId} />;
+  }
 
   const handleStartTrip = async () => {
     if (groupId) {

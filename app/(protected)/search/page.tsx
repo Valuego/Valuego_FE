@@ -1,17 +1,7 @@
-import { Header } from '@/shared/components/header';
-import { MobileShell } from '@/shared/components/mobile-shell';
-import { TabBar } from '@/shared/components/tab-bar';
+import { SearchScreen } from '@/features/home';
 
 const SearchPage = () => {
-  return (
-    <MobileShell className="bg-surface-gray">
-      <div className="flex flex-1 flex-col gap-4 px-5 pt-4">
-        <Header title="검색" />
-        <p className="text-text-secondary-soft text-sm">검색 화면은 추후 구현됩니다.</p>
-      </div>
-      <TabBar />
-    </MobileShell>
-  );
+  return <SearchScreen />;
 };
 
 export default SearchPage;

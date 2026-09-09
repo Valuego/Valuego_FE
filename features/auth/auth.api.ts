@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 
 import { apiRequest } from '@/shared/lib/api';
 
-import type { LoginInfo, UserAgreeUpdateRequest, UserProfileResponse } from './auth.types';
+import type { LoginInfo, UserAgreeUpdateRequest, UserInfoUpdateRequest, UserProfileResponse } from './auth.types';
 
 import { getKakaoRedirectUri } from './auth.lib';
 import { loginInfoSchema, userProfileSchema } from './auth.schemas';
@@ -30,6 +30,14 @@ export const logoutRequest = async () => {
 
 export const getUserProfile = async (): Promise<UserProfileResponse> => {
   const data = await apiRequest<UserProfileResponse>('/users/profile');
+  return parseProfile(data);
+};
+
+export const updateUserProfile = async (body: UserInfoUpdateRequest): Promise<UserProfileResponse> => {
+  const data = await apiRequest<UserProfileResponse>('/users/profile', {
+    method: 'PATCH',
+    body,
+  });
   return parseProfile(data);
 };
 
