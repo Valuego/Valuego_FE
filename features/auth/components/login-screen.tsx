@@ -9,6 +9,7 @@ import { getSessionSnapshot } from '@/shared/session';
 
 import { getKakaoAuthorizeUrl } from '../auth.api';
 import { startKakaoLogin, useAuthStatus, useLoginWithTestAccount } from '../auth.hooks';
+import { isKakaoRedirectOriginMismatch } from '../auth.lib';
 import { BrandLogo } from './brand-logo';
 import { KakaoLoginButton } from './kakao-login-button';
 
@@ -53,7 +54,13 @@ export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps)
     }
   };
 
-  const errorMessage = kakaoError ?? (testLogin.isError ? getErrorMessage(testLogin.error) : null);
+  const originMismatch = isKakaoRedirectOriginMismatch();
+  const errorMessage =
+    kakaoError ??
+    (originMismatch
+      ? '카카오 로그인은 등록된 주소(http://localhost:3000)로 접속해야 합니다. IP나 배포 도메인에서는 KOE006이 납니다.'
+      : null) ??
+    (testLogin.isError ? getErrorMessage(testLogin.error) : null);
 
   return (
     <MobileShell className="from-auth-gradient-from bg-linear-to-b to-white">

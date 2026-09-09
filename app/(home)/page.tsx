@@ -1,15 +1,21 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { useAuthStatus } from '@/features/auth';
+import { authQueryKeys, useAuthStatus } from '@/features/auth';
 import { useAppSession } from '@/shared/session';
 
 const HomeEntryPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useAppSession();
   const { isBootstrapping, isAuthenticated, hasCompletedOnboarding } = useAuthStatus();
+
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: authQueryKeys.profile() });
+  }, [queryClient]);
 
   useEffect(() => {
     if (session.isGuest && session.activeTripId) {

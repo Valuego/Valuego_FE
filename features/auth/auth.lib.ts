@@ -5,17 +5,34 @@ import { MEMBER_COLOR_TO_KEY, type UserProfileResponse } from './auth.types';
 export const KAKAO_CALLBACK_PATH = '/api/v1/login/kakao';
 
 export const getKakaoRedirectUri = () => {
+  const fromEnv = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim();
+  if (fromEnv) {
+    return fromEnv.replace(/\/$/, '');
+  }
+
   if (typeof window !== 'undefined') {
     return `${window.location.origin}${KAKAO_CALLBACK_PATH}`;
   }
 
-  const fromEnv = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim();
-  if (fromEnv) {
-    return fromEnv;
-  }
-
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
   return `${site}${KAKAO_CALLBACK_PATH}`;
+};
+
+export const isKakaoRedirectOriginMismatch = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const registered = process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI?.trim();
+  if (!registered) {
+    return false;
+  }
+
+  try {
+    return new URL(registered).origin !== window.location.origin;
+  } catch {
+    return false;
+  }
 };
 
 export const toSessionUser = (profile: UserProfileResponse): UserProfile => {

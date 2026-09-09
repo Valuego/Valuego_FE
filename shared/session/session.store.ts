@@ -59,7 +59,9 @@ export const getSessionSnapshot = (): AppSession => {
   return memorySession;
 };
 
-export const getServerSnapshot = (): AppSession => createInitialSession();
+const SERVER_SNAPSHOT: AppSession = createInitialSession();
+
+export const getServerSnapshot = (): AppSession => SERVER_SNAPSHOT;
 
 export const subscribeSession = (listener: () => void) => {
   listeners.add(listener);

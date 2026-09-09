@@ -14,11 +14,6 @@ export const authQueryKeys = {
 
 const parseProfile = (data: UserProfileResponse) => userProfileSchema.parse(data);
 
-export const loginWithKakaoCode = async (code: string): Promise<LoginInfo> => {
-  const data = await apiRequest<LoginInfo>(`/login/kakao?code=${encodeURIComponent(code)}`);
-  return loginInfoSchema.parse(data);
-};
-
 export const loginWithTestAccount = async (): Promise<LoginInfo> => {
   const data = await apiRequest<LoginInfo>('/login/test-account', { method: 'POST' });
   return loginInfoSchema.parse(data);

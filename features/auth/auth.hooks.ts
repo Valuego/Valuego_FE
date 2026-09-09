@@ -11,7 +11,6 @@ import type { UserAgreeUpdateRequest, UserInfoUpdateRequest, UserProfileResponse
 import {
   authQueryKeys,
   getKakaoAuthorizeUrl,
-  loginWithKakaoCode,
   loginWithTestAccount,
   logoutRequest,
   updateUserAgree,
@@ -38,8 +37,10 @@ export const useAuthStatus = () => {
     applyAuthenticatedUser(toSessionUser(profileQuery.data));
   }, [profileQuery.data]);
 
-  const isBootstrapping = session.isGuest ? false : profileQuery.isLoading && !profileQuery.data;
-  const isAuthenticated = session.isGuest ? false : Boolean(profileQuery.data) || session.isAuthenticated;
+  const isBootstrapping = session.isGuest
+    ? false
+    : !profileQuery.data && (profileQuery.isPending || profileQuery.isFetching);
+  const isAuthenticated = session.isGuest ? false : Boolean(profileQuery.data);
 
   return {
     isBootstrapping,
@@ -57,19 +58,6 @@ export const useLoginWithTestAccount = () => {
 
   return useMutation({
     mutationFn: loginWithTestAccount,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: authQueryKeys.profile() });
-      const profile = await queryClient.fetchQuery(userProfileQueryOptions);
-      applyAuthenticatedUser(toSessionUser(profile));
-    },
-  });
-};
-
-export const useLoginWithKakaoCode = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: loginWithKakaoCode,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: authQueryKeys.profile() });
       const profile = await queryClient.fetchQuery(userProfileQueryOptions);

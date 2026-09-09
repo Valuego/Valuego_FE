@@ -3,7 +3,7 @@ import { z } from 'zod';
 const memberColorSchema = z.enum(['BLUE', 'PURPLE', 'SKYBLUE', 'ORANGE']);
 
 export const loginInfoSchema = z.object({
-  userId: z.number(),
+  userId: z.coerce.number(),
 });
 
 export const userNotificationAgreeSchema = z.object({
@@ -14,12 +14,12 @@ export const userNotificationAgreeSchema = z.object({
 });
 
 export const userProfileSchema = z.object({
-  userId: z.number(),
+  userId: z.coerce.number(),
   nickname: z.string(),
   email: z.string(),
-  profileImageUrl: z.string().nullable(),
+  profileImageUrl: z.string().nullable().optional(),
   socialType: z.string(),
   userRole: z.string(),
   memberColor: memberColorSchema,
-  notificationAgree: userNotificationAgreeSchema.nullable(),
+  notificationAgree: userNotificationAgreeSchema.nullable().optional(),
 });

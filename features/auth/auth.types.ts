@@ -12,11 +12,11 @@ export type UserProfileResponse = {
   userId: number;
   nickname: string;
   email: string;
-  profileImageUrl: string | null;
+  profileImageUrl?: string | null;
   socialType: string;
   userRole: string;
   memberColor: MemberColor;
-  notificationAgree: UserNotificationAgree | null;
+  notificationAgree?: UserNotificationAgree | null;
 };
 
 export type UserAgreeUpdateRequest = UserNotificationAgree;
