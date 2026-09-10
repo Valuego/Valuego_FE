@@ -39,10 +39,7 @@ const slugifyDestination = (destination: string) => {
   return map[destination] ?? 'trip';
 };
 
-const createInviteCode = () => {
-  const token = Math.random().toString(36).slice(2, 6);
-  return `gachigachi.app/j/${token}`;
-};
+const createInviteCode = () => Math.random().toString(36).slice(2, 8);
 
 const hostMember = (greetingName: string, member: MemberKey): TripMember => ({
   id: 'host',
@@ -54,13 +51,14 @@ const hostMember = (greetingName: string, member: MemberKey): TripMember => ({
 });
 
 export const normalizeInviteInput = (raw: string) => {
-  const trimmed = raw.trim().toLowerCase();
+  const trimmed = raw.trim();
   if (!trimmed) {
     return '';
   }
-  const withoutProtocol = trimmed.replace(/^https?:\/\//, '');
-  const parts = withoutProtocol.split('/');
-  return parts[parts.length - 1] ?? withoutProtocol;
+  const withoutProtocol = trimmed.replace(/^https?:\/\//i, '');
+  const withoutQuery = withoutProtocol.split(/[?#]/, 1)[0] ?? withoutProtocol;
+  const parts = withoutQuery.split('/').filter(Boolean);
+  return (parts[parts.length - 1] ?? withoutQuery).toLowerCase();
 };
 
 export const login = () => {
@@ -97,6 +95,23 @@ const isPendingInvitee = (member: TripMember) => {
 
 export const isDemoInviteCode = (rawCode: string) => {
   return normalizeInviteInput(rawCode) === DEMO_GUEST_INVITE_CODE;
+};
+
+export const completeHostStyle = (tripId: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      return withTripDefaults({
+        ...trip,
+        members: trip.members.map((member) =>
+          member.role.includes('호스트') ? { ...member, status: 'done' as const, statusLabel: '완료' } : member,
+        ),
+      });
+    }),
+  }));
 };
 
 export const seedPendingInvitees = (tripId: string) => {
@@ -147,13 +162,17 @@ export const acceptInviteFromLink = (rawCode: string, guest?: { name?: string; m
       return prev;
     }
 
-    const pendingIndex = trip.members.findIndex((member) => isPendingInvitee(member));
     const guestName = guest?.name?.trim();
+    const openedIndex = guestName
+      ? trip.members.findIndex((member) => member.statusLabel === '완료' && member.name === '친구')
+      : -1;
+    const pendingIndex = trip.members.findIndex((member) => isPendingInvitee(member));
+    const targetIndex = openedIndex >= 0 ? openedIndex : pendingIndex;
     let members = trip.members;
 
-    if (pendingIndex >= 0) {
+    if (targetIndex >= 0) {
       members = trip.members.map((member, index) => {
-        if (index !== pendingIndex) {
+        if (index !== targetIndex) {
           return member;
         }
         return {
@@ -212,6 +231,20 @@ export const enterDemoGuestSession = (guestName?: string, member?: MemberKey) =>
   return trip;
 };
 
+export const joinInviteLocally = (rawCode: string, guestName: string, member?: MemberKey) => {
+  const token = normalizeInviteInput(rawCode) || DEMO_GUEST_INVITE_CODE;
+  const accepted = acceptInviteFromLink(token, { name: guestName, member });
+  const trip =
+    accepted ??
+    withTripDefaults({
+      ...createDemoGuestTrip(guestName, member),
+      id: token === DEMO_GUEST_INVITE_CODE ? 'demo-guest-trip' : `invite-${token}`,
+      inviteCode: token,
+    });
+  enterGuestSession(trip);
+  return trip;
+};
+
 export const signOutSession = () => {
   setSession((prev) => ({
     ...createInitialSession(),
@@ -220,10 +253,15 @@ export const signOutSession = () => {
 };
 
 export const setActiveTripId = (tripId: string | null) => {
-  setSession((prev) => ({
-    ...prev,
-    activeTripId: tripId,
-  }));
+  setSession((prev) => {
+    if (prev.activeTripId === tripId) {
+      return prev;
+    }
+    return {
+      ...prev,
+      activeTripId: tripId,
+    };
+  });
 };
 
 export const upsertLocalTrip = (trip: Trip) => {

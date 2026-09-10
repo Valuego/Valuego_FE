@@ -32,10 +32,8 @@ export const TimelineScreen = ({ tripId }: TimelineScreenProps) => {
   const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

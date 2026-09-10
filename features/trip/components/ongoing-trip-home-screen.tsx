@@ -42,10 +42,8 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
   const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   if (isLoading) {
     return (

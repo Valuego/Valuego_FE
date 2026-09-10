@@ -94,6 +94,9 @@ export const subscribeSession = (listener: () => void) => {
 export const setSession = (next: AppSession | ((prev: AppSession) => AppSession)) => {
   hydrateSession();
   const resolved = typeof next === 'function' ? next(memorySession) : next;
+  if (resolved === memorySession) {
+    return;
+  }
   persist(resolved);
 };
 

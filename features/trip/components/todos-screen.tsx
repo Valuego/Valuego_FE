@@ -21,10 +21,8 @@ export const TodosScreen = ({ tripId }: TodosScreenProps) => {
   const [title, setTitle] = useState('');
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

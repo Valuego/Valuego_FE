@@ -117,7 +117,7 @@ export const DatePicker = ({
           onClick={() => moveMonth(-1)}
           className="border-border-gray-light flex size-8 cursor-pointer items-center justify-center rounded-full border-[0.8px] bg-transparent"
         >
-          <ChevronLeftIcon className="h-4 w-[9.6px] -rotate-90 text-gray-800" aria-hidden />
+          <ChevronLeftIcon className="h-4 w-[9.6px] rotate-90 text-gray-800" aria-hidden />
         </button>
 
         <div className="flex flex-1 items-center justify-center">
@@ -143,7 +143,7 @@ export const DatePicker = ({
           onClick={() => moveMonth(1)}
           className="border-border-gray-light flex size-8 cursor-pointer items-center justify-center rounded-full border-[0.8px] bg-transparent"
         >
-          <ChevronLeftIcon className="h-4 w-[9.6px] rotate-90 text-gray-800" aria-hidden />
+          <ChevronLeftIcon className="h-4 w-[9.6px] -rotate-90 text-gray-800" aria-hidden />
         </button>
       </div>
 

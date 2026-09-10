@@ -14,6 +14,21 @@ const nextConfig: NextConfig = {
         destination: '/join',
         permanent: false,
       },
+      {
+        source: '/j/:code',
+        destination: '/invite/:code',
+        permanent: false,
+      },
+      {
+        source: '/gachigachi.app/j/:code',
+        destination: '/invite/:code',
+        permanent: false,
+      },
+      {
+        source: '/invite',
+        destination: '/join',
+        permanent: false,
+      },
     ];
   },
   // /api/v1 은 app/api/v1/[...path] 라우트 핸들러가 쿠키를 붙여 백엔드로 프록시한다.

@@ -87,7 +87,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
     budget: '적당히',
     foods: ['한식'],
     activity: 50,
-    inviteCode: 'gachigachi.app/j/gn26',
+    inviteCode: 'gn26',
     totalAmount: '248,000원',
     perPersonAmount: '62,000원',
     expenses: [
@@ -120,7 +120,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
     budget: '플렉스',
     foods: ['한식', '일식'],
     activity: 40,
-    inviteCode: 'gachigachi.app/j/jj26',
+    inviteCode: 'jj26',
     totalAmount: '512,000원',
     perPersonAmount: '170,600원',
     members: [

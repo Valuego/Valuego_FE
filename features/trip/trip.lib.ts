@@ -1,5 +1,12 @@
 import { formatDateDot, startOfDay } from '@/shared/components/date-picker';
-import type { MemberKey, Transport, Trip, TripMember, TripPhase } from '@/shared/session';
+import {
+  normalizeInviteInput,
+  type MemberKey,
+  type Transport,
+  type Trip,
+  type TripMember,
+  type TripPhase,
+} from '@/shared/session';
 
 import type {
   BudgetType,
@@ -252,8 +259,16 @@ export const formatVisitTime = (visitTime?: string | null) => {
   return visitTime.slice(0, 5);
 };
 
+export const toInviteToken = (groupLink: string) => {
+  return normalizeInviteInput(groupLink);
+};
+
 export const buildInvitePath = (groupLink: string) => {
-  return `/invite/${encodeURIComponent(groupLink)}`;
+  const token = toInviteToken(groupLink);
+  if (!token) {
+    return '/join';
+  }
+  return `/invite/${encodeURIComponent(token)}`;
 };
 
 export const buildInviteUrl = (origin: string, groupLink: string) => {
@@ -261,19 +276,15 @@ export const buildInviteUrl = (origin: string, groupLink: string) => {
 };
 
 export const formatInviteLinkLabel = (groupLink: string, origin?: string) => {
-  const trimmed = groupLink.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  if (trimmed.includes('/') && !trimmed.startsWith('/')) {
-    return trimmed;
-  }
   if (!origin) {
-    return trimmed;
+    return toInviteToken(groupLink);
   }
 
   try {
     const url = new URL(buildInvitePath(groupLink), origin);
     return `${url.host}${url.pathname}`.replace(/\/$/, '');
   } catch {
-    return trimmed;
+    return toInviteToken(groupLink);
   }
 };
 

@@ -28,13 +28,9 @@ export const TravelStyleForm = ({
   showProgress = false,
 }: TravelStyleFormProps) => {
   const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>('적당히');
-  const [foods, setFoods] = useState<string[]>(['한식']);
+  const [food, setFood] = useState<string>('한식');
   const [activity, setActivity] = useState(52);
-  const canSubmit = foods.length > 0 && !isSubmitting;
-
-  const toggleFood = (food: string) => {
-    setFoods((prev) => (prev.includes(food) ? prev.filter((item) => item !== food) : [...prev, food]));
-  };
+  const canSubmit = !isSubmitting;
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -69,8 +65,8 @@ export const TravelStyleForm = ({
               <Chip
                 key={option}
                 label={option}
-                selected={foods.includes(option)}
-                onClick={() => toggleFood(option)}
+                selected={food === option}
+                onClick={() => setFood(option)}
                 className="min-w-0 flex-1"
               />
             ))}
@@ -90,7 +86,12 @@ export const TravelStyleForm = ({
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={() => onSubmit({ budget, foods, activity })}>
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={!canSubmit}
+          onClick={() => onSubmit({ budget, foods: [food], activity })}
+        >
           {isSubmitting ? '저장하는 중…' : submitLabel}
         </Button>
       </div>

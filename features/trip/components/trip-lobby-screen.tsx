@@ -44,10 +44,8 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   }, [isError, isGuest, isLoading, router, trip]);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   if (isLoading) {
     return (

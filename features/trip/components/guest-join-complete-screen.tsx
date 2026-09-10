@@ -25,15 +25,16 @@ export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) 
   const scheduleQuery = useScheduleQuery(trip?.id ?? '');
   const hasSchedule = Boolean(scheduleQuery.data?.days?.length);
   const scheduleMissing = isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
-  const canViewSchedule = hasSchedule && !scheduleMissing;
+  const canViewSchedule = Boolean(trip) && !scheduleQuery.isPending && (hasSchedule || !scheduleMissing);
 
   useEffect(() => {
-    if (session.isGuest && trip) {
+    if (trip) {
       return;
     }
-    if (!session.isGuest) {
-      router.replace(`${buildInvitePath(code)}/profile`);
+    if (session.isGuest) {
+      return;
     }
+    router.replace(`${buildInvitePath(code)}/profile`);
   }, [code, router, session.isGuest, trip]);
 
   const handleViewSchedule = () => {

@@ -18,15 +18,11 @@ export const StyleInputScreen = () => {
   const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>(
     (draft?.budget as (typeof BUDGET_OPTIONS)[number]) ?? '적당히',
   );
-  const [foods, setFoods] = useState<string[]>(draft?.foods ?? ['한식', '중식']);
+  const [food, setFood] = useState<string>(draft?.foods?.[0] ?? '한식');
   const [activity, setActivity] = useState(draft?.activity ?? 52);
 
-  const toggleFood = (food: string) => {
-    setFoods((prev) => (prev.includes(food) ? prev.filter((item) => item !== food) : [...prev, food]));
-  };
-
   const handleSubmit = () => {
-    updateTripDraft({ budget, foods, activity });
+    updateTripDraft({ budget, foods: [food], activity });
     router.push('/trips/new/confirm');
   };
 
@@ -61,8 +57,8 @@ export const StyleInputScreen = () => {
               <Chip
                 key={option}
                 label={option}
-                selected={foods.includes(option)}
-                onClick={() => toggleFood(option)}
+                selected={food === option}
+                onClick={() => setFood(option)}
                 className="min-w-0 flex-1"
               />
             ))}

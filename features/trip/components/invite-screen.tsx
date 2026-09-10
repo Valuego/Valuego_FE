@@ -15,6 +15,7 @@ import { seedPendingInvitees, useAppSession, type TripMember } from '@/shared/se
 
 import { rememberActiveTrip, useTripView } from '../trip.hooks';
 import {
+  buildInvitePath,
   buildInviteShareText,
   buildInviteUrl,
   buildTripHref,
@@ -56,10 +57,8 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   }, [isError, isLoading, router, trip]);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!toast) {
@@ -95,25 +94,26 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   }
 
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  const inviteUrl = origin ? buildInviteUrl(origin, trip.inviteCode) : trip.inviteCode;
+  const invitePath = buildInvitePath(trip.inviteCode);
+  const inviteUrl = origin ? buildInviteUrl(origin, trip.inviteCode) : invitePath;
   const inviteLabel = formatInviteLinkLabel(trip.inviteCode, origin || undefined);
   const hostName = session.user.greetingName || session.user.name;
   const shareText = buildInviteShareText(hostName, trip.destination);
   const friends = trip.members.filter((member) => member.role === '친구' || member.role === '나');
   const waitingCount = trip.members.filter((member) => toInviteStatusLabel(member) === '대기 중').length;
   const filledCount = trip.members.filter((member) => isInviteSeatFilled(member)).length;
-  const canProceed = filledCount === trip.memberCount && trip.memberCount > 0;
+  const showEmptyFriends = friends.length === 0;
+  const canProceed = !showEmptyFriends;
   const hostIncomplete = trip.members.some(
     (member) => member.role.includes('호스트') && toInviteStatusLabel(member) !== '완료',
   );
-  const showEmptyFriends = friends.length === 0;
 
   const markInvitesSent = () => {
     seedPendingInvitees(trip.id);
   };
 
   const handleCopy = async (nextToast: Exclude<InviteToast, null> = 'copied') => {
-    const payload = `${shareText}\n${inviteUrl}`;
+    const payload = nextToast === 'copied' ? inviteUrl : `${shareText}\n${inviteUrl}`;
     try {
       await navigator.clipboard.writeText(payload);
       markInvitesSent();
@@ -124,6 +124,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   };
 
   const handleKakaoInvite = async () => {
+    markInvitesSent();
     const shareData = {
       title: `${trip.destination} 초대`,
       text: shareText,
@@ -132,12 +133,12 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
     try {
       if (navigator.share) {
         await navigator.share(shareData);
-        markInvitesSent();
         setToast('shared');
         return;
       }
     } catch (shareError) {
       if (isShareAbort(shareError)) {
+        setToast('shared');
         return;
       }
     }
@@ -164,7 +165,9 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
         {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}
 
         <div className="border-line-hairline flex items-center justify-between rounded-[10px] border bg-white py-[11px] pr-2.5 pl-3">
-          <p className="text-text-secondary-soft mr-3 truncate text-[13px] font-medium">{inviteLabel}</p>
+          <a href={invitePath} className="text-text-secondary-soft mr-3 min-w-0 truncate text-[13px] font-medium">
+            {inviteLabel}
+          </a>
           <button
             type="button"
             onClick={() => void handleCopy()}

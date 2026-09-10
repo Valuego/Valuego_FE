@@ -19,10 +19,8 @@ export const RolesScreen = ({ tripId }: RolesScreenProps) => {
   const { trip, isLoading } = useTripView(tripId);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

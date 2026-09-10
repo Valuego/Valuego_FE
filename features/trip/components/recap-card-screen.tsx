@@ -10,7 +10,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { advanceTripPhase } from '@/shared/session';
 
 import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { buildInviteUrl, laborRewardFor } from '../trip.lib';
+import { buildInvitePath, buildInviteUrl, laborRewardFor } from '../trip.lib';
 
 type RecapCardScreenProps = {
   tripId: string;
@@ -23,10 +23,8 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {
@@ -40,8 +38,9 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
     [trip],
   );
   const distance = scheduleQuery.data?.days.reduce((acc, day) => acc + (day.totalDistanceKm ?? 0), 0) ?? 0;
+  const invitePath = trip ? buildInvitePath(trip.inviteCode) : '/join';
   const inviteUrl =
-    trip && typeof window !== 'undefined' ? buildInviteUrl(window.location.origin, trip.inviteCode) : trip?.inviteCode;
+    trip && typeof window !== 'undefined' ? buildInviteUrl(window.location.origin, trip.inviteCode) : invitePath;
 
   if (isLoading || !trip) {
     return (
