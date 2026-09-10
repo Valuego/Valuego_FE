@@ -11,7 +11,6 @@ import { Chip } from '@/shared/components/chip';
 import { DatePicker } from '@/shared/components/date-picker';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { ProgressBar } from '@/shared/components/progress-bar';
 import { cn } from '@/shared/lib/cn';
 import { startTripDraft, useTripDraft } from '@/shared/session';
 import type { Transport } from '@/shared/session';
@@ -62,10 +61,6 @@ export const CreateGroupScreen = () => {
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
         <Header title="그룹 만들기" />
-        <div className="flex items-center gap-2.5">
-          <ProgressBar value={33} className="flex-1" />
-          <span className="text-text-placeholder text-[12.5px] font-bold">1/3</span>
-        </div>
 
         <section className="border-line-hairline flex flex-col gap-3.5 rounded-2xl border bg-white p-[18px]">
           <h2 className="text-ink-900 text-base font-bold tracking-[-0.2px]">어디로 떠나요?</h2>

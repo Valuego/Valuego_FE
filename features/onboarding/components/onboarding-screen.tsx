@@ -27,7 +27,8 @@ export const OnboardingScreen = ({ lastCtaLabel, onSkip, onComplete }: Onboardin
       onComplete();
       return;
     }
-    router.push('/welcome');
+    completeOnboarding();
+    router.push('/home');
   };
 
   const handleSkip = () => {

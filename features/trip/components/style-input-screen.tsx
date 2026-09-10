@@ -8,7 +8,6 @@ import { Button } from '@/shared/components/button';
 import { Chip } from '@/shared/components/chip';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { ProgressBar } from '@/shared/components/progress-bar';
 import { Slider } from '@/shared/components/slider';
 import { updateTripDraft, useTripDraft } from '@/shared/session';
 
@@ -30,10 +29,6 @@ export const StyleInputScreen = () => {
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
         <Header title="여행 스타일 정하기" />
-        <div className="flex items-center gap-2.5">
-          <ProgressBar value={66} className="flex-1" />
-          <span className="text-text-placeholder text-[12.5px] font-bold">2/3</span>
-        </div>
 
         <section className="border-line-hairline flex flex-col gap-3.5 rounded-2xl border bg-white p-[18px]">
           <h2 className="text-ink-900 text-base font-bold tracking-[-0.2px]">예산</h2>

@@ -1,7 +1,7 @@
-import { WelcomeScreen } from '@/features/onboarding';
+import { redirect } from 'next/navigation';
 
 const WelcomePage = () => {
-  return <WelcomeScreen />;
+  redirect('/home');
 };
 
 export default WelcomePage;
