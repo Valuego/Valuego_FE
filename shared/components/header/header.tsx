@@ -34,7 +34,7 @@ export const Header = ({ title, onBack, className, backButtonProps }: HeaderProp
         className="relative flex size-6 shrink-0 cursor-pointer items-center justify-center"
         {...backButtonProps}
       >
-        <ChevronLeftIcon className="text-ink-900 h-[16px] w-[9.6px] -rotate-90" aria-hidden />
+        <ChevronLeftIcon className="text-ink-900 h-[16px] w-[9.6px] rotate-90" aria-hidden />
       </button>
       <h1 className="text-ink-900 text-[22px] leading-[1.4] font-bold tracking-[-0.5px]">{title}</h1>
     </header>

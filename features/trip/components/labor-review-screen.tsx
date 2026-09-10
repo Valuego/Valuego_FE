@@ -25,10 +25,8 @@ export const LaborReviewScreen = ({ tripId }: LaborReviewScreenProps) => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

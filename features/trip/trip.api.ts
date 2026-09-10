@@ -75,6 +75,15 @@ export const createLeaderStyle = async (groupId: number, body: StyleCreateReques
   return styleInfoSchema.parse(data);
 };
 
+export const createGuestStyle = async (body: StyleCreateRequest): Promise<StyleInfo> => {
+  const data = await apiRequest<StyleInfo>('/groups/styles/guest', {
+    method: 'POST',
+    body,
+    skipAuthRetry: true,
+  });
+  return styleInfoSchema.parse(data);
+};
+
 export const generateAiSchedule = async (groupId: number): Promise<TravelSchedule> => {
   const data = await apiRequest<TravelSchedule>(`/schedules/ai?groupId=${groupId}`, {
     method: 'POST',

@@ -4,6 +4,7 @@ import { LadderScreen, MinigameHubScreen, RouletteScreen } from '@/features/mini
 import {
   BlindValueScreen,
   ExpenseRecordScreen,
+  GroupStyleScreen,
   InviteScreen,
   LaborResultScreen,
   LaborReviewScreen,
@@ -34,6 +35,9 @@ const TripCatchAllPage = async ({ params }: TripCatchAllPageProps) => {
   }
   if (section === 'invite') {
     return <InviteScreen tripId={id} />;
+  }
+  if (section === 'style') {
+    return <GroupStyleScreen tripId={id} />;
   }
   if (section === 'games' && sub === 'roulette') {
     return <RouletteScreen tripId={id} />;

@@ -47,10 +47,8 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
   const note = draftNote ?? saved?.note ?? '덕분에 편하게 다녔어 🙏 다음엔 내가 할게!';
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

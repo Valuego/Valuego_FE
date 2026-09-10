@@ -49,10 +49,8 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
   const amount = parseAmount(amountInput);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

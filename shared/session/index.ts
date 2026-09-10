@@ -14,11 +14,15 @@ export {
   applyAuthenticatedUser,
   assignLaborMember,
   assignTripRole,
+  completeHostStyle,
   completeOnboarding,
   confirmSettlementBoard,
   createTripFromDraft,
+  enterDemoGuestSession,
   enterGuestSession,
   getTripById,
+  isDemoInviteCode,
+  joinInviteLocally,
   joinMembersDemo,
   joinTripByCode,
   login,
@@ -27,6 +31,8 @@ export {
   removeLaborCategory,
   resetDemo,
   saveLaborValue,
+  seedPendingInvitees,
+  acceptInviteFromLink,
   setActiveTripId,
   signOutSession,
   startTripDraft,
@@ -35,7 +41,7 @@ export {
   upsertLocalTrip,
 } from './session.actions';
 export { useActiveTrip, useAppSession, useSettledTrips, useTripById, useTripDraft } from './session.hooks';
-export { DEFAULT_DRAFT, DEFAULT_USER, SESSION_STORAGE_KEY } from './session.seed';
+export { DEFAULT_DRAFT, DEFAULT_USER, DEMO_GUEST_INVITE_CODE, SESSION_STORAGE_KEY } from './session.seed';
 export type {
   AppSession,
   GameResult,

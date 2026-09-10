@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { isApiError } from '@/shared/lib/api';
-import { useAppSession } from '@/shared/session';
+import { normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { useScheduleQuery } from '../trip.hooks';
 import { buildInvitePath, buildTripHref } from '../trip.lib';
@@ -20,19 +20,21 @@ type GuestJoinCompleteScreenProps = {
 export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) => {
   const router = useRouter();
   const session = useAppSession();
-  const trip = session.trips.find((item) => item.inviteCode === code) ?? null;
+  const trip =
+    session.trips.find((item) => normalizeInviteInput(item.inviteCode) === normalizeInviteInput(code)) ?? null;
   const scheduleQuery = useScheduleQuery(trip?.id ?? '');
   const hasSchedule = Boolean(scheduleQuery.data?.days?.length);
   const scheduleMissing = isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
-  const canViewSchedule = hasSchedule && !scheduleMissing;
+  const canViewSchedule = Boolean(trip) && !scheduleQuery.isPending && (hasSchedule || !scheduleMissing);
 
   useEffect(() => {
-    if (session.isGuest && trip) {
+    if (trip) {
       return;
     }
-    if (!session.isGuest) {
-      router.replace(`${buildInvitePath(code)}/profile`);
+    if (session.isGuest) {
+      return;
     }
+    router.replace(`${buildInvitePath(code)}/profile`);
   }, [code, router, session.isGuest, trip]);
 
   const handleViewSchedule = () => {

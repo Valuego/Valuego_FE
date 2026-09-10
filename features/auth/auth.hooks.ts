@@ -26,16 +26,17 @@ export const useUserProfileQuery = (enabled = true) => {
   });
 };
 
-export const useAuthStatus = () => {
+export const useAuthStatus = (options?: { fetchProfile?: boolean }) => {
   const session = useAppSession();
-  const profileQuery = useUserProfileQuery(!session.isGuest);
+  const fetchProfile = options?.fetchProfile ?? true;
+  const profileQuery = useUserProfileQuery(!session.isGuest && fetchProfile);
 
   useEffect(() => {
-    if (!profileQuery.data) {
+    if (!profileQuery.data || session.isGuest) {
       return;
     }
     applyAuthenticatedUser(toSessionUser(profileQuery.data));
-  }, [profileQuery.data]);
+  }, [profileQuery.data, session.isGuest]);
 
   const isBootstrapping = session.isGuest
     ? false

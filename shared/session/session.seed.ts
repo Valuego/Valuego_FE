@@ -87,7 +87,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
     budget: '적당히',
     foods: ['한식'],
     activity: 50,
-    inviteCode: 'gachigachi.app/j/gn26',
+    inviteCode: 'gn26',
     totalAmount: '248,000원',
     perPersonAmount: '62,000원',
     expenses: [
@@ -120,7 +120,7 @@ export const SEED_PAST_TRIPS: Trip[] = [
     budget: '플렉스',
     foods: ['한식', '일식'],
     activity: 40,
-    inviteCode: 'gachigachi.app/j/jj26',
+    inviteCode: 'jj26',
     totalAmount: '512,000원',
     perPersonAmount: '170,600원',
     members: [
@@ -150,3 +150,44 @@ export const createInitialSession = (): AppSession => ({
 });
 
 export const normalizeTrip = (trip: Trip): Trip => withTripDefaults(trip);
+
+export const DEMO_GUEST_INVITE_CODE = 'demo';
+
+export const createDemoGuestTrip = (guestName?: string, member: UserProfile['member'] = 'seojun'): Trip =>
+  withTripDefaults({
+    id: 'demo-guest-trip',
+    title: '부산 우정여행',
+    destination: '부산',
+    dateLabel: '2026.06.20 – 06.22',
+    nightsLabel: '2박 3일',
+    phase: 'planning',
+    dDayLabel: '일행 대기 중',
+    memberCount: 4,
+    transport: 'car',
+    budget: '적당히',
+    foods: ['한식'],
+    activity: 50,
+    inviteCode: DEMO_GUEST_INVITE_CODE,
+    members: [
+      {
+        id: 'host',
+        name: '도연',
+        role: '나 · 호스트',
+        member: 'doyeon',
+        status: 'host',
+        statusLabel: '성향 입력 전',
+      },
+      ...(guestName
+        ? [
+            {
+              id: 'guest',
+              name: guestName,
+              role: '나',
+              member,
+              status: 'done' as const,
+              statusLabel: '완료',
+            },
+          ]
+        : []),
+    ],
+  });

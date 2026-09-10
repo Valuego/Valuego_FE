@@ -4,6 +4,8 @@ import { Avatar } from '@/shared/components/avatar';
 import { cn } from '@/shared/lib/cn';
 import type { TripMember } from '@/shared/session';
 
+import { toInviteToken } from '../trip.lib';
+
 type GuestUrlBarProps = {
   groupLink: string;
 };
@@ -18,7 +20,7 @@ export const GuestUrlBar = ({ groupLink }: GuestUrlBarProps) => {
           🔒
         </span>
         <p className="text-text-secondary-soft truncate text-[12.5px] font-medium">
-          {origin}/invite/{groupLink}
+          {origin}/invite/{toInviteToken(groupLink)}
         </p>
       </div>
     </div>

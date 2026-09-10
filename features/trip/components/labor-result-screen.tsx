@@ -23,10 +23,8 @@ export const LaborResultScreen = ({ tripId }: LaborResultScreenProps) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

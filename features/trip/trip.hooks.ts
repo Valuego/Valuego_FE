@@ -5,10 +5,12 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
-import type { CreateTripPayload, GroupInfo, GuestJoinRequest, PlaceVoteStatus } from './trip.types';
+import type { CreateTripPayload, GroupInfo, GuestJoinRequest, PlaceVoteStatus, StyleCreateRequest } from './trip.types';
 
 import {
   confirmSchedule,
+  createGuestStyle,
+  createLeaderStyle,
   createTripWithAiSchedule,
   generateAiSchedule,
   getSchedule,
@@ -30,11 +32,12 @@ export const useMyGroupsQuery = (enabled = true) => {
   });
 };
 
-export const useGroupDetailQuery = (tripId: string, enabled = true) => {
+export const useGroupDetailQuery = (tripId: string, enabled = true, refetchInterval?: number | false) => {
   const groupId = parseGroupId(tripId) ?? 0;
   return useQuery({
     ...groupDetailQueryOptions(groupId),
     enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+    refetchInterval,
   });
 };
 
@@ -78,11 +81,11 @@ const findGroupByTripId = (groups: GroupInfo[] | undefined, tripId: string) => {
   );
 };
 
-export const useTripView = (tripId: string) => {
+export const useTripView = (tripId: string, options?: { refetchInterval?: number | false }) => {
   const session = useAppSession();
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
-  const groupQuery = useGroupDetailQuery(tripId, !session.isGuest);
+  const groupQuery = useGroupDetailQuery(tripId, !session.isGuest, options?.refetchInterval);
   const listQuery = useMyGroupsQuery(!session.isGuest);
   const groupFromList = useMemo(() => {
     const groups = [...(listQuery.data?.ongoingGroups ?? []), ...(listQuery.data?.pastGroups ?? [])];
@@ -159,6 +162,24 @@ export const useConfirmSchedule = (groupId: number) => {
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(groupId) });
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
     },
+  });
+};
+
+export const useCreateLeaderStyle = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: StyleCreateRequest) => createLeaderStyle(groupId, body),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(groupId) });
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
+    },
+  });
+};
+
+export const useCreateGuestStyle = () => {
+  return useMutation({
+    mutationFn: (body: StyleCreateRequest) => createGuestStyle(body),
   });
 };
 

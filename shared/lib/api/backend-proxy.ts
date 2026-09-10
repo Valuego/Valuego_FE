@@ -40,24 +40,18 @@ export const adaptSetCookieForBrowser = (setCookie: string, isHttps: boolean) =>
 
   const [nameValue, ...attributes] = segments;
   const nextAttributes: string[] = [];
-  let hasPath = false;
 
   attributes.forEach((attribute) => {
     const separatorIndex = attribute.indexOf('=');
     const name = (separatorIndex === -1 ? attribute : attribute.slice(0, separatorIndex)).trim().toLowerCase();
 
-    if (name === 'domain' || name === 'secure' || name === 'samesite' || name === 'partitioned') {
+    if (name === 'domain' || name === 'secure' || name === 'samesite' || name === 'partitioned' || name === 'path') {
       return;
-    }
-    if (name === 'path') {
-      hasPath = true;
     }
     nextAttributes.push(attribute);
   });
 
-  if (!hasPath) {
-    nextAttributes.push('Path=/');
-  }
+  nextAttributes.push('Path=/');
   nextAttributes.push('SameSite=Lax');
   if (isHttps) {
     nextAttributes.push('Secure');

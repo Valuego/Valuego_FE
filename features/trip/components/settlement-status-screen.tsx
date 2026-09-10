@@ -23,10 +23,8 @@ export const SettlementStatusScreen = ({ tripId }: SettlementStatusScreenProps) 
   const progress = memberCount > 0 ? Math.min(100, Math.round((submittedCount / memberCount) * 100)) : 0;
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {

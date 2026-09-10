@@ -5,7 +5,7 @@ export type ApiRequestOptions = Omit<RequestInit, 'body'> & {
   skipAuthRetry?: boolean;
 };
 
-const AUTH_RETRY_SKIP_PREFIXES = ['/login/', '/groups/invite'];
+const AUTH_RETRY_SKIP_PREFIXES = ['/login/', '/groups/invite', '/groups/styles/guest'];
 
 const getApiBase = () => {
   if (typeof window !== 'undefined') {

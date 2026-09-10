@@ -1,15 +1,22 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { buildInvitePath, buildTripHref } from '@/features/trip/trip.lib';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
-import { getSessionSnapshot } from '@/shared/session';
+import {
+  applyAuthenticatedUser,
+  DEMO_GUEST_INVITE_CODE,
+  enterDemoGuestSession,
+  getSessionSnapshot,
+} from '@/shared/session';
 
-import { getKakaoAuthorizeUrl } from '../auth.api';
+import { authQueryKeys, getKakaoAuthorizeUrl, getUserProfile } from '../auth.api';
 import { startKakaoLogin, useAuthStatus, useLoginWithTestAccount } from '../auth.hooks';
-import { isKakaoRedirectOriginMismatch } from '../auth.lib';
+import { isKakaoRedirectOriginMismatch, toSessionUser } from '../auth.lib';
 import { BrandLogo } from './brand-logo';
 import { KakaoLoginButton } from './kakao-login-button';
 
@@ -19,17 +26,34 @@ type LoginScreenProps = {
 
 export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps) => {
   const router = useRouter();
-  const { isAuthenticated, hasCompletedOnboarding, isBootstrapping } = useAuthStatus();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, hasCompletedOnboarding, isBootstrapping, isGuest } = useAuthStatus({ fetchProfile: false });
   const testLogin = useLoginWithTestAccount();
   const [kakaoError, setKakaoError] = useState<string | null>(kakaoErrorFromCallback);
   const kakaoReady = Boolean(getKakaoAuthorizeUrl());
 
   useEffect(() => {
-    if (isBootstrapping || !isAuthenticated) {
+    let cancelled = false;
+    void getUserProfile({ skipAuthRetry: true })
+      .then((profile) => {
+        if (cancelled || getSessionSnapshot().isGuest) {
+          return;
+        }
+        queryClient.setQueryData(authQueryKeys.profile(), profile);
+        applyAuthenticatedUser(toSessionUser(profile));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (isGuest || isBootstrapping || !isAuthenticated) {
       return;
     }
     router.replace(hasCompletedOnboarding ? '/home' : '/onboarding');
-  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router]);
+  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, isGuest, router]);
 
   const redirectAfterLogin = () => {
     const session = getSessionSnapshot();
@@ -52,6 +76,15 @@ export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps)
     } catch {
       // mutation error is rendered below
     }
+  };
+
+  const handleGuestBrowse = () => {
+    const trip = enterDemoGuestSession();
+    router.push(buildTripHref(trip.id, 'invite'));
+  };
+
+  const handleJoinWithCode = () => {
+    router.push(buildInvitePath(DEMO_GUEST_INVITE_CODE));
   };
 
   const originMismatch = isKakaoRedirectOriginMismatch();
@@ -78,6 +111,20 @@ export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps)
           onClick={() => void handleTestLogin()}
         >
           {testLogin.isPending ? '테스트 계정 로그인 중…' : '테스트 계정으로 시작하기'}
+        </button>
+        <button
+          type="button"
+          className="text-text-secondary-soft w-full max-w-[340px] cursor-pointer text-sm font-semibold underline-offset-2 hover:underline"
+          onClick={handleGuestBrowse}
+        >
+          게스트로 둘러보기
+        </button>
+        <button
+          type="button"
+          className="text-text-secondary-soft w-full max-w-[340px] cursor-pointer text-sm font-semibold underline-offset-2 hover:underline"
+          onClick={handleJoinWithCode}
+        >
+          초대 코드로 참여해보기
         </button>
         {errorMessage ? <p className="text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
         {!kakaoReady ? (

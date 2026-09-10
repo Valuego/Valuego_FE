@@ -1,5 +1,12 @@
 import { formatDateDot, startOfDay } from '@/shared/components/date-picker';
-import type { MemberKey, Transport, Trip, TripMember, TripPhase } from '@/shared/session';
+import {
+  normalizeInviteInput,
+  type MemberKey,
+  type Transport,
+  type Trip,
+  type TripMember,
+  type TripPhase,
+} from '@/shared/session';
 
 import type {
   BudgetType,
@@ -163,6 +170,16 @@ type GroupToTripOptions = {
   viewerIsGuest?: boolean;
 };
 
+const memberStatusLabel = (status: GroupMemberInfo['memberStatus']) => {
+  if (status === 'COMPLETED') {
+    return '완료';
+  }
+  if (status === 'BEFORE_PREFERENCE') {
+    return '성향 입력 전';
+  }
+  return '대기 중';
+};
+
 const toTripMember = (member: GroupMemberInfo, viewerIsGuest = false): TripMember => {
   const isLeader = member.memberRole === 'LEADER';
   const isDone = member.memberStatus === 'COMPLETED';
@@ -172,8 +189,8 @@ const toTripMember = (member: GroupMemberInfo, viewerIsGuest = false): TripMembe
     name: member.memberName,
     role: isLeader ? (viewerIsGuest ? '호스트' : '나 · 호스트') : '친구',
     member: MEMBER_COLOR_TO_KEY[member.memberColor],
-    status: isLeader ? 'host' : isDone ? 'done' : 'pending',
-    statusLabel: isDone ? '완료' : isLeader ? '성향 입력 전' : '대기 중',
+    status: isDone ? 'done' : isLeader ? 'host' : 'pending',
+    statusLabel: memberStatusLabel(member.memberStatus),
   };
 };
 
@@ -242,12 +259,61 @@ export const formatVisitTime = (visitTime?: string | null) => {
   return visitTime.slice(0, 5);
 };
 
+export const toInviteToken = (groupLink: string) => {
+  return normalizeInviteInput(groupLink);
+};
+
 export const buildInvitePath = (groupLink: string) => {
-  return `/invite/${encodeURIComponent(groupLink)}`;
+  const token = toInviteToken(groupLink);
+  if (!token) {
+    return '/join';
+  }
+  return `/invite/${encodeURIComponent(token)}`;
 };
 
 export const buildInviteUrl = (origin: string, groupLink: string) => {
   return `${origin}${buildInvitePath(groupLink)}`;
+};
+
+export const formatInviteLinkLabel = (groupLink: string, origin?: string) => {
+  if (!origin) {
+    return toInviteToken(groupLink);
+  }
+
+  try {
+    const url = new URL(buildInvitePath(groupLink), origin);
+    return `${url.host}${url.pathname}`.replace(/\/$/, '');
+  } catch {
+    return toInviteToken(groupLink);
+  }
+};
+
+export const isInviteMemberComplete = (statusLabel: string) => {
+  return statusLabel === '완료';
+};
+
+export const isInviteMemberWaiting = (statusLabel: string) => {
+  return statusLabel === '대기 중';
+};
+
+export const toInviteStatusLabel = (member: TripMember) => {
+  if (member.role.includes('호스트')) {
+    return member.statusLabel;
+  }
+  if (isInviteMemberWaiting(member.statusLabel)) {
+    return '대기 중';
+  }
+  return '완료';
+};
+
+export const isInviteSeatFilled = (member: TripMember) => {
+  return !isInviteMemberWaiting(toInviteStatusLabel(member));
+};
+
+export const buildInviteShareText = (userName: string, destination: string) => {
+  const name = userName.trim() || '친구';
+  const place = destination.trim() || '여행';
+  return `${name}님이 ${place}에 당신을 초대되었습니다`;
 };
 
 export const toCreateGroupRequest = (payload: CreateTripPayload) => {
@@ -283,8 +349,15 @@ export const mergeTripWithLocal = (remote: Trip, local?: Trip | null): Trip => {
     return remote;
   }
 
+  const extraPending = local.members.filter(
+    (member) => member.id.startsWith('invite-pending-') && member.statusLabel === '대기 중',
+  );
+  const remainingSlots = Math.max(0, remote.memberCount - remote.members.length);
+  const members = remainingSlots > 0 ? [...remote.members, ...extraPending.slice(0, remainingSlots)] : remote.members;
+
   return {
     ...remote,
+    members,
     expenses: local.expenses.length ? local.expenses : remote.expenses,
     timeline: local.timeline.length ? local.timeline : remote.timeline,
     todos: local.todos.length ? local.todos : remote.todos,

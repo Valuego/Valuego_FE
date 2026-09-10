@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { BUDGET_OPTIONS, FOOD_OPTIONS } from '@/features/home/home.constants';
@@ -10,30 +9,39 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { ProgressBar } from '@/shared/components/progress-bar';
 import { Slider } from '@/shared/components/slider';
-import { updateTripDraft, useTripDraft } from '@/shared/session';
 
-export const StyleInputScreen = () => {
-  const router = useRouter();
-  const draft = useTripDraft();
-  const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>(
-    (draft?.budget as (typeof BUDGET_OPTIONS)[number]) ?? '적당히',
-  );
-  const [food, setFood] = useState<string>(draft?.foods?.[0] ?? '한식');
-  const [activity, setActivity] = useState(draft?.activity ?? 52);
+type TravelStyleFormProps = {
+  onBack?: () => void;
+  onSubmit: (value: { budget: string; foods: string[]; activity: number }) => void;
+  submitLabel: string;
+  isSubmitting?: boolean;
+  errorMessage?: string | null;
+  showProgress?: boolean;
+};
 
-  const handleSubmit = () => {
-    updateTripDraft({ budget, foods: [food], activity });
-    router.push('/trips/new/confirm');
-  };
+export const TravelStyleForm = ({
+  onBack,
+  onSubmit,
+  submitLabel,
+  isSubmitting = false,
+  errorMessage,
+  showProgress = false,
+}: TravelStyleFormProps) => {
+  const [budget, setBudget] = useState<(typeof BUDGET_OPTIONS)[number]>('적당히');
+  const [food, setFood] = useState<string>('한식');
+  const [activity, setActivity] = useState(52);
+  const canSubmit = !isSubmitting;
 
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
-        <Header title="여행 스타일 정하기" />
-        <div className="flex items-center gap-2.5">
-          <ProgressBar value={66} className="flex-1" />
-          <span className="text-text-placeholder text-[12.5px] font-bold">2/3</span>
-        </div>
+        <Header title="여행 스타일 정하기" onBack={onBack} />
+        {showProgress ? (
+          <div className="flex items-center gap-2.5">
+            <ProgressBar value={66} className="flex-1" />
+            <span className="text-text-placeholder text-[12.5px] font-bold">2/3</span>
+          </div>
+        ) : null}
 
         <section className="border-line-hairline flex flex-col gap-3.5 rounded-2xl border bg-white p-[18px]">
           <h2 className="text-ink-900 text-base font-bold tracking-[-0.2px]">예산</h2>
@@ -73,11 +81,18 @@ export const StyleInputScreen = () => {
             <span>알차게</span>
           </div>
         </section>
+
+        {errorMessage ? <p className="text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth onClick={handleSubmit}>
-          AI 일정 조건 확인하기
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={!canSubmit}
+          onClick={() => onSubmit({ budget, foods: [food], activity })}
+        >
+          {isSubmitting ? '저장하는 중…' : submitLabel}
         </Button>
       </div>
     </MobileShell>

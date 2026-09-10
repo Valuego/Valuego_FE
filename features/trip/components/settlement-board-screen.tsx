@@ -21,10 +21,8 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
   const { trip, isLoading } = useTripView(tripId);
 
   useEffect(() => {
-    if (trip) {
-      rememberActiveTrip(trip.id);
-    }
-  }, [trip]);
+    rememberActiveTrip(tripId);
+  }, [tripId]);
 
   useEffect(() => {
     if (!isLoading && !trip) {
