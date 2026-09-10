@@ -15,6 +15,8 @@ import {
   DEFAULT_LABOR_CATEGORIES,
   DEFAULT_ROLES,
   DEFAULT_TODOS,
+  DEMO_GUEST_INVITE_CODE,
+  createDemoGuestTrip,
   withTripDefaults,
 } from './session.seed';
 import { getSessionSnapshot, resetSessionStore, setSession } from './session.store';
@@ -85,6 +87,129 @@ export const enterGuestSession = (trip: Trip) => {
     activeTripId: trip.id,
     trips: [trip, ...prev.trips.filter((item) => item.id !== trip.id)],
   }));
+};
+
+const INVITE_MEMBER_KEYS: MemberKey[] = ['seojun', 'hayeong', 'minjae', 'doyeon'];
+
+const isPendingInvitee = (member: TripMember) => {
+  return member.statusLabel === '대기 중' || member.id.startsWith('invite-pending-');
+};
+
+export const isDemoInviteCode = (rawCode: string) => {
+  return normalizeInviteInput(rawCode) === DEMO_GUEST_INVITE_CODE;
+};
+
+export const seedPendingInvitees = (tripId: string) => {
+  setSession((prev) => ({
+    ...prev,
+    trips: prev.trips.map((trip) => {
+      if (trip.id !== tripId) {
+        return trip;
+      }
+      const missing = Math.max(0, trip.memberCount - trip.members.length);
+      if (missing === 0) {
+        return trip;
+      }
+      const used = new Set(trip.members.map((item) => item.member));
+      const extras: TripMember[] = [];
+      for (let index = 0; index < missing; index += 1) {
+        const member =
+          INVITE_MEMBER_KEYS.find((key) => !used.has(key) && extras.every((item) => item.member !== key)) ??
+          INVITE_MEMBER_KEYS[index % INVITE_MEMBER_KEYS.length];
+        extras.push({
+          id: `invite-pending-${trip.id}-${index}`,
+          name: '친구',
+          role: '친구',
+          member,
+          status: 'pending',
+          statusLabel: '대기 중',
+        });
+      }
+      return withTripDefaults({
+        ...trip,
+        members: [...trip.members, ...extras],
+        dDayLabel: trip.dDayLabel ?? '일행 대기 중',
+      });
+    }),
+  }));
+};
+
+export const acceptInviteFromLink = (rawCode: string, guest?: { name?: string; member?: MemberKey }) => {
+  const token = normalizeInviteInput(rawCode);
+  if (!token) {
+    return null;
+  }
+
+  let nextTrip: Trip | null = null;
+  setSession((prev) => {
+    const trip = prev.trips.find((item) => normalizeInviteInput(item.inviteCode) === token);
+    if (!trip) {
+      return prev;
+    }
+
+    const pendingIndex = trip.members.findIndex((member) => isPendingInvitee(member));
+    const guestName = guest?.name?.trim();
+    let members = trip.members;
+
+    if (pendingIndex >= 0) {
+      members = trip.members.map((member, index) => {
+        if (index !== pendingIndex) {
+          return member;
+        }
+        return {
+          ...member,
+          id: member.id.startsWith('invite-pending-') ? `invite-guest-${index}` : member.id,
+          name: guestName || (member.name === '친구' ? '친구' : member.name),
+          role: guestName ? '나' : member.role,
+          member: guest?.member ?? member.member,
+          status: 'done' as const,
+          statusLabel: '완료',
+        };
+      });
+    } else if (guestName && trip.members.length < trip.memberCount) {
+      const memberKey = guest?.member ?? 'seojun';
+      members = [
+        ...trip.members,
+        {
+          id: `invite-guest-${trip.members.length}`,
+          name: guestName,
+          role: '나',
+          member: memberKey,
+          status: 'done',
+          statusLabel: '완료',
+        },
+      ];
+    } else {
+      nextTrip = trip;
+      return prev;
+    }
+
+    nextTrip = withTripDefaults({ ...trip, members });
+    return {
+      ...prev,
+      trips: prev.trips.map((item) => (item.id === trip.id ? nextTrip! : item)),
+    };
+  });
+
+  return nextTrip;
+};
+
+export const enterDemoGuestSession = (guestName?: string, member?: MemberKey) => {
+  const existing = getSessionSnapshot().trips.find(
+    (trip) => trip.id === 'demo-guest-trip' || normalizeInviteInput(trip.inviteCode) === DEMO_GUEST_INVITE_CODE,
+  );
+
+  if (guestName) {
+    const trip =
+      acceptInviteFromLink(existing?.inviteCode ?? DEMO_GUEST_INVITE_CODE, { name: guestName, member }) ??
+      createDemoGuestTrip(guestName, member);
+    enterGuestSession(trip);
+    return trip;
+  }
+
+  const trip = existing ?? createDemoGuestTrip();
+  enterGuestSession(trip);
+  return trip;
 };
 
 export const signOutSession = () => {

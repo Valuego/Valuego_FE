@@ -9,6 +9,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
+import { enterDemoGuestSession, isDemoInviteCode } from '@/shared/session';
 
 import type { MemberColor } from '../trip.types';
 
@@ -33,12 +34,18 @@ export const GuestJoinProfileScreen = ({ code }: GuestJoinProfileScreenProps) =>
     if (!canSubmit) {
       return;
     }
+    const selectedMember = GUEST_COLOR_OPTIONS.find((option) => option.color === color)?.member ?? 'seojun';
+    if (isDemoInviteCode(code)) {
+      enterDemoGuestSession(trimmedName, selectedMember);
+      router.push(`${buildInvitePath(code)}/style`);
+      return;
+    }
     try {
       await joinGroup.mutateAsync({
         groupLink: code,
         body: { memberName: trimmedName, memberColor: color },
       });
-      router.push(`${buildInvitePath(code)}/complete`);
+      router.push(`${buildInvitePath(code)}/style`);
     } catch {
       // mutation error is rendered below
     }

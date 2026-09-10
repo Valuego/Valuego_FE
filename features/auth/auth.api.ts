@@ -23,8 +23,10 @@ export const logoutRequest = async () => {
   await apiRequest('/login/logout', { method: 'POST', skipAuthRetry: true });
 };
 
-export const getUserProfile = async (): Promise<UserProfileResponse> => {
-  const data = await apiRequest<UserProfileResponse>('/users/profile');
+export const getUserProfile = async (options?: { skipAuthRetry?: boolean }): Promise<UserProfileResponse> => {
+  const data = await apiRequest<UserProfileResponse>('/users/profile', {
+    skipAuthRetry: options?.skipAuthRetry,
+  });
   return parseProfile(data);
 };
 
@@ -46,7 +48,7 @@ export const updateUserAgree = async (body: UserAgreeUpdateRequest): Promise<Use
 
 export const userProfileQueryOptions = queryOptions({
   queryKey: authQueryKeys.profile(),
-  queryFn: getUserProfile,
+  queryFn: () => getUserProfile(),
   retry: 0,
   throwOnError: false,
 });

@@ -5,6 +5,8 @@ export { GuestInviteLandingScreen } from './components/guest-invite-landing-scre
 export { GuestJoinCompleteScreen } from './components/guest-join-complete-screen';
 export { GuestJoinProfileScreen } from './components/guest-join-profile-screen';
 export { GuestOnboardingScreen } from './components/guest-onboarding-screen';
+export { GroupStyleScreen } from './components/group-style-screen';
+export { GuestStyleScreen } from './components/guest-style-screen';
 export { InviteScreen } from './components/invite-screen';
 export { JoinTripScreen } from './components/join-trip-screen';
 export { BlindValueScreen } from './components/blind-value-screen';

@@ -44,6 +44,26 @@ const persist = (session: AppSession) => {
   notify();
 };
 
+let storageBound = false;
+
+const bindStorageSync = () => {
+  if (!isBrowser() || storageBound) {
+    return;
+  }
+  storageBound = true;
+  window.addEventListener('storage', (event) => {
+    if (event.key !== SESSION_STORAGE_KEY || event.newValue == null) {
+      return;
+    }
+    const next = parseSession(event.newValue);
+    if (!next) {
+      return;
+    }
+    memorySession = next;
+    notify();
+  });
+};
+
 export const hydrateSession = () => {
   if (!isBrowser() || hydrated) {
     return;
@@ -52,6 +72,7 @@ export const hydrateSession = () => {
   const stored = parseSession(window.localStorage.getItem(SESSION_STORAGE_KEY));
   memorySession = stored ?? createInitialSession();
   hydrated = true;
+  bindStorageSync();
 };
 
 export const getSessionSnapshot = (): AppSession => {

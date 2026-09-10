@@ -55,8 +55,9 @@ export const JoinTripScreen = () => {
           label="참여 코드"
           value={code}
           onChange={(event) => setCode(event.target.value)}
-          placeholder="초대 링크 또는 코드"
+          placeholder="초대 링크 또는 코드 (체험: demo)"
         />
+        <p className="text-text-secondary-soft text-xs font-medium">로컬 체험은 코드 `demo` 를 입력하면 돼요.</p>
         {error ? <p className="text-sm font-medium text-[#e08300]">{error}</p> : null}
       </div>
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">

@@ -24,16 +24,26 @@ export const LoginCompleteScreen = () => {
 
     const finishLogin = async () => {
       queryClient.removeQueries({ queryKey: authQueryKeys.profile() });
-      try {
-        const profile = await queryClient.fetchQuery(userProfileQueryOptions);
-        applyAuthenticatedUser(toSessionUser(profile));
-        const session = getSessionSnapshot();
-        router.replace(session.hasCompletedOnboarding ? '/home' : '/onboarding');
-      } catch (error) {
-        router.replace(
-          `/login?kakaoError=${encodeURIComponent(getErrorMessage(error, '로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.'))}`,
-        );
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          if (attempt > 0) {
+            await new Promise((resolve) => {
+              window.setTimeout(resolve, 200 * attempt);
+            });
+          }
+          const profile = await queryClient.fetchQuery(userProfileQueryOptions);
+          applyAuthenticatedUser(toSessionUser(profile));
+          const session = getSessionSnapshot();
+          router.replace(session.hasCompletedOnboarding ? '/home' : '/onboarding');
+          return;
+        } catch (error) {
+          lastError = error;
+        }
       }
+      router.replace(
+        `/login?kakaoError=${encodeURIComponent(getErrorMessage(lastError, '로그인 상태를 확인하지 못했어요. 다시 시도해 주세요.'))}`,
+      );
     };
 
     void finishLogin();

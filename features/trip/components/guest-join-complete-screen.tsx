@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { isApiError } from '@/shared/lib/api';
-import { useAppSession } from '@/shared/session';
+import { normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { useScheduleQuery } from '../trip.hooks';
 import { buildInvitePath, buildTripHref } from '../trip.lib';
@@ -20,7 +20,8 @@ type GuestJoinCompleteScreenProps = {
 export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) => {
   const router = useRouter();
   const session = useAppSession();
-  const trip = session.trips.find((item) => item.inviteCode === code) ?? null;
+  const trip =
+    session.trips.find((item) => normalizeInviteInput(item.inviteCode) === normalizeInviteInput(code)) ?? null;
   const scheduleQuery = useScheduleQuery(trip?.id ?? '');
   const hasSchedule = Boolean(scheduleQuery.data?.days?.length);
   const scheduleMissing = isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
