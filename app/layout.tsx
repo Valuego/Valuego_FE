@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: [{ url: '/brand/logo-gachigaja.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/brand/logo-gachigaja.svg' }],
+    icon: [{ url: '/logo.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/logo.svg' }],
   },
 };
 

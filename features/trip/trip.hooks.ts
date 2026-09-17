@@ -16,11 +16,15 @@ import {
   getSchedule,
   groupDetailQueryOptions,
   joinGroupAsGuest,
+  leaderGroupListQueryOptions,
   myGroupsQueryOptions,
   placeCommentsQueryOptions,
   placeVoteQueryOptions,
+  remainingScheduleQueryOptions,
+  styleCardQueryOptions,
   togglePlaceVote,
   tripQueryKeys,
+  userTimelineQueryOptions,
 } from './trip.api';
 import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
 import { decodeTripId, groupToTrip, mergeTripWithLocal, parseGroupId } from './trip.lib';
@@ -63,6 +67,34 @@ export const usePlaceVoteQuery = (placeId: number) => {
 
 export const usePlaceCommentsQuery = (placeId: number) => {
   return useQuery(placeCommentsQueryOptions(placeId));
+};
+
+export const useLeaderGroupListQuery = (enabled = true) => {
+  return useQuery({ ...leaderGroupListQueryOptions, enabled });
+};
+
+export const useStyleCardQuery = (tripId: string, enabled = true) => {
+  const groupId = parseGroupId(tripId) ?? 0;
+  return useQuery({
+    ...styleCardQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const useUserTimelineQuery = (tripId: string, enabled = true) => {
+  const groupId = parseGroupId(tripId) ?? 0;
+  return useQuery({
+    ...userTimelineQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const useRemainingScheduleQuery = (tripId: string, enabled = true) => {
+  const groupId = parseGroupId(tripId) ?? 0;
+  return useQuery({
+    ...remainingScheduleQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
 };
 
 const findGroupByTripId = (groups: GroupInfo[] | undefined, tripId: string) => {

@@ -142,3 +142,56 @@ export type PlaceCommentList = {
   commentCount: number;
   comments: PlaceComment[];
 };
+
+export type LeaderGroupSummary = {
+  groupId: number;
+  title: string;
+  startDate: string;
+  endDate: string;
+};
+
+export type MyStyleCard = {
+  styleId: number;
+  groupId: number;
+  groupMemberId: number;
+  dnaTitle: string;
+  dnaDescription: string;
+  tags: string[];
+  activityLevelText: string;
+  budgetStyleText: string;
+  preferredFoodText: string;
+  budgetType: BudgetType;
+  foodType: FoodType;
+  activityIntensity: number;
+};
+
+export type UserTimelineItem = {
+  id: number;
+  title: string;
+  time: string;
+  category: string;
+  description?: string | null;
+};
+
+export type UserTimeline = {
+  currentDay: number;
+  totalExpense: number;
+  items: UserTimelineItem[];
+};
+
+export type RemainingScheduleItem = {
+  travelPlaceId: number;
+  time: string;
+  placeName: string;
+  category: string;
+};
+
+export type UserRemainingSchedule = {
+  groupId: number;
+  scheduleStatus: string;
+  groupTitle: string;
+  currentDay: number;
+  currentStatus: string;
+  totalExpense: number;
+  todaySchedules: RemainingScheduleItem[];
+};

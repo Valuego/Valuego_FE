@@ -1,5 +1,6 @@
 'use client';
 
+import { useStyleCardQuery } from '@/features/trip';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
@@ -19,14 +20,26 @@ export const PersonalityCardScreen = () => {
   const session = useAppSession();
   const draft = useTripDraft();
   const user = session.user;
+  const canFetchStyleCard = !session.isGuest && Boolean(session.activeTripId);
+  const styleCardQuery = useStyleCardQuery(session.activeTripId ?? '', canFetchStyleCard);
+  const styleCard = styleCardQuery.data;
+
   const budget = draft?.budget ?? '적당히';
   const foods = draft?.foods?.length ? draft.foods.join(' · ') : '한식 · 카페';
   const activity = draft?.activity ?? 52;
 
+  const title = styleCard?.dnaTitle ?? user.personalityTitle;
+  const description = styleCard?.dnaDescription ?? user.personalityDescription;
+  const tags = styleCard?.tags.length ? styleCard.tags : user.tags;
+
   const rows = [
-    { label: '활동 강도', value: activityLabel(activity), valueClassName: 'text-brand-blue' },
-    { label: '예산 감각', value: budget, valueClassName: 'text-brand-success' },
-    { label: '선호 음식', value: foods, valueClassName: 'text-member-minjae' },
+    {
+      label: '활동 강도',
+      value: styleCard?.activityLevelText ?? activityLabel(activity),
+      valueClassName: 'text-brand-blue',
+    },
+    { label: '예산 감각', value: styleCard?.budgetStyleText ?? budget, valueClassName: 'text-brand-success' },
+    { label: '선호 음식', value: styleCard?.preferredFoodText ?? foods, valueClassName: 'text-member-minjae' },
   ] as const;
 
   return (
@@ -41,10 +54,10 @@ export const PersonalityCardScreen = () => {
           }}
         >
           <p className="text-[12.5px] font-bold tracking-[1px] text-white/80">나의 여행 DNA</p>
-          <h2 className="text-[26px] font-extrabold tracking-[-0.5px] text-white">{user.personalityTitle}</h2>
-          <p className="text-sm font-medium text-white/85">{user.personalityDescription}</p>
+          <h2 className="text-[26px] font-extrabold tracking-[-0.5px] text-white">{title}</h2>
+          <p className="text-sm font-medium text-white/85">{description}</p>
           <div className="flex flex-wrap gap-2">
-            {user.tags.map((tag) => (
+            {tags.map((tag) => (
               <span key={tag} className="rounded-full bg-white/20 px-[11px] py-1.5 text-[11.5px] font-bold text-white">
                 {tag}
               </span>

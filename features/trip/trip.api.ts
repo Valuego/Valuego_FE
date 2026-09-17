@@ -9,12 +9,16 @@ import type {
   GroupList,
   GuestJoinRequest,
   GuestJoinResult,
+  LeaderGroupSummary,
+  MyStyleCard,
   PlaceCommentList,
   PlaceVote,
   PlaceVoteStatus,
   StyleCreateRequest,
   StyleInfo,
   TravelSchedule,
+  UserRemainingSchedule,
+  UserTimeline,
 } from './trip.types';
 
 import { toCreateGroupRequest, toCreateStyleRequest } from './trip.lib';
@@ -22,10 +26,14 @@ import {
   groupInfoSchema,
   groupListSchema,
   guestJoinResultSchema,
+  leaderGroupListSchema,
+  myStyleCardSchema,
   placeCommentListSchema,
   placeVoteSchema,
   styleInfoSchema,
   travelScheduleSchema,
+  userRemainingScheduleSchema,
+  userTimelineSchema,
 } from './trip.schemas';
 
 export const AI_SCHEDULE_TIMEOUT_MS = 120_000;
@@ -41,6 +49,13 @@ export const tripQueryKeys = {
   vote: (placeId: number) => [...tripQueryKeys.votes(), placeId] as const,
   comments: () => [...tripQueryKeys.all(), 'comment'] as const,
   comment: (placeId: number) => [...tripQueryKeys.comments(), placeId] as const,
+  leaderGroups: () => [...tripQueryKeys.all(), 'leader-group-list'] as const,
+  styleCards: () => [...tripQueryKeys.all(), 'style-card'] as const,
+  styleCard: (groupId: number) => [...tripQueryKeys.styleCards(), groupId] as const,
+  timelines: () => [...tripQueryKeys.all(), 'timeline'] as const,
+  timeline: (groupId: number) => [...tripQueryKeys.timelines(), groupId] as const,
+  remainingSchedules: () => [...tripQueryKeys.all(), 'remaining-schedule'] as const,
+  remainingSchedule: (groupId: number) => [...tripQueryKeys.remainingSchedules(), groupId] as const,
 };
 
 export const joinGroupAsGuest = async (groupLink: string, body: GuestJoinRequest): Promise<GuestJoinResult> => {
@@ -119,6 +134,26 @@ export const getPlaceComments = async (travelPlaceId: number): Promise<PlaceComm
   return placeCommentListSchema.parse(data);
 };
 
+export const getLeaderGroupList = async (): Promise<LeaderGroupSummary[]> => {
+  const data = await apiRequest<LeaderGroupSummary[]>('/groups/styles/groups');
+  return leaderGroupListSchema.parse(data);
+};
+
+export const getLeaderStyleCard = async (groupId: number): Promise<MyStyleCard> => {
+  const data = await apiRequest<MyStyleCard>(`/groups/styles?groupId=${groupId}`);
+  return myStyleCardSchema.parse(data);
+};
+
+export const getUserTimeline = async (groupId: number): Promise<UserTimeline> => {
+  const data = await apiRequest<UserTimeline>(`/users/timeline?groupId=${groupId}`);
+  return userTimelineSchema.parse(data);
+};
+
+export const getRemainingSchedule = async (groupId: number): Promise<UserRemainingSchedule> => {
+  const data = await apiRequest<UserRemainingSchedule>(`/users/timeline/remaining?groupId=${groupId}`);
+  return userRemainingScheduleSchema.parse(data);
+};
+
 export const createGroupWithStyle = async (payload: CreateTripPayload): Promise<GroupInfo> => {
   const group = await createGroup(toCreateGroupRequest(payload));
   try {
@@ -181,6 +216,40 @@ export const placeCommentsQueryOptions = (placeId: number) =>
     queryKey: tripQueryKeys.comment(placeId),
     queryFn: () => getPlaceComments(placeId),
     enabled: Number.isFinite(placeId) && placeId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const leaderGroupListQueryOptions = queryOptions({
+  queryKey: tripQueryKeys.leaderGroups(),
+  queryFn: getLeaderGroupList,
+  retry: 0,
+  throwOnError: false,
+});
+
+export const styleCardQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.styleCard(groupId),
+    queryFn: () => getLeaderStyleCard(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const userTimelineQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.timeline(groupId),
+    queryFn: () => getUserTimeline(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const remainingScheduleQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.remainingSchedule(groupId),
+    queryFn: () => getRemainingSchedule(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
     retry: 0,
     throwOnError: false,
   });

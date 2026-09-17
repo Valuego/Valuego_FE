@@ -10,12 +10,12 @@ type BrandLogoProps = {
 export const BrandLogo = ({ className, priority = false }: BrandLogoProps) => {
   return (
     <Image
-      src="/brand/logo-gachigaja.svg"
+      src="/logo.svg"
       alt="가치가자"
-      width={287}
+      width={104}
       height={104}
       priority={priority}
-      className={cn('h-[104px] w-[287px] object-contain', className)}
+      className={cn('h-[104px] w-[104px] object-contain', className)}
     />
   );
 };

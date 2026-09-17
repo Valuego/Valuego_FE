@@ -22,7 +22,7 @@ export const WelcomeScreen = () => {
     <MobileShell className="from-auth-gradient-from-soft bg-linear-to-b via-white to-white">
       <div className="flex flex-1 flex-col px-6 pt-10">
         <div className="flex flex-col items-center">
-          <BrandLogo priority className="h-[104px] w-[287px]" />
+          <BrandLogo priority />
         </div>
 
         <div className="mt-3.5 flex flex-col gap-3.5">

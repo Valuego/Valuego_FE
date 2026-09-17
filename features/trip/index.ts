@@ -25,4 +25,12 @@ export { TimelineScreen } from './components/timeline-screen';
 export { TodosScreen } from './components/todos-screen';
 export { TripLobbyScreen } from './components/trip-lobby-screen';
 export { buildInvitePath, buildTripHref, groupToTrip, mergeTripWithLocal } from './trip.lib';
-export { rememberActiveTrip, useMyGroupsQuery, useTripView } from './trip.hooks';
+export {
+  rememberActiveTrip,
+  useLeaderGroupListQuery,
+  useMyGroupsQuery,
+  useRemainingScheduleQuery,
+  useStyleCardQuery,
+  useTripView,
+  useUserTimelineQuery,
+} from './trip.hooks';

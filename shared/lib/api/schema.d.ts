@@ -185,8 +185,7 @@ export interface paths {
         };
         /**
          * 그룹 상세 정보 조회
-         * @description 로그인한 팀장이 그룹 상세 정보를 조회합니다.
-         *      팀장만 조회 가능
+         * @description 그룹에 참여한 사용자가 그룹 상세 정보를 조회합니다.
          */
         get: operations["getDetailGroup"];
         put?: never;
@@ -208,7 +207,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * 팀장 내 성향 카드 조회
+         * @description 팀장 개인의 여행 스타일을 분석하여 내 성향 카드를 조회합니다.
+         */
+        get: operations["getLeaderStyleCard"];
         put?: never;
         /**
          * 팀장 여행 스타일 입력
@@ -362,6 +365,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 지출 기록 생성
+         * @description 그룹에 포함된 사용자가 지출 기록을 생성합니다.
+         */
+        post: operations["createExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/efforts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 수고 회고 생성
+         * @description 특정 멤버에게 전달할 수고 가치 금액과 한마디를 입력하여 제출합니다.
+         */
+        post: operations["createEffort"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/effort-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 수고 항목 리스트 조회
+         * @description 그룹 내 등록된 기본/커스텀 수고 항목 목록을 조회합니다.
+         */
+        get: operations["getEffortItems"];
+        put?: never;
+        /**
+         * 수고 항목 직접 추가
+         * @description 사용자가 직접 새로운 수고 항목을 추가합니다.
+         */
+        post: operations["createEffortItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/comments": {
         parameters: {
             query?: never;
@@ -450,6 +517,26 @@ export interface paths {
         patch: operations["confirmSchedule"];
         trace?: never;
     };
+    "/api/v1/notifications/{notificationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 알림 읽음 처리
+         * @description 사용자가 상세 알림을 읽음 처리합니다.
+         */
+        patch: operations["readNotification"];
+        trace?: never;
+    };
     "/test": {
         parameters: {
             query?: never;
@@ -458,6 +545,46 @@ export interface paths {
             cookie?: never;
         };
         get: operations["test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 타임라인 조회
+         * @description 그룹에 참여한 사용자가 타임라인 리스트를 조회합니다.
+         */
+        get: operations["getTimeLine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/timeline/remaining": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 남은 일정 조회
+         * @description 그룹에 참여한 사용자가 남은 일정 리스트를 조회합니다.
+         */
+        get: operations["getRemainingSchedule"];
         put?: never;
         post?: never;
         delete?: never;
@@ -506,6 +633,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 알림 전체 목록 조회
+         * @description 사용자가 알림 전체 리스트를 조회합니다.
+         */
+        get: operations["getNotificationList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/subscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SSE 구독
+         * @description SSE 구독 생성, 로딩중 화면이 정상입니다.
+         */
+        get: operations["subscribe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/login/kakao": {
         parameters: {
             query?: never;
@@ -526,6 +693,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/groups/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 그룹 정보 요약 조회
+         * @description 비로그인 사용자에게 그룹 요약 정보를 보여줍니다.
+         */
+        get: operations["getSummaryGroup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/styles/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 팀장 그룹 정보 리스트 조회
+         * @description 팀장이 생성했거나 속해있는 전체 그룹 요약 목록(groupId, title, startDate, endDate)을 조회합니다.
+         */
+        get: operations["getLeaderGroupList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/groups/all": {
         parameters: {
             query?: never;
@@ -534,13 +741,73 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 그룹 전체 정보 조회
-         * @description 로그인한 팀장(카카오 사용자)이 참여한 그룹 전체 정보를 조회합니다.
+         * 내 그룹 전체 정보 조회
+         * @description 로그인한 팀장(카카오 사용자)이 참여한 내가 참여한 그룹 전체 정보 리스트를 조회합니다.
          */
         get: operations["getMyGroups"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/expenses/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 지출 기록 전체 조회
+         * @description 그룹에 포함된 사용자가 지출 기록 리스트를 조회합니다.
+         */
+        get: operations["getAllExpenses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/efforts/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 최종 수고 결과 조회
+         * @description 특정 멤버가 전달받은 수고 보상 금액의 중간값과 친구들의 한마디 리스트를 조회합니다.
+         */
+        get: operations["getEffortResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/effort-items/{effortItemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 수고 항목 삭제
+         * @description 직접 추가했던 커스텀 수고 항목을 삭제합니다.
+         */
+        delete: operations["deleteEffortItem"];
         options?: never;
         head?: never;
         patch?: never;
@@ -863,6 +1130,111 @@ export interface components {
             groupMemberId?: number;
             memberName?: string;
         };
+        ExpenseParticipantReqDto: {
+            /** Format: int64 */
+            groupMemberId?: number;
+            isIncluded: boolean;
+        };
+        ExpensePayerReqDto: {
+            /** Format: int64 */
+            groupMemberId?: number;
+        };
+        ExpenseReqDto: {
+            /** Format: int64 */
+            groupId: number;
+            amount: number;
+            /** @enum {string} */
+            category?: "MEAL" | "GAS" | "ACCOMMODATION" | "CAFE" | "OTHER";
+            /** Format: date */
+            expenseDate?: string;
+            payers: components["schemas"]["ExpensePayerReqDto"][];
+            participants: components["schemas"]["ExpenseParticipantReqDto"][];
+        };
+        ApiResTemplateExpenseInfoResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ExpenseInfoResDto"];
+        };
+        ExpenseInfoResDto: {
+            /** Format: int64 */
+            expenseId?: number;
+            amount?: number;
+            /** @enum {string} */
+            category?: "MEAL" | "GAS" | "ACCOMMODATION" | "CAFE" | "OTHER";
+            /** Format: date */
+            expenseDate?: string;
+            payerName?: string;
+            /** Format: int32 */
+            participantCount?: number;
+            payers?: components["schemas"]["ExpensePayerResDto"][];
+            participants?: components["schemas"]["ExpenseParticipantResDto"][];
+        };
+        ExpenseParticipantResDto: {
+            /** Format: int64 */
+            expenseParticipantId?: number;
+            /** Format: int64 */
+            groupMemberId?: number;
+            isIncluded?: boolean;
+        };
+        ExpensePayerResDto: {
+            /** Format: int64 */
+            expensePayerId?: number;
+            /** Format: int64 */
+            groupMemberId?: number;
+        };
+        EffortReqDto: {
+            /** Format: int64 */
+            groupId: number;
+            /** Format: int64 */
+            targetMemberId?: number;
+            /** Format: int64 */
+            effortAmount?: number;
+            comment?: string;
+            /** Format: int64 */
+            effortItemId: number;
+        };
+        ApiResTemplateEffortInfoResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["EffortInfoResDto"];
+        };
+        EffortInfoResDto: {
+            /** Format: int64 */
+            effortId?: number;
+            /** Format: int64 */
+            writerMemberId?: number;
+            /** Format: int64 */
+            targetMemberId?: number;
+            targetMemberName?: string;
+            /** Format: int64 */
+            effortItemId?: number;
+            /** Format: int64 */
+            effortAmount?: number;
+            comment?: string;
+        };
+        EffortItemReqDto: {
+            /** @enum {string} */
+            itemCategory: "DRIVING" | "RESERVATION" | "ETC";
+            title?: string;
+        };
+        ApiResTemplateEffortItemResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["EffortItemResDto"];
+        };
+        EffortItemResDto: {
+            /** Format: int64 */
+            effortItemId?: number;
+            title?: string;
+            isCustom?: boolean;
+            memberList?: components["schemas"]["GameMemberListResDto"][];
+        };
         CommentCreateReqDto: {
             content: string;
         };
@@ -879,6 +1251,8 @@ export interface components {
             /** Format: int64 */
             userId?: number;
             nickname?: string;
+            /** @enum {string} */
+            memberColor?: "BLUE" | "PURPLE" | "SKYBLUE" | "ORANGE";
             profileImageUrl?: string;
             content?: string;
             /** Format: date-time */
@@ -950,6 +1324,156 @@ export interface components {
             /** @enum {string} */
             groupStatus?: "PLANNING" | "CONFIRMED" | "COMPLETED";
         };
+        ApiResTemplateNotificationResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["NotificationResDto"];
+        };
+        NotificationResDto: {
+            /** Format: int64 */
+            notificationId?: number;
+            /** Format: int64 */
+            userId?: number;
+            /** Format: int64 */
+            guestGroupMemberId?: number;
+            /** @enum {string} */
+            type?: "RETROSPECT_COMPLETE" | "GROUP_JOIN_COMPLETE";
+            title?: string;
+            content?: string;
+            /** Format: int64 */
+            targetId?: number;
+            isRead?: boolean;
+            /** Format: date-time */
+            notificationCreatedAt?: string;
+            /** Format: int64 */
+            totalCount?: number;
+        };
+        ApiResTemplateUserTimelineResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["UserTimelineResDto"];
+        };
+        TimelineItemDto: {
+            /** Format: int64 */
+            id?: number;
+            title?: string;
+            /** Format: date-time */
+            time?: string;
+            category?: string;
+            description?: string;
+        };
+        UserTimelineResDto: {
+            /** Format: int32 */
+            currentDay?: number;
+            /** Format: int32 */
+            totalExpense?: number;
+            items?: components["schemas"]["TimelineItemDto"][];
+        };
+        ApiResTemplateUserScheduleResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["UserScheduleResDto"];
+        };
+        RemainingScheduleResDto: {
+            /** Format: int64 */
+            travelPlaceId?: number;
+            /** Format: date-time */
+            time?: string;
+            placeName?: string;
+            category?: string;
+        };
+        UserScheduleResDto: {
+            /** Format: int64 */
+            groupId?: number;
+            scheduleStatus?: string;
+            groupTitle?: string;
+            /** Format: int32 */
+            currentDay?: number;
+            currentStatus?: string;
+            /** Format: int32 */
+            totalExpense?: number;
+            todaySchedules?: components["schemas"]["RemainingScheduleResDto"][];
+        };
+        ApiResTemplateListNotificationResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["NotificationResDto"][];
+        };
+        SseEmitter: {
+            /** Format: int64 */
+            timeout?: number;
+        };
+        ApiResTemplateGroupSummaryInfoResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["GroupSummaryInfoResDto"];
+        };
+        GroupSummaryInfoResDto: {
+            inviterName?: string;
+            title?: string;
+            /** @enum {string} */
+            destination?: "BUSAN" | "GANGNEUNG" | "GYEONGJU" | "YEOSU" | "JEONJU" | "SOKCHO";
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+            /** Format: int32 */
+            memberCount?: number;
+            duration?: string;
+        };
+        ApiResTemplateMyStyleCardResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["MyStyleCardResDto"];
+        };
+        MyStyleCardResDto: {
+            /** Format: int64 */
+            styleId?: number;
+            /** Format: int64 */
+            groupId?: number;
+            /** Format: int64 */
+            groupMemberId?: number;
+            dnaTitle?: string;
+            dnaDescription?: string;
+            tags?: string[];
+            activityLevelText?: string;
+            budgetStyleText?: string;
+            preferredFoodText?: string;
+            /** @enum {string} */
+            budgetType?: "ECONOMICAL" | "MODERATE" | "LUXURY";
+            /** @enum {string} */
+            foodType?: "KOREAN" | "JAPANESE" | "CHINESE";
+            /** Format: int32 */
+            activityIntensity?: number;
+        };
+        ApiResTemplateListStyleGroupListResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["StyleGroupListResDto"][];
+        };
+        StyleGroupListResDto: {
+            /** Format: int64 */
+            groupId?: number;
+            title?: string;
+            /** Format: date-time */
+            startDate?: string;
+            /** Format: date-time */
+            endDate?: string;
+        };
         ApiResTemplateGroupListResDto: {
             /** Format: int32 */
             status?: number;
@@ -960,6 +1484,41 @@ export interface components {
         GroupListResDto: {
             ongoingGroups?: components["schemas"]["GroupInfoResDto"][];
             pastGroups?: components["schemas"]["GroupInfoResDto"][];
+        };
+        ApiResTemplateExpenseListResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ExpenseListResDto"];
+        };
+        ExpenseListResDto: {
+            totalAmount?: number;
+            expenseInfoResDtos?: components["schemas"]["ExpenseInfoResDto"][];
+        };
+        ApiResTemplateEffortResultResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["EffortResultResDto"];
+        };
+        EffortResultResDto: {
+            /** Format: int64 */
+            targetMemberId?: number;
+            targetMemberName?: string;
+            /** Format: int64 */
+            totalRewardAmount?: number;
+            /** Format: int32 */
+            evaluatorCount?: number;
+            comments?: string[];
+        };
+        ApiResTemplateListEffortItemResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["EffortItemResDto"][];
         };
         ApiResTemplateCommentListResDto: {
             /** Format: int32 */
@@ -972,6 +1531,13 @@ export interface components {
             /** Format: int64 */
             commentCount?: number;
             comments?: components["schemas"]["CommentInfoResDto"][];
+        };
+        ApiResTemplateVoid: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: unknown;
         };
     };
     responses: never;
@@ -1259,7 +1825,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
         };
         requestBody?: never;
         responses: {
@@ -1294,6 +1862,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResTemplateGroupInfoResDto"];
+                };
+            };
+        };
+    };
+    getLeaderStyleCard: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateMyStyleCardResDto"];
                 };
             };
         };
@@ -1508,6 +2098,110 @@ export interface operations {
             };
         };
     };
+    createExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseReqDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateExpenseInfoResDto"];
+                };
+            };
+        };
+    };
+    createEffort: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EffortReqDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateEffortInfoResDto"];
+                };
+            };
+        };
+    };
+    getEffortItems: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateListEffortItemResDto"];
+                };
+            };
+        };
+    };
+    createEffortItem: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EffortItemReqDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateEffortItemResDto"];
+                };
+            };
+        };
+    };
     getComments: {
         parameters: {
             query: {
@@ -1652,6 +2346,30 @@ export interface operations {
             };
         };
     };
+    readNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notificationId: number;
+            };
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateNotificationResDto"];
+                };
+            };
+        };
+    };
     test: {
         parameters: {
             query?: never;
@@ -1668,6 +2386,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+        };
+    };
+    getTimeLine: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateUserTimelineResDto"];
+                };
+            };
+        };
+    };
+    getRemainingSchedule: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateUserScheduleResDto"];
                 };
             };
         };
@@ -1720,6 +2486,50 @@ export interface operations {
             };
         };
     };
+    getNotificationList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateListNotificationResDto"];
+                };
+            };
+        };
+    };
+    subscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
+            };
+        };
+    };
     kakaoCallback: {
         parameters: {
             query: {
@@ -1742,6 +2552,48 @@ export interface operations {
             };
         };
     };
+    getSummaryGroup: {
+        parameters: {
+            query: {
+                groupLink: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateGroupSummaryInfoResDto"];
+                };
+            };
+        };
+    };
+    getLeaderGroupList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateListStyleGroupListResDto"];
+                };
+            };
+        };
+    };
     getMyGroups: {
         parameters: {
             query?: never;
@@ -1758,6 +2610,81 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResTemplateGroupListResDto"];
+                };
+            };
+        };
+    };
+    getAllExpenses: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateExpenseListResDto"];
+                };
+            };
+        };
+    };
+    getEffortResult: {
+        parameters: {
+            query: {
+                groupId: number;
+                targetMemberId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateEffortResultResDto"];
+                };
+            };
+        };
+    };
+    deleteEffortItem: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path: {
+                effortItemId: number;
+            };
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateVoid"];
                 };
             };
         };

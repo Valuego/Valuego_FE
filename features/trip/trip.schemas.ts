@@ -101,3 +101,58 @@ export const placeCommentListSchema = z.object({
   commentCount: z.number(),
   comments: z.array(placeCommentSchema),
 });
+
+export const leaderGroupSummarySchema = z.object({
+  groupId: z.coerce.number(),
+  title: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+});
+
+export const leaderGroupListSchema = z.array(leaderGroupSummarySchema);
+
+export const myStyleCardSchema = z.object({
+  styleId: z.coerce.number(),
+  groupId: z.coerce.number(),
+  groupMemberId: z.coerce.number(),
+  dnaTitle: z.string(),
+  dnaDescription: z.string(),
+  tags: z.array(z.string()).optional().default([]),
+  activityLevelText: z.string(),
+  budgetStyleText: z.string(),
+  preferredFoodText: z.string(),
+  budgetType: budgetTypeSchema,
+  foodType: foodTypeSchema,
+  activityIntensity: z.number(),
+});
+
+export const userTimelineItemSchema = z.object({
+  id: z.coerce.number(),
+  title: z.string(),
+  time: z.string(),
+  category: z.string(),
+  description: z.string().nullable().optional(),
+});
+
+export const userTimelineSchema = z.object({
+  currentDay: z.number(),
+  totalExpense: z.number(),
+  items: z.array(userTimelineItemSchema),
+});
+
+export const remainingScheduleItemSchema = z.object({
+  travelPlaceId: z.coerce.number(),
+  time: z.string(),
+  placeName: z.string(),
+  category: z.string(),
+});
+
+export const userRemainingScheduleSchema = z.object({
+  groupId: z.coerce.number(),
+  scheduleStatus: z.string(),
+  groupTitle: z.string(),
+  currentDay: z.number(),
+  currentStatus: z.string(),
+  totalExpense: z.number(),
+  todaySchedules: z.array(remainingScheduleItemSchema),
+});
