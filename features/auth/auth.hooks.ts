@@ -11,6 +11,7 @@ import type { UserAgreeUpdateRequest, UserInfoUpdateRequest, UserProfileResponse
 import {
   authQueryKeys,
   getKakaoAuthorizeUrl,
+  getUserProfile,
   loginWithTestAccount,
   logoutRequest,
   updateUserAgree,
@@ -19,9 +20,10 @@ import {
 } from './auth.api';
 import { toSessionUser } from './auth.lib';
 
-export const useUserProfileQuery = (enabled = true) => {
+export const useUserProfileQuery = (enabled = true, options?: { skipAuthRetry?: boolean }) => {
   return useQuery({
     ...userProfileQueryOptions,
+    queryFn: () => getUserProfile({ skipAuthRetry: options?.skipAuthRetry }),
     enabled,
   });
 };
@@ -29,19 +31,19 @@ export const useUserProfileQuery = (enabled = true) => {
 export const useAuthStatus = (options?: { fetchProfile?: boolean }) => {
   const session = useAppSession();
   const fetchProfile = options?.fetchProfile ?? true;
-  const profileQuery = useUserProfileQuery(!session.isGuest && fetchProfile);
+  const profileQuery = useUserProfileQuery(fetchProfile, {
+    skipAuthRetry: session.isGuest || !session.isAuthenticated,
+  });
 
   useEffect(() => {
-    if (!profileQuery.data || session.isGuest) {
+    if (!profileQuery.data) {
       return;
     }
     applyAuthenticatedUser(toSessionUser(profileQuery.data));
-  }, [profileQuery.data, session.isGuest]);
+  }, [profileQuery.data]);
 
-  const isBootstrapping = session.isGuest
-    ? false
-    : !profileQuery.data && (profileQuery.isPending || profileQuery.isFetching);
-  const isAuthenticated = session.isGuest ? false : Boolean(profileQuery.data);
+  const isBootstrapping = fetchProfile && !profileQuery.data && profileQuery.isPending;
+  const isAuthenticated = Boolean(profileQuery.data);
 
   return {
     isBootstrapping,

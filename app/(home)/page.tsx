@@ -18,11 +18,11 @@ const HomeEntryPage = () => {
   }, [queryClient]);
 
   useEffect(() => {
-    if (session.isGuest && session.activeTripId) {
-      router.replace('/home');
+    if (isBootstrapping) {
       return;
     }
-    if (isBootstrapping) {
+    if (session.isGuest) {
+      router.replace('/home');
       return;
     }
     if (!isAuthenticated) {
@@ -34,7 +34,7 @@ const HomeEntryPage = () => {
       return;
     }
     router.replace('/home');
-  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router, session.activeTripId, session.isGuest]);
+  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router, session.isGuest]);
 
   return (
     <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">

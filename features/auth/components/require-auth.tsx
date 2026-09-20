@@ -19,10 +19,10 @@ export const RequireAuth = ({ children }: RequireAuthProps) => {
   const { isBootstrapping, isAuthenticated, hasCompletedOnboarding } = useAuthStatus();
 
   useEffect(() => {
-    if (session.isGuest) {
+    if (isBootstrapping) {
       return;
     }
-    if (isBootstrapping) {
+    if (session.isGuest) {
       return;
     }
     if (!isAuthenticated) {
@@ -34,11 +34,19 @@ export const RequireAuth = ({ children }: RequireAuthProps) => {
     }
   }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, router, session.isGuest]);
 
+  if (isBootstrapping) {
+    return (
+      <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+        이동 중…
+      </div>
+    );
+  }
+
   if (session.isGuest) {
     return children;
   }
 
-  if (isBootstrapping || !isAuthenticated || !hasCompletedOnboarding) {
+  if (!isAuthenticated || !hasCompletedOnboarding) {
     return (
       <div className="bg-surface-gray flex min-h-dvh items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
         이동 중…

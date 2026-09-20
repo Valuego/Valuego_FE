@@ -1,16 +1,15 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
-import { applyAuthenticatedUser, getSessionSnapshot } from '@/shared/session';
+import { getSessionSnapshot } from '@/shared/session';
 
-import { authQueryKeys, getKakaoAuthorizeUrl, getUserProfile } from '../auth.api';
+import { getKakaoAuthorizeUrl } from '../auth.api';
 import { startKakaoLogin, useAuthStatus, useLoginWithTestAccount } from '../auth.hooks';
-import { isKakaoRedirectOriginMismatch, toSessionUser } from '../auth.lib';
+import { isKakaoRedirectOriginMismatch } from '../auth.lib';
 import { BrandLogo } from './brand-logo';
 import { KakaoLoginButton } from './kakao-login-button';
 
@@ -20,27 +19,10 @@ type LoginScreenProps = {
 
 export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps) => {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { isAuthenticated, hasCompletedOnboarding, isBootstrapping, isGuest } = useAuthStatus({ fetchProfile: false });
+  const { isAuthenticated, hasCompletedOnboarding, isBootstrapping, isGuest } = useAuthStatus();
   const testLogin = useLoginWithTestAccount();
   const [kakaoError, setKakaoError] = useState<string | null>(kakaoErrorFromCallback);
   const kakaoReady = Boolean(getKakaoAuthorizeUrl());
-
-  useEffect(() => {
-    let cancelled = false;
-    void getUserProfile({ skipAuthRetry: true })
-      .then((profile) => {
-        if (cancelled || getSessionSnapshot().isGuest) {
-          return;
-        }
-        queryClient.setQueryData(authQueryKeys.profile(), profile);
-        applyAuthenticatedUser(toSessionUser(profile));
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [queryClient]);
 
   useEffect(() => {
     if (isGuest || isBootstrapping || !isAuthenticated) {
@@ -79,6 +61,14 @@ export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps)
       ? '카카오 로그인은 등록된 주소(http://localhost:3000)로 접속해야 합니다. IP나 배포 도메인에서는 KOE006이 납니다.'
       : null) ??
     (testLogin.isError ? getErrorMessage(testLogin.error) : null);
+
+  if (isBootstrapping) {
+    return (
+      <MobileShell className="from-auth-gradient-from bg-linear-to-b to-white">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">로그인하는 중…</div>
+      </MobileShell>
+    );
+  }
 
   return (
     <MobileShell className="from-auth-gradient-from bg-linear-to-b to-white">

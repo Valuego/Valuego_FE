@@ -37,6 +37,29 @@ export const PLACE_TYPE_STYLE: Record<
   },
 };
 
+export const PLACE_TYPE_ALIASES: Record<string, keyof typeof PLACE_TYPE_STYLE> = {
+  이동: '이동',
+  관광: '관광',
+  식사: '식사',
+  TOUR: '관광',
+  TOURISM: '관광',
+  TOURIST: '관광',
+  TOURIST_SPOT: '관광',
+  ATTRACTION: '관광',
+  SIGHTSEEING: '관광',
+  SIGHT: '관광',
+  ACTIVITY: '관광',
+  RESTAURANT: '식사',
+  FOOD: '식사',
+  MEAL: '식사',
+  CAFE: '식사',
+  TRANSPORT: '이동',
+  TRANSFER: '이동',
+  MOVE: '이동',
+  TRAFFIC: '이동',
+  TRANSIT: '이동',
+};
+
 export const DEFAULT_PLACE_TYPE_STYLE = {
   label: '장소',
   emoji: '📍',

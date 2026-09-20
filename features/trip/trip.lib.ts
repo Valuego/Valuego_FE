@@ -21,7 +21,7 @@ import type {
   TransportType,
 } from './trip.types';
 
-import { DEFAULT_PLACE_TYPE_STYLE, PLACE_TYPE_STYLE } from './trip.constants';
+import { DEFAULT_PLACE_TYPE_STYLE, PLACE_TYPE_ALIASES, PLACE_TYPE_STYLE } from './trip.constants';
 
 const DESTINATION_LABEL: Record<Destination, string> = {
   BUSAN: '부산',
@@ -524,5 +524,7 @@ export const getPlaceTypeStyle = (placeType?: string | null) => {
   if (!placeType) {
     return DEFAULT_PLACE_TYPE_STYLE;
   }
-  return PLACE_TYPE_STYLE[placeType] ?? { ...DEFAULT_PLACE_TYPE_STYLE, label: placeType };
+  const trimmed = placeType.trim();
+  const aliased = PLACE_TYPE_ALIASES[trimmed] ?? PLACE_TYPE_ALIASES[trimmed.toUpperCase()];
+  return PLACE_TYPE_STYLE[aliased ?? trimmed] ?? DEFAULT_PLACE_TYPE_STYLE;
 };
