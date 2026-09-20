@@ -54,33 +54,66 @@ const coordSchema = z.preprocess((value) => {
   return Number.isFinite(parsed) ? parsed : null;
 }, z.number().nullable().optional());
 
-export const schedulePlaceSchema = z.object({
-  travelPlaceId: z.coerce.number(),
-  contentId: z.string().nullable().optional(),
-  visitTime: z.string().nullable().optional(),
-  name: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  imageUrl: z.string().nullable().optional(),
-  latitude: coordSchema,
-  longitude: coordSchema,
-  scheduleOrder: z.number().nullable().optional(),
-  placeType: z.string().nullable().optional(),
-  reason: z.string().nullable().optional(),
-  distanceFromPreviousKm: z.number().nullable().optional(),
-  memoUrl: z.string().nullable().optional(),
-});
+const optionalIdSchema = z.preprocess((value) => {
+  if (value === '' || value == null) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}, z.number().optional());
 
-export const scheduleDaySchema = z.object({
-  travelDayId: z.coerce.number(),
-  dayNumber: z.coerce.number(),
-  totalDistanceKm: z.number().nullable().optional(),
-  places: z.array(schedulePlaceSchema),
-});
+export const schedulePlaceSchema = z
+  .object({
+    travelPlaceId: optionalIdSchema,
+    contentId: z.string().nullable().optional(),
+    visitTime: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    imageUrl: z.string().nullable().optional(),
+    latitude: coordSchema,
+    longitude: coordSchema,
+    scheduleOrder: z.number().nullable().optional(),
+    placeType: z.string().nullable().optional(),
+    reason: z.string().nullable().optional(),
+    distanceFromPreviousKm: z.number().nullable().optional(),
+    memoUrl: z.string().nullable().optional(),
+  })
+  .transform((place) => ({
+    ...place,
+    travelPlaceId: place.travelPlaceId ?? 0,
+  }));
 
-export const travelScheduleSchema = z.object({
-  travelId: z.coerce.number(),
-  days: z.array(scheduleDaySchema),
-});
+export const scheduleDaySchema = z
+  .object({
+    travelDayId: optionalIdSchema,
+    dayNumber: z.preprocess((value) => {
+      if (value === '' || value == null) {
+        return 1;
+      }
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 1;
+    }, z.number()),
+    totalDistanceKm: z.number().nullable().optional(),
+    places: z.array(schedulePlaceSchema).optional().default([]),
+  })
+  .transform((day) => ({
+    ...day,
+    travelDayId: day.travelDayId ?? day.dayNumber,
+    places: day.places.map((place, placeIndex) => ({
+      ...place,
+      travelPlaceId: place.travelPlaceId > 0 ? place.travelPlaceId : day.dayNumber * 1000 + placeIndex + 1,
+    })),
+  }));
+
+export const travelScheduleSchema = z
+  .object({
+    travelId: optionalIdSchema,
+    days: z.array(scheduleDaySchema).optional().default([]),
+  })
+  .transform((schedule) => ({
+    ...schedule,
+    travelId: schedule.travelId ?? 0,
+  }));
 
 export const guestJoinResultSchema = z.object({
   groupMemberId: z.number(),

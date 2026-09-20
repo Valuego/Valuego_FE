@@ -9,13 +9,7 @@ import { InfoBanner } from '@/shared/components/info-banner';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
 
-import {
-  rememberActiveTrip,
-  useGenerateAiSchedule,
-  useScheduleQuery,
-  useStyleCardQuery,
-  useTripView,
-} from '../trip.hooks';
+import { rememberActiveTrip, useGenerateAiSchedule, useStyleCardQuery, useTripView } from '../trip.hooks';
 import { budgetToLabel, buildTripHref, foodToLabel, parseGroupId } from '../trip.lib';
 import { AiScheduleGeneratingScreen } from './ai-schedule-generating-screen';
 
@@ -43,10 +37,8 @@ export const AiSchedulePrepScreen = ({ tripId }: AiSchedulePrepScreenProps) => {
   const { trip, isGuest, isLoading } = useTripView(tripId);
   const groupId = parseGroupId(tripId) ?? 0;
   const styleQuery = useStyleCardQuery(tripId, Boolean(groupId) && !isGuest);
-  const scheduleQuery = useScheduleQuery(tripId);
   const generateSchedule = useGenerateAiSchedule(groupId);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const hasSchedule = Boolean(scheduleQuery.data?.days.length);
 
   useEffect(() => {
     rememberActiveTrip(tripId);
@@ -86,10 +78,7 @@ export const AiSchedulePrepScreen = ({ tripId }: AiSchedulePrepScreenProps) => {
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
-        <Header
-          title="AI 일정 생성 준비"
-          onBack={() => router.push(hasSchedule ? buildTripHref(tripId, 'schedule') : buildTripHref(tripId, 'style'))}
-        />
+        <Header title="AI 일정 생성 준비" onBack={() => router.push(buildTripHref(tripId, 'style'))} />
 
         <section className="border-line-hairline overflow-hidden rounded-2xl border bg-white px-[18px]">
           <PrepRow label="목적지" value={trip?.destination ?? '부산'} />

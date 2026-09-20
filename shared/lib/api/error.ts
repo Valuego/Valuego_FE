@@ -31,9 +31,23 @@ export class ApiError extends Error {
 
 export const isApiError = (error: unknown): error is ApiError => error instanceof ApiError;
 
+const isZodError = (error: unknown) => {
+  return Boolean(
+    error &&
+    typeof error === 'object' &&
+    'name' in error &&
+    error.name === 'ZodError' &&
+    'issues' in error &&
+    Array.isArray(error.issues),
+  );
+};
+
 export const getErrorMessage = (error: unknown, fallback = '요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.') => {
   if (isApiError(error)) {
     return error.message;
+  }
+  if (isZodError(error)) {
+    return fallback;
   }
   if (error instanceof Error && error.message) {
     return error.message;
