@@ -16,6 +16,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
+import { advanceTripPhase } from '@/shared/session';
 
 import type { ScheduleDay, SchedulePlace } from '../trip.types';
 
@@ -147,6 +148,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     setPlaceError(null);
     try {
       await confirmSchedule.mutateAsync();
+      advanceTripPhase(tripId, 'ongoing');
       router.push(buildTripHref(tripId));
     } catch (error) {
       setPlaceError(getErrorMessage(error, '일정을 확정하지 못했어요.'));
@@ -215,19 +217,11 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   };
 
   const handleBack = () => {
-    if (!trip) {
-      router.push('/home');
-      return;
-    }
-    if (trip.phase === 'ongoing' || trip.phase === 'settling') {
+    if (trip && (trip.phase === 'ongoing' || trip.phase === 'settling')) {
       router.push(buildTripHref(trip.id));
       return;
     }
-    if (isGuest) {
-      router.push('/home');
-      return;
-    }
-    router.push(buildTripHref(trip.id, 'prep'));
+    router.push('/home');
   };
 
   if (isTripLoading || scheduleQuery.isPending) {
@@ -431,7 +425,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
         ) : null}
       </div>
 
-      <div className="border-line-hairline fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 border-t bg-white px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))]">
+      <div className="border-line-hairline fixed right-0 bottom-0 left-0 z-20 mx-auto flex w-full max-w-[430px] flex-col gap-2 border-t bg-white px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {isConfirmable ? (
           <>
             {placeError ? <p className="text-sm font-medium text-[#e08300]">{placeError}</p> : null}

@@ -6,12 +6,10 @@ import { usePathname } from 'next/navigation';
 import HomeIcon from '@/shared/assets/icons/home.svg';
 import UserCircleIcon from '@/shared/assets/icons/user-circle.svg';
 import { cn } from '@/shared/lib/cn';
-import { useAppSession } from '@/shared/session';
 
 export const TabBar = () => {
   const pathname = usePathname();
-  const session = useAppSession();
-  const homeHref = session.isGuest && session.activeTripId ? `/trips/${session.activeTripId}` : '/home';
+  const homeHref = '/home';
 
   const tabs = [
     { href: homeHref, label: '홈', Icon: HomeIcon, match: homeHref },
@@ -24,7 +22,7 @@ export const TabBar = () => {
         {tabs.map((tab) => {
           const isActive =
             tab.label === '홈'
-              ? pathname === tab.href || pathname.startsWith('/trips/')
+              ? pathname === '/home' || pathname === '/'
               : pathname === tab.match || pathname.startsWith(`${tab.match}/`);
 
           return (

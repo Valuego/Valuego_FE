@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { MEMBER_COLOR_TO_KEY, useLogout, useUserProfileQuery } from '@/features/auth';
 import KakaoIcon from '@/shared/assets/icons/kakao.svg';
@@ -29,12 +28,6 @@ export const MyPageScreen = () => {
   const name = profile?.nickname ?? session.user.name;
   const email = profile?.email ?? session.user.email;
   const member = profile ? MEMBER_COLOR_TO_KEY[profile.memberColor] : session.user.member;
-
-  useEffect(() => {
-    if (session.isGuest && session.activeTripId) {
-      router.replace(`/trips/${session.activeTripId}`);
-    }
-  }, [router, session.activeTripId, session.isGuest]);
 
   const handleLogout = async () => {
     await logout.mutateAsync();

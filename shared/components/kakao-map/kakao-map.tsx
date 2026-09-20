@@ -335,7 +335,7 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
   }
 
   return (
-    <div className={cn('relative h-[140px] w-full overflow-hidden rounded-2xl bg-[#eef1f5]', className)}>
+    <div className={cn('relative isolate z-0 h-[140px] w-full overflow-hidden rounded-2xl bg-[#eef1f5]', className)}>
       <div ref={containerRef} className="h-[140px] w-full" />
       {status !== 'ready' ? (
         <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-[12.5px] font-medium text-[rgba(55,56,60,0.5)]">

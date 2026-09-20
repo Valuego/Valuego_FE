@@ -26,12 +26,12 @@ export const Header = ({ title, onBack, className, backButtonProps }: HeaderProp
   };
 
   return (
-    <header className={cn('relative flex h-11 items-center gap-2 overflow-hidden', className)}>
+    <header className={cn('relative z-20 flex h-11 items-center gap-2', className)}>
       <button
         type="button"
         aria-label="뒤로가기"
         onClick={handleBack}
-        className="relative flex size-6 shrink-0 cursor-pointer items-center justify-center"
+        className="relative -ml-2 flex size-11 shrink-0 cursor-pointer items-center justify-center"
         {...backButtonProps}
       >
         <ChevronLeftIcon className="text-ink-900 h-[16px] w-[9.6px] rotate-90" aria-hidden />

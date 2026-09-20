@@ -19,7 +19,7 @@ const HomeEntryPage = () => {
 
   useEffect(() => {
     if (session.isGuest && session.activeTripId) {
-      router.replace(`/trips/${session.activeTripId}`);
+      router.replace('/home');
       return;
     }
     if (isBootstrapping) {

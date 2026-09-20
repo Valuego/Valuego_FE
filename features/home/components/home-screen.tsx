@@ -1,8 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { buildTripHref, groupToTrip, mergeTripWithLocal, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
 import BellIcon from '@/shared/assets/icons/bell.svg';
@@ -14,7 +12,6 @@ import { getErrorMessage } from '@/shared/lib/api';
 import { useAppSession } from '@/shared/session';
 
 export const HomeScreen = () => {
-  const router = useRouter();
   const session = useAppSession();
   const groupsQuery = useMyGroupsQuery(!session.isGuest);
   const remoteOngoing = (groupsQuery.data?.ongoingGroups ?? []).map((group) => groupToTrip(group));
@@ -50,12 +47,6 @@ export const HomeScreen = () => {
   ];
   const activeTrip = ongoingTrips[0] ?? null;
   const hasActiveTrip = Boolean(activeTrip);
-
-  useEffect(() => {
-    if (session.isGuest && session.activeTripId) {
-      router.replace(buildTripHref(session.activeTripId, 'schedule'));
-    }
-  }, [router, session.activeTripId, session.isGuest]);
 
   return (
     <MobileShell className="bg-surface-gray">
