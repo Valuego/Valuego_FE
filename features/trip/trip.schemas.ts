@@ -63,6 +63,7 @@ export const schedulePlaceSchema = z.object({
 });
 
 export const scheduleDaySchema = z.object({
+  travelDayId: z.coerce.number(),
   dayNumber: z.coerce.number(),
   totalDistanceKm: z.number().nullable().optional(),
   places: z.array(schedulePlaceSchema),

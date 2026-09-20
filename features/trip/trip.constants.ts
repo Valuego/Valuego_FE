@@ -68,6 +68,7 @@ export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {
   travelId: 0,
   days: [
     {
+      travelDayId: 0,
       dayNumber: 1,
       totalDistanceKm: 32.2,
       places: [

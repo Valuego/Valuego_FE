@@ -85,6 +85,7 @@ export type SchedulePlace = {
 };
 
 export type ScheduleDay = {
+  travelDayId: number;
   dayNumber: number;
   totalDistanceKm?: number | null;
   places: SchedulePlace[];
@@ -93,6 +94,21 @@ export type ScheduleDay = {
 export type TravelSchedule = {
   travelId: number;
   days: ScheduleDay[];
+};
+
+export type CreatePlaceRequest = {
+  travelDayId: number;
+  scheduleOrder?: number;
+  customName: string;
+  visitTime?: string;
+  memoUrl?: string;
+};
+
+export type UpdatePlaceRequest = {
+  customName?: string;
+  scheduleOrder?: number;
+  visitTime?: string;
+  memoUrl?: string;
 };
 
 export type CreateTripPayload = {

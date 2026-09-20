@@ -5,6 +5,8 @@ export { Chip, chipVariants } from './chip';
 export { DatePicker } from './date-picker';
 export { Header } from './header';
 export { InfoBanner, infoBannerVariants } from './info-banner';
+export { KakaoMap } from './kakao-map';
+export type { KakaoMapPlace } from './kakao-map';
 export { MobileShell } from './mobile-shell';
 export { PageContainer } from './page-container';
 export { ProgressBar } from './progress-bar';

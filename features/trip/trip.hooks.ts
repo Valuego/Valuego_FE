@@ -10,24 +10,28 @@ import type {
   CreateEffortItemRequest,
   CreateEffortRequest,
   CreateExpenseRequest,
-  CreateTripPayload,
+  CreatePlaceRequest,
+  GroupCreateRequest,
   GroupInfo,
   GuestJoinRequest,
   PlaceVoteStatus,
   StyleCreateRequest,
+  UpdatePlaceRequest,
 } from './trip.types';
 
 import {
   confirmSchedule,
   confirmSettlement,
+  createCustomPlace,
   createEffort,
   createEffortItem,
   createExpense,
+  createGroup,
   createGuestStyle,
   createLeaderStyle,
   createPlaceComment,
-  createTripWithAiSchedule,
   deleteEffortItem,
+  deletePlace,
   effortItemsQueryOptions,
   effortResultQueryOptions,
   expensesQueryOptions,
@@ -46,6 +50,7 @@ import {
   styleCardQueryOptions,
   togglePlaceVote,
   tripQueryKeys,
+  updatePlace,
   userTimelineQueryOptions,
 } from './trip.api';
 import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
@@ -219,19 +224,15 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
   };
 };
 
-export const useCreateTripWithAiSchedule = () => {
+export const useCreateGroup = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateTripPayload) => createTripWithAiSchedule(payload),
-    onSuccess: async ({ group, schedule }) => {
+    mutationFn: (body: GroupCreateRequest) => createGroup(body),
+    onSuccess: async (group) => {
       queryClient.setQueryData(tripQueryKeys.detail(group.groupId), group);
-      if (schedule) {
-        queryClient.setQueryData(tripQueryKeys.schedule(group.groupId), schedule);
-      }
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
-      const trip = groupToTrip(group);
-      upsertLocalTrip(trip);
+      upsertLocalTrip(groupToTrip(group));
     },
   });
 };
@@ -255,6 +256,40 @@ export const useConfirmSchedule = (groupId: number) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(groupId) });
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
+    },
+  });
+};
+
+export const useCreatePlace = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: CreatePlaceRequest) => createCustomPlace(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.schedule(groupId) });
+    },
+  });
+};
+
+export const useUpdatePlace = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ travelPlaceId, body }: { travelPlaceId: number; body: UpdatePlaceRequest }) =>
+      updatePlace(travelPlaceId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.schedule(groupId) });
+    },
+  });
+};
+
+export const useDeletePlace = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (travelPlaceId: number) => deletePlace(travelPlaceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.schedule(groupId) });
     },
   });
 };

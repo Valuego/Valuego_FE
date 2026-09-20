@@ -316,17 +316,6 @@ export const buildInviteShareText = (userName: string, destination: string) => {
   return `${name}님이 ${place}에 당신을 초대되었습니다`;
 };
 
-export const toCreateGroupRequest = (payload: CreateTripPayload) => {
-  return {
-    title: payload.title,
-    destination: destinationFromLabel(payload.destinationLabel),
-    startDate: toLocalDateTime(payload.startDate),
-    endDate: toLocalDateTime(payload.endDate, true),
-    memberCount: payload.memberCount,
-    transportType: transportFromUi(payload.transport),
-  };
-};
-
 export const toCreateStyleRequest = (payload: CreateTripPayload) => {
   return {
     budgetType: budgetFromLabel(payload.budgetLabel),

@@ -11,15 +11,29 @@ import { Chip } from '@/shared/components/chip';
 import { DatePicker } from '@/shared/components/date-picker';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
+import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { startTripDraft, useTripDraft } from '@/shared/session';
+import { useTripDraft } from '@/shared/session';
 import type { Transport } from '@/shared/session';
 
-import { formatDateRangeLabel, formatNightsLabel, getDefaultTripDates, parseIsoDate, toIsoDate } from '../trip.lib';
+import { useCreateGroup } from '../trip.hooks';
+import {
+  buildTripHref,
+  destinationFromLabel,
+  formatDateRangeLabel,
+  formatNightsLabel,
+  getDefaultTripDates,
+  parseIsoDate,
+  toIsoDate,
+  toLocalDateTime,
+  transportFromUi,
+} from '../trip.lib';
 
 export const CreateGroupScreen = () => {
   const router = useRouter();
   const draft = useTripDraft();
+  const createGroup = useCreateGroup();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const defaultDates = useMemo(() => getDefaultTripDates(), []);
   const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>(
     (draft?.destination as (typeof DESTINATIONS)[number]) ?? '부산',
@@ -39,22 +53,26 @@ export const CreateGroupScreen = () => {
   const hasCompleteRange = Boolean(start && end);
   const nightsLabel = start && end ? formatNightsLabel(start, end) : '기간을 선택하세요';
   const dateLabel = start && end ? formatDateRangeLabel(start, end) : '날짜를 선택해 주세요';
-  const canSubmit = memberCount >= 2 && memberCount <= 8 && hasCompleteRange;
+  const canSubmit = memberCount >= 2 && memberCount <= 8 && hasCompleteRange && !createGroup.isPending;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!start || !end) {
       return;
     }
-    startTripDraft({
-      destination,
-      memberCount,
-      transport,
-      dateLabel,
-      nightsLabel,
-      startDate: toIsoDate(start),
-      endDate: toIsoDate(end),
-    });
-    router.push('/trips/new/style');
+    setErrorMessage(null);
+    try {
+      const group = await createGroup.mutateAsync({
+        title: `${destination} 우정여행`,
+        destination: destinationFromLabel(destination),
+        startDate: toLocalDateTime(toIsoDate(start)),
+        endDate: toLocalDateTime(toIsoDate(end), true),
+        memberCount,
+        transportType: transportFromUi(transport),
+      });
+      router.push(buildTripHref(String(group.groupId), 'invite'));
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '그룹을 만들지 못했어요. 잠시 후 다시 시도해 주세요.'));
+    }
   };
 
   return (
@@ -151,8 +169,9 @@ export const CreateGroupScreen = () => {
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={handleSubmit}>
-          다음
+        {errorMessage ? <p className="mb-2 text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
+        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={() => void handleSubmit()}>
+          {createGroup.isPending ? '그룹을 만드는 중…' : '다음'}
         </Button>
       </div>
 

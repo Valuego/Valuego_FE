@@ -103,7 +103,6 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   const waitingCount = trip.members.filter((member) => toInviteStatusLabel(member) === '대기 중').length;
   const filledCount = trip.members.filter((member) => isInviteSeatFilled(member)).length;
   const showEmptyFriends = friends.length === 0;
-  const canProceed = !showEmptyFriends;
   const hostIncomplete = trip.members.some(
     (member) => member.role.includes('호스트') && toInviteStatusLabel(member) !== '완료',
   );
@@ -146,9 +145,6 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   };
 
   const handleProceed = () => {
-    if (!canProceed) {
-      return;
-    }
     if (hostIncomplete) {
       router.push(buildTripHref(tripId, 'style'));
       return;
@@ -230,13 +226,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
       ) : null}
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button
-          variant="primary"
-          fullWidth
-          disabled={!canProceed}
-          className="disabled:bg-[#d1d5db] disabled:opacity-100 disabled:shadow-none"
-          onClick={handleProceed}
-        >
+        <Button variant="primary" fullWidth onClick={handleProceed}>
           여행 스타일 정하러 가기
         </Button>
       </div>

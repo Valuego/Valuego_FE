@@ -15,8 +15,6 @@ const LINKS = [
   { href: '/my/settlements', label: '지난 정산 내역' },
   { href: '/join', label: '참여 코드 합류' },
   { href: '/trips/new', label: '그룹 만들기' },
-  { href: '/trips/new/style', label: '성향 입력' },
-  { href: '/trips/new/confirm', label: 'AI 조건 확인' },
   { href: '/login', label: '로그인' },
   { href: '/onboarding', label: '온보딩' },
   { href: '/welcome', label: '웰컴' },

@@ -1,13 +1,13 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiRequest, isApiError } from '@/shared/lib/api';
+import { apiRequest } from '@/shared/lib/api';
 
 import type {
   CreateCommentRequest,
   CreateEffortItemRequest,
   CreateEffortRequest,
   CreateExpenseRequest,
-  CreateTripPayload,
+  CreatePlaceRequest,
   EffortItem,
   EffortResult,
   ExpenseInfo,
@@ -24,16 +24,17 @@ import type {
   PlaceCommentList,
   PlaceVote,
   PlaceVoteStatus,
+  SchedulePlace,
   Settlement,
   SettlementRecap,
   StyleCreateRequest,
   StyleInfo,
   TravelSchedule,
+  UpdatePlaceRequest,
   UserRemainingSchedule,
   UserTimeline,
 } from './trip.types';
 
-import { toCreateGroupRequest, toCreateStyleRequest } from './trip.lib';
 import {
   effortInfoSchema,
   effortItemListSchema,
@@ -50,6 +51,7 @@ import {
   placeCommentListSchema,
   placeCommentSchema,
   placeVoteSchema,
+  schedulePlaceSchema,
   settlementRecapSchema,
   settlementSchema,
   styleInfoSchema,
@@ -148,6 +150,23 @@ export const getSchedule = async (groupId: number): Promise<TravelSchedule> => {
 
 export const confirmSchedule = async (groupId: number) => {
   await apiRequest(`/schedules/confirm?groupId=${groupId}`, { method: 'PATCH' });
+};
+
+export const createCustomPlace = async (body: CreatePlaceRequest): Promise<SchedulePlace> => {
+  const data = await apiRequest<SchedulePlace>(`/schedules/places`, { method: 'POST', body });
+  return schedulePlaceSchema.parse(data);
+};
+
+export const updatePlace = async (travelPlaceId: number, body: UpdatePlaceRequest): Promise<SchedulePlace> => {
+  const data = await apiRequest<SchedulePlace>(`/schedules/places?travelPlaceId=${travelPlaceId}`, {
+    method: 'PATCH',
+    body,
+  });
+  return schedulePlaceSchema.parse(data);
+};
+
+export const deletePlace = async (travelPlaceId: number): Promise<void> => {
+  await apiRequest(`/schedules/places?travelPlaceId=${travelPlaceId}`, { method: 'DELETE' });
 };
 
 export const getPlaceVote = async (travelPlaceId: number): Promise<PlaceVote> => {
@@ -250,29 +269,6 @@ export const getSettlementRecap = async (groupId: number): Promise<SettlementRec
 export const getPastSettlements = async (): Promise<PastSettlement[]> => {
   const data = await apiRequest<PastSettlement[]>(`/settlements/history`);
   return pastSettlementListSchema.parse(data);
-};
-
-export const createGroupWithStyle = async (payload: CreateTripPayload): Promise<GroupInfo> => {
-  const group = await createGroup(toCreateGroupRequest(payload));
-  try {
-    await createLeaderStyle(group.groupId, toCreateStyleRequest(payload));
-  } catch (error) {
-    const alreadyExists = isApiError(error) && error.errorData?.code === 'STYLE-001';
-    if (!alreadyExists) {
-      throw error;
-    }
-  }
-  return group;
-};
-
-export const createTripWithAiSchedule = async (payload: CreateTripPayload) => {
-  const group = await createGroupWithStyle(payload);
-  try {
-    const schedule = await generateAiSchedule(group.groupId);
-    return { group, schedule };
-  } catch {
-    return { group, schedule: null };
-  }
 };
 
 export const myGroupsQueryOptions = queryOptions({
