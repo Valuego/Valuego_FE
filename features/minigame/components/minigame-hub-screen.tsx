@@ -20,7 +20,7 @@ export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
   const tripFromId = useTripById(tripId ?? '');
   const trip = tripId ? tripFromId : activeTrip;
   const recent = trip?.timeline[0];
-  const basePath = trip ? `/trips/${trip.id}/games` : null;
+  const isOngoing = trip?.phase === 'ongoing' || trip?.phase === 'settling';
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -43,38 +43,50 @@ export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
               새 여행 만들기 →
             </Link>
           </div>
+        ) : !isOngoing ? (
+          <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">
+            <p className="text-ink-900 text-sm font-bold">아직 게임을 열 수 없어요</p>
+            <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
+              일정을 확정하면 미니게임을 즐길 수 있어요.
+            </p>
+            <Link href={`/trips/${trip.id}/schedule`} className="text-brand-blue mt-3 inline-block text-sm font-bold">
+              일정으로 가기 →
+            </Link>
+          </div>
         ) : (
-          <p className="text-text-secondary-soft text-xs font-medium">{trip.title} · 게임 허브</p>
+          <>
+            <p className="text-text-secondary-soft text-xs font-medium">{trip.title} · 게임 허브</p>
+
+            <ul className="flex flex-col gap-3">
+              {GAMES.map((game) => (
+                <li key={game.slug}>
+                  <Link
+                    href={`/trips/${trip.id}/games/${game.slug}`}
+                    className="border-line-hairline flex items-center gap-3.5 overflow-hidden rounded-2xl border bg-white p-[18px]"
+                  >
+                    <span
+                      className={`flex size-12 shrink-0 items-center justify-center rounded-[14px] text-2xl ${game.iconBg}`}
+                      aria-hidden
+                    >
+                      {game.emoji}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-ink-900 text-base font-bold tracking-[-0.2px]">{game.title}</span>
+                      <span className="text-text-secondary-soft text-[12.5px] font-medium">{game.description}</span>
+                    </span>
+                    <span className="text-[20px] font-bold text-[rgba(55,56,60,0.28)]" aria-hidden>
+                      ›
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">
+              {recent ? `최근 기록: ${recent.label}` : '게임 결과는 타임라인에 자동 기록돼요.'}
+            </p>
+          </>
         )}
-
-        <ul className="flex flex-col gap-3">
-          {GAMES.map((game) => (
-            <li key={game.slug}>
-              <Link
-                href={basePath ? `${basePath}/${game.slug}` : '/join'}
-                className="border-line-hairline flex items-center gap-3.5 overflow-hidden rounded-2xl border bg-white p-[18px]"
-              >
-                <span
-                  className={`flex size-12 shrink-0 items-center justify-center rounded-[14px] text-2xl ${game.iconBg}`}
-                  aria-hidden
-                >
-                  {game.emoji}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-ink-900 text-base font-bold tracking-[-0.2px]">{game.title}</span>
-                  <span className="text-text-secondary-soft text-[12.5px] font-medium">{game.description}</span>
-                </span>
-                <span className="text-[20px] font-bold text-[rgba(55,56,60,0.28)]" aria-hidden>
-                  ›
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">
-          {recent ? `최근 기록: ${recent.label}` : '게임 결과는 타임라인에 자동 기록돼요.'}
-        </p>
       </div>
       <TabBar />
     </MobileShell>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import RoulettePointerIcon from '@/shared/assets/icons/roulette-pointer.svg';
 import { Button } from '@/shared/components/button';
@@ -31,6 +31,14 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
   const useApi = Boolean(groupId);
   const membersQuery = useGameMembersQuery(tripId);
   const playRoulette = usePlayRoulette(groupId ?? 0);
+  const isOngoing = trip?.phase === 'ongoing' || trip?.phase === 'settling';
+  const isBlocked = Boolean(trip) && !isOngoing;
+
+  useEffect(() => {
+    if (trip && isBlocked) {
+      router.replace(`/trips/${trip.id}/schedule`);
+    }
+  }, [isBlocked, router, trip]);
 
   const seedNames = useMemo(() => {
     if (useApi && membersQuery.data && membersQuery.data.length > 0) {
@@ -118,6 +126,16 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
   const winner = winnerIndex !== null ? participants[winnerIndex] : null;
   const showResult = Boolean(winner) && !spinning;
   const isMembersLoading = useApi && membersQuery.isPending;
+
+  if (isBlocked) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          일정으로 이동하는 중…
+        </div>
+      </MobileShell>
+    );
+  }
 
   return (
     <MobileShell className="bg-surface-gray">

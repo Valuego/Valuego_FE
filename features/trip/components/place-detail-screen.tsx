@@ -54,6 +54,7 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
   const typeStyle = getPlaceTypeStyle(place?.placeType);
   const vote = voteQuery.data;
   const [commentDraft, setCommentDraft] = useState('');
+  const isOngoing = trip?.phase === 'ongoing' || trip?.phase === 'settling';
 
   const handleVote = (voteStatus: PlaceVoteStatus) => {
     void toggleVote.mutateAsync(voteStatus);
@@ -199,23 +200,21 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
         </section>
       </div>
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/games`)}>
-          게임 하러가기
-        </Button>
+        {isOngoing ? (
+          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/games`)}>
+            게임 하러가기
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           fullWidth
           onClick={() =>
             router.push(
-              trip
-                ? trip.phase === 'ongoing' || trip.phase === 'settling'
-                  ? `/trips/${trip.id}`
-                  : `/trips/${trip.id}/schedule`
-                : `/trips/${tripId}/schedule`,
+              trip ? (isOngoing ? `/trips/${trip.id}` : `/trips/${trip.id}/schedule`) : `/trips/${tripId}/schedule`,
             )
           }
         >
-          {trip?.phase === 'ongoing' || trip?.phase === 'settling' ? '여행 중 홈으로' : '일정으로'}
+          {isOngoing ? '여행 중 홈으로' : '일정으로'}
         </Button>
       </div>
     </MobileShell>
