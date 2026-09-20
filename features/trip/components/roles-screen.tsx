@@ -66,7 +66,12 @@ export const RolesScreen = ({ tripId }: RolesScreenProps) => {
                         selected ? 'bg-brand-blue text-white' : 'bg-surface-gray text-ink-900'
                       }`}
                     >
-                      <Avatar member={member.member} size="sm" className="size-5 text-[9px]" />
+                      <Avatar
+                        member={member.member}
+                        size="sm"
+                        initial={member.name.slice(0, 1)}
+                        className="size-5 text-[9px]"
+                      />
                       {member.name}
                     </button>
                   );

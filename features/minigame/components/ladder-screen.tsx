@@ -71,7 +71,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
           className="absolute top-3.5 -translate-x-1/2"
           style={{ left: `${columnPct(index, colCount)}%` }}
         >
-          <Avatar member={member.key} size="sm" className="size-[33px] text-[9px]" />
+          <Avatar member={member.key} size="sm" initial={member.initial} className="size-[33px] text-[9px]" />
         </div>
       ))}
 

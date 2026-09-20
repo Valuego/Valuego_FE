@@ -52,9 +52,15 @@ export const ParticipantNameFields = ({ names, onChangeName, className }: Partic
     <ul className={cn('flex flex-col gap-2.5', className)}>
       {names.map((name, index) => {
         const member = MINIGAME_MEMBERS[index % MINIGAME_MEMBERS.length];
+        const trimmedName = name.trim();
         return (
           <li key={member.key} className="flex h-[54px] items-center gap-2.5 rounded-[14px] bg-white p-3">
-            <Avatar member={member.key} size="sm" className="size-[30px] shrink-0 text-xs" />
+            <Avatar
+              member={member.key}
+              size="sm"
+              initial={trimmedName ? trimmedName.slice(0, 1) : undefined}
+              className="size-[30px] shrink-0 text-xs"
+            />
             <input
               type="text"
               value={name}
