@@ -51,7 +51,12 @@ export const GuestInviteLandingScreen = ({ code }: GuestInviteLandingScreenProps
     <MobileShell className="bg-white">
       <div className="flex flex-1 flex-col items-center justify-center px-5">
         <div className="flex w-full max-w-[340px] flex-col items-center gap-4">
-          <Avatar member={host?.member ?? 'doyeon'} size="md" className="size-10 text-base" />
+          <Avatar
+            member={host?.member ?? 'doyeon'}
+            size="md"
+            className="size-10 text-base"
+            initial={hostName.slice(0, 1)}
+          />
           <h1 className="text-ink-900 text-center text-xl font-bold tracking-[-0.4px]">{hostName}님이 초대했어요 💌</h1>
           <p className="text-text-secondary-soft text-sm font-medium">함께 떠날 여행 준비를 도와주세요</p>
           {summaryQuery.isError ? (

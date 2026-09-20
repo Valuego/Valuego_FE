@@ -108,7 +108,7 @@ export const scheduleDaySchema = z
   })
   .transform((day) => ({
     ...day,
-    travelDayId: day.travelDayId ?? day.dayNumber,
+    travelDayId: day.travelDayId ?? 0,
     places: day.places.map((place, placeIndex) => ({
       ...place,
       travelPlaceId: place.travelPlaceId > 0 ? place.travelPlaceId : day.dayNumber * 1000 + placeIndex + 1,
@@ -310,15 +310,15 @@ export const settlementSchema = z.object({
 });
 
 export const settlementRecapSchema = z.object({
-  groupId: z.coerce.number(),
-  groupTitle: z.string(),
-  groupPeriod: z.string(),
-  durationText: z.string(),
-  memberCount: z.number(),
-  totalDistance: z.string(),
-  totalExpenseAmount: z.coerce.number(),
-  gameResult: z.string(),
-  totalEffortAmount: z.coerce.number(),
+  groupId: z.coerce.number().optional().default(0),
+  groupTitle: z.string().optional().default(''),
+  groupPeriod: z.string().optional().default(''),
+  durationText: z.string().optional().default(''),
+  memberCount: z.coerce.number().optional().default(0),
+  totalDistance: z.string().optional().default('0km'),
+  totalExpenseAmount: z.coerce.number().optional().default(0),
+  gameResult: z.string().optional().default('진행한 게임 없음'),
+  totalEffortAmount: z.coerce.number().optional().default(0),
 });
 
 export const pastSettlementSchema = z.object({

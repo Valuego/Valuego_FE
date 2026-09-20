@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
+import { upsertLocalTrip } from '@/shared/session';
 
 import { useConfirmSettlement, useSettlementQuery, useTripView } from '../trip.hooks';
 import { parseGroupId } from '../trip.lib';
@@ -40,7 +41,17 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
   }
 
   const settlement = settlementQuery.data;
+  const hasConfirmed = Boolean(settlement?.isConfirmed || trip.settlementConfirmed || confirmSettlement.isSuccess);
   const findMember = (memberId: number) => trip.members.find((member) => Number(member.id) === memberId);
+
+  const handleConfirm = async () => {
+    try {
+      await confirmSettlement.mutateAsync();
+      upsertLocalTrip({ ...trip, settlementConfirmed: true });
+    } catch {
+      // mutation error is rendered below
+    }
+  };
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -140,15 +151,15 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
           variant="outline"
           fullWidth
           className="border-brand-blue text-brand-blue border-[1.5px]"
-          disabled={confirmSettlement.isPending || Boolean(settlement?.isConfirmed)}
-          onClick={() => confirmSettlement.mutate()}
+          disabled={confirmSettlement.isPending || hasConfirmed}
+          onClick={() => void handleConfirm()}
         >
-          {settlement?.isConfirmed ? '확인 완료' : confirmSettlement.isPending ? '확인하는 중…' : '확인하기'}
+          {hasConfirmed ? '확인 완료' : confirmSettlement.isPending ? '확인하는 중…' : '확인하기'}
         </Button>
         <Button
           variant="primary"
           fullWidth
-          disabled={!settlement?.isConfirmed}
+          disabled={!hasConfirmed}
           onClick={() => router.push(`/trips/${tripId}/settlement/recap`)}
         >
           리캡 카드 보기

@@ -201,7 +201,8 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     setPlaceError(null);
     try {
       if (sheetMode.type === 'add') {
-        if (!activeDay) {
+        if (!activeDay?.travelDayId) {
+          setPlaceError('일정 정보를 다시 불러온 뒤 장소를 추가해 주세요.');
           return;
         }
         await createPlace.mutateAsync({
@@ -227,9 +228,14 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     }
   };
 
-  const handleDeletePlace = (travelPlaceId: number) => {
+  const handleDeletePlace = async (travelPlaceId: number) => {
     setOpenMenuId(null);
-    deletePlace.mutate(travelPlaceId);
+    setPlaceError(null);
+    try {
+      await deletePlace.mutateAsync(travelPlaceId);
+    } catch (error) {
+      setPlaceError(getErrorMessage(error, '장소를 삭제하지 못했어요.'));
+    }
   };
 
   const handleBack = () => {
@@ -327,17 +333,23 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
         {errorMessage ? <p className="text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
 
         {activeDay ? (
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-3 overflow-visible">
             {activeDay.places.map((place, placeIndex) => {
               const typeStyle = getPlaceTypeStyle(place.placeType);
               const vote = voteQueries[placeIndex]?.data;
               const hasVotes = Boolean(vote && (vote.likeCount > 0 || vote.dislikeCount > 0));
               return (
-                <li key={place.travelPlaceId} className="relative flex items-start gap-2.5">
+                <li
+                  key={place.travelPlaceId}
+                  className={cn(
+                    'relative flex items-start gap-2.5 overflow-visible',
+                    openMenuId === place.travelPlaceId && 'z-20',
+                  )}
+                >
                   <p className="text-text-secondary-soft w-[38px] shrink-0 pt-0.5 text-right text-[11.5px] leading-4 font-bold">
                     {formatVisitTime(place.visitTime)}
                   </p>
-                  <div className="relative min-w-0 flex-1">
+                  <div className="relative min-w-0 flex-1 overflow-visible">
                     <button
                       type="button"
                       className="border-line-hairline flex w-full min-w-0 gap-3 rounded-[14px] border bg-white px-3.5 py-[13px] text-left"
@@ -398,39 +410,41 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                       </div>
                     </button>
                     {canManagePlaces ? (
-                      <button
-                        type="button"
-                        aria-label="장소 메뉴"
-                        className="absolute top-[16px] right-[14px] flex size-[18px] items-center justify-center"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setOpenMenuId((current) => (current === place.travelPlaceId ? null : place.travelPlaceId));
-                        }}
-                      >
-                        <EllipsisVerticalIcon className="size-[18px]" aria-hidden />
-                      </button>
-                    ) : null}
-                    {openMenuId === place.travelPlaceId ? (
-                      <div
-                        className="absolute top-11 right-2 z-10 flex min-w-[168px] flex-col overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0px_8px_24px_rgba(23,23,25,0.16)]"
-                        onClick={(event) => event.stopPropagation()}
-                      >
+                      <div className="absolute top-[16px] right-[14px] z-20">
                         <button
                           type="button"
-                          className="flex h-12 w-full items-center justify-between rounded-lg px-3.5 text-left text-[15px] text-[#111827]"
-                          onClick={() => openEditSheet(place)}
+                          aria-label="장소 메뉴"
+                          className="flex size-[18px] items-center justify-center"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setOpenMenuId((current) => (current === place.travelPlaceId ? null : place.travelPlaceId));
+                          }}
                         >
-                          수정
-                          <EditIcon aria-hidden />
+                          <EllipsisVerticalIcon className="size-[18px]" aria-hidden />
                         </button>
-                        <button
-                          type="button"
-                          className="flex h-12 w-full items-center justify-between rounded-lg px-3.5 text-left text-[15px] text-[#111827]"
-                          onClick={() => handleDeletePlace(place.travelPlaceId)}
-                        >
-                          삭제
-                          <TrashIcon aria-hidden />
-                        </button>
+                        {openMenuId === place.travelPlaceId ? (
+                          <div
+                            className="absolute top-full right-0 z-30 mt-1 flex min-w-[160px] flex-col rounded-lg border border-[#e5e7eb] bg-white p-2 shadow-[0px_8px_24px_rgba(23,23,25,0.16)]"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                              onClick={() => openEditSheet(place)}
+                            >
+                              수정
+                              <EditIcon className="size-5" aria-hidden />
+                            </button>
+                            <button
+                              type="button"
+                              className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                              onClick={() => void handleDeletePlace(place.travelPlaceId)}
+                            >
+                              삭제
+                              <TrashIcon className="size-5" aria-hidden />
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
