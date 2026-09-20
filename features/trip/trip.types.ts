@@ -188,6 +188,32 @@ export type PlaceBlogReviews = {
   reviews: PlaceBlogPost[];
 };
 
+export type AiScheduleUpdateRequest = {
+  groupId: number;
+  dayNum: number;
+  prompt: string;
+};
+
+export type AiOriginalPlace = {
+  contentId?: string;
+  visitTime?: string;
+  placeName?: string;
+};
+
+export type AiSuggestedPlace = {
+  contentId?: string;
+  visitTime?: string;
+  placeType?: string;
+  reason?: string;
+};
+
+export type AiScheduleSuggestion = {
+  summaryTitle?: string;
+  dayNumber: number;
+  originalPlace?: AiOriginalPlace;
+  newPlaces: AiSuggestedPlace[];
+};
+
 export type LeaderGroupSummary = {
   groupId: number;
   title: string;

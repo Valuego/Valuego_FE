@@ -3,6 +3,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { apiRequest } from '@/shared/lib/api';
 
 import type {
+  AiScheduleSuggestion,
   CreateCommentRequest,
   CreateEffortItemRequest,
   CreateEffortRequest,
@@ -38,6 +39,7 @@ import type {
 } from './trip.types';
 
 import {
+  aiScheduleSuggestionSchema,
   effortInfoSchema,
   effortItemListSchema,
   effortItemSchema,
@@ -156,6 +158,27 @@ export const generateAiSchedule = async (groupId: number): Promise<TravelSchedul
     signal: AbortSignal.timeout(AI_SCHEDULE_TIMEOUT_MS),
   });
   return travelScheduleSchema.parse(data);
+};
+
+export const suggestAiScheduleUpdate = async (body: {
+  groupId: number;
+  dayNum: number;
+  prompt: string;
+}): Promise<AiScheduleSuggestion> => {
+  const data = await apiRequest<AiScheduleSuggestion>('/schedules/ai/suggest', {
+    method: 'POST',
+    body,
+    signal: AbortSignal.timeout(AI_SCHEDULE_TIMEOUT_MS),
+  });
+  return aiScheduleSuggestionSchema.parse(data);
+};
+
+export const applyAiScheduleUpdate = async (groupId: number, suggestion: AiScheduleSuggestion): Promise<void> => {
+  await apiRequest(`/schedules/ai/apply?groupId=${groupId}`, {
+    method: 'POST',
+    body: suggestion,
+    signal: AbortSignal.timeout(AI_SCHEDULE_TIMEOUT_MS),
+  });
 };
 
 export const getSchedule = async (groupId: number): Promise<TravelSchedule> => {

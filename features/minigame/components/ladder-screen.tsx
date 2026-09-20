@@ -32,9 +32,6 @@ const columnPct = (index: number, count: number) => {
   return 11.6 + ((86.2 - 11.6) * index) / (count - 1);
 };
 
-const avatarPct = (index: number, count: number) => columnPct(index, count) - 4.6;
-const resultPct = (index: number, count: number) => columnPct(index, count) - 6.6;
-
 const traceLadder = (startCol: number, colCount: number, rungs: readonly { fromCol: number; y: number }[]) => {
   let col = startCol;
   const sorted = [...rungs].filter((r) => r.fromCol < colCount - 1).sort((a, b) => a.y - b.y);
@@ -69,7 +66,11 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
   return (
     <div className="border-line-hairline relative h-[340px] w-full overflow-hidden rounded-[18px] border bg-white">
       {members.map((member, index) => (
-        <div key={member.id} className="absolute top-3.5" style={{ left: `${avatarPct(index, colCount)}%` }}>
+        <div
+          key={member.id}
+          className="absolute top-3.5 -translate-x-1/2"
+          style={{ left: `${columnPct(index, colCount)}%` }}
+        >
           <Avatar member={member.key} size="sm" className="size-[33px] text-[9px]" />
         </div>
       ))}
@@ -78,7 +79,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
         {Array.from({ length: colCount }, (_, col) => (
           <div
             key={`v-base-${col}`}
-            className="absolute top-0 h-full w-1 rounded-sm bg-[rgba(255,146,0,0.35)]"
+            className="absolute top-0 h-full w-1 -translate-x-1/2 rounded-sm bg-[rgba(255,146,0,0.35)]"
             style={{ left: `${columnPct(col, colCount)}%` }}
           />
         ))}
@@ -91,8 +92,8 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
               key={`h-base-${rung.fromCol}-${rung.y}`}
               className="absolute h-[5px] rounded-sm bg-[rgba(255,146,0,0.35)]"
               style={{
-                left: `calc(${left}% + 2px)`,
-                width: `calc(${right - left}% - 2px)`,
+                left: `${left}%`,
+                width: `${right - left}%`,
                 top: `${rung.y * 100}%`,
               }}
             />
@@ -102,7 +103,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
         {path?.pathVerticals.map((seg) => (
           <div
             key={`v-path-${seg.col}-${seg.y0}-${seg.y1}`}
-            className="absolute w-1 rounded-sm bg-[#ff9200]"
+            className="absolute w-1 -translate-x-1/2 rounded-sm bg-[#ff9200]"
             style={{
               left: `${columnPct(seg.col, colCount)}%`,
               top: `${seg.y0 * 100}%`,
@@ -119,8 +120,8 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
               key={`h-path-${rung.fromCol}-${rung.y}`}
               className="absolute h-[5px] rounded-sm bg-[#ff9200]"
               style={{
-                left: `calc(${left}% + 2px)`,
-                width: `calc(${right - left}% - 2px)`,
+                left: `${left}%`,
+                width: `${right - left}%`,
                 top: `${rung.y * 100}%`,
               }}
             />
@@ -134,10 +135,10 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
           <div
             key={`result-${member.id}`}
             className={cn(
-              'absolute top-[295px] rounded-full px-2 py-[5px]',
+              'absolute top-[295px] -translate-x-1/2 rounded-full px-2 py-[5px]',
               isBang ? 'bg-[rgba(255,146,0,0.15)]' : 'bg-[rgba(112,115,132,0.08)]',
             )}
-            style={{ left: `${resultPct(index, colCount)}%` }}
+            style={{ left: `${columnPct(index, colCount)}%` }}
           >
             <p
               className={cn(

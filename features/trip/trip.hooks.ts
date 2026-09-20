@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
 import type {
+  AiScheduleSuggestion,
   CreateCommentRequest,
   CreateEffortItemRequest,
   CreateEffortRequest,
@@ -20,6 +21,7 @@ import type {
 } from './trip.types';
 
 import {
+  applyAiScheduleUpdate,
   confirmSchedule,
   confirmSettlement,
   createCustomPlace,
@@ -50,6 +52,7 @@ import {
   settlementQueryOptions,
   settlementRecapQueryOptions,
   styleCardQueryOptions,
+  suggestAiScheduleUpdate,
   togglePlaceVote,
   tripQueryKeys,
   updatePlace,
@@ -265,6 +268,23 @@ export const useGenerateAiSchedule = (groupId: number) => {
     mutationFn: () => generateAiSchedule(groupId),
     onSuccess: (schedule) => {
       queryClient.setQueryData(tripQueryKeys.schedule(groupId), schedule);
+    },
+  });
+};
+
+export const useSuggestAiScheduleUpdate = (groupId: number) => {
+  return useMutation({
+    mutationFn: (input: { dayNum: number; prompt: string }) => suggestAiScheduleUpdate({ groupId, ...input }),
+  });
+};
+
+export const useApplyAiScheduleUpdate = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (suggestion: AiScheduleSuggestion) => applyAiScheduleUpdate(groupId, suggestion),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.schedule(groupId) });
     },
   });
 };

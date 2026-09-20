@@ -18,6 +18,22 @@ const shouldSkipAuthRetry = (path: string, skipAuthRetry?: boolean) => {
   return Boolean(skipAuthRetry) || AUTH_RETRY_SKIP_PREFIXES.some((prefix) => path.startsWith(prefix));
 };
 
+// 페이지를 새로 열면 여러 쿼리가 동시에 401/403을 받는데, 각자 /login/reissue를 따로 호출하면
+// 리프레시 토큰이 1회용일 때 먼저 도착한 요청만 성공하고 나머지는 재발급에 실패해 원래 요청이 빈 데이터로 끝난다.
+// 진행 중인 재발급 요청을 공유해서 동시 요청 모두 같은 결과를 기다리게 한다.
+let reissuePromise: Promise<void> | null = null;
+
+const reissueAccessToken = (): Promise<void> => {
+  if (!reissuePromise) {
+    reissuePromise = apiRequest('/login/reissue', { method: 'POST', skipAuthRetry: true })
+      .then(() => undefined)
+      .finally(() => {
+        reissuePromise = null;
+      });
+  }
+  return reissuePromise;
+};
+
 const parseResponse = async <T>(res: Response): Promise<T> => {
   if (res.type === 'opaqueredirect' || res.status === 0) {
     throw new ApiError(502, '로그인 상태를 확인하지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -84,7 +100,7 @@ export const apiRequest = async <T>(path: string, options: ApiRequestOptions = {
   // refreshToken도 없거나 진짜 권한 없음(403)이면 재발급이 실패해 원래 응답이 그대로 유지된다.
   if ((res.status === 401 || res.status === 403) && !shouldSkipAuthRetry(path, skipAuthRetry)) {
     try {
-      await apiRequest('/login/reissue', { method: 'POST', skipAuthRetry: true });
+      await reissueAccessToken();
       res = await fetch(url, init);
     } catch {
       // 재발급 실패 시 원래 401 응답을 그대로 처리한다.

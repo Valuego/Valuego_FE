@@ -187,6 +187,38 @@ export const placeBlogReviewsSchema = z.object({
     .transform((value) => value ?? []),
 });
 
+const nullishOptional = () =>
+  z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined);
+
+export const aiOriginalPlaceSchema = z.object({
+  contentId: nullishOptional(),
+  visitTime: nullishOptional(),
+  placeName: nullishOptional(),
+});
+
+export const aiSuggestedPlaceSchema = z.object({
+  contentId: nullishOptional(),
+  visitTime: nullishOptional(),
+  placeType: nullishOptional(),
+  reason: nullishOptional(),
+});
+
+export const aiScheduleSuggestionSchema = z.object({
+  summaryTitle: nullishOptional(),
+  dayNumber: z
+    .number()
+    .nullish()
+    .transform((value) => value ?? 1),
+  originalPlace: aiOriginalPlaceSchema.nullish().transform((value) => value ?? undefined),
+  newPlaces: z
+    .array(aiSuggestedPlaceSchema)
+    .nullish()
+    .transform((value) => value ?? []),
+});
+
 export const leaderGroupSummarySchema = z.object({
   groupId: z.coerce.number(),
   title: z.string(),

@@ -61,7 +61,12 @@ export const RouletteWheel = ({ participants, rotation, spinning, spinMs }: Roul
 
           return (
             <g key={participant.id}>
-              <path d={segmentPath(startDeg, endDeg)} fill={color} stroke="white" strokeWidth={2} />
+              {/* 참가자가 1명이면 시작각과 끝각이 같아 부채꼴 path가 길이 0으로 사라지므로 원으로 그린다 */}
+              {count === 1 ? (
+                <circle cx={CENTER} cy={CENTER} r={RADIUS} fill={color} stroke="white" strokeWidth={2} />
+              ) : (
+                <path d={segmentPath(startDeg, endDeg)} fill={color} stroke="white" strokeWidth={2} />
+              )}
               <text
                 x={label.x}
                 y={label.y}

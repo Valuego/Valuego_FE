@@ -23,10 +23,12 @@ import type { ScheduleDay, SchedulePlace } from '../trip.types';
 import { placeVoteQueryOptions } from '../trip.api';
 import {
   rememberActiveTrip,
+  useApplyAiScheduleUpdate,
   useConfirmSchedule,
   useCreatePlace,
   useDeletePlace,
   useScheduleQuery,
+  useSuggestAiScheduleUpdate,
   useTripView,
   useUpdatePlace,
 } from '../trip.hooks';
@@ -81,12 +83,15 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const createPlace = useCreatePlace(groupId);
   const updatePlace = useUpdatePlace(groupId);
   const deletePlace = useDeletePlace(groupId);
+  const suggestAiUpdate = useSuggestAiScheduleUpdate(groupId);
+  const applyAiUpdate = useApplyAiScheduleUpdate(groupId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [editing, setEditing] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [sheetMode, setSheetMode] = useState<{ type: 'add' } | { type: 'edit'; place: SchedulePlace } | null>(null);
   const [formValue, setFormValue] = useState<PlaceFormValue>(EMPTY_FORM);
   const [placeError, setPlaceError] = useState<string | null>(null);
+  const [aiSheetOpen, setAiSheetOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   const redirectedRef = useRef(false);
 
   useEffect(() => {
@@ -168,6 +173,39 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
       router.replace(buildTripHref(tripId));
     } catch (error) {
       setPlaceError(getErrorMessage(error, '일정을 확정하지 못했어요.'));
+    }
+  };
+
+  const openAiSheet = () => {
+    setAiPrompt('');
+    suggestAiUpdate.reset();
+    applyAiUpdate.reset();
+    setAiSheetOpen(true);
+  };
+
+  const closeAiSheet = () => {
+    setAiSheetOpen(false);
+    setAiPrompt('');
+    suggestAiUpdate.reset();
+    applyAiUpdate.reset();
+  };
+
+  const handleSuggestAiUpdate = () => {
+    if (!activeDay || !aiPrompt.trim() || suggestAiUpdate.isPending) {
+      return;
+    }
+    suggestAiUpdate.mutate({ dayNum: activeDay.dayNumber, prompt: aiPrompt.trim() });
+  };
+
+  const handleApplyAiUpdate = async () => {
+    if (!suggestAiUpdate.data) {
+      return;
+    }
+    try {
+      await applyAiUpdate.mutateAsync(suggestAiUpdate.data);
+      closeAiSheet();
+    } catch {
+      // 에러 메시지는 아래 applyAiUpdate.isError 영역에서 그대로 보여준다.
     }
   };
 
@@ -478,42 +516,23 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
             {placeError && sheetMode === null ? (
               <p className="text-sm font-medium text-[#e08300]">{placeError}</p>
             ) : null}
-            {editing ? (
-              <div className="flex gap-2.5">
-                <Button
-                  variant="outline"
-                  className="border-brand-blue text-brand-blue w-[125px] shrink-0 border-[1.5px] px-3 text-base"
-                  onClick={() => {
-                    setEditing(false);
-                    closeSheet();
-                    setOpenMenuId(null);
-                  }}
-                >
-                  취소
-                </Button>
-                <Button variant="primary" className="min-w-0 flex-1 text-base" onClick={() => setEditing(false)}>
-                  저장하기
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2.5">
-                <Button
-                  variant="outline"
-                  className="border-brand-blue text-brand-blue min-w-0 flex-1 border-[1.5px] px-3 text-base"
-                  onClick={() => setEditing(true)}
-                >
-                  일정 수정
-                </Button>
-                <Button
-                  variant="primary"
-                  className="min-w-0 flex-1 px-3 text-base"
-                  disabled={days.length === 0 || confirmSchedule.isPending}
-                  onClick={() => void handleConfirm()}
-                >
-                  {confirmSchedule.isPending ? '확정하는 중…' : '이 일정으로 확정'}
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2.5">
+              <Button
+                variant="outline"
+                className="border-brand-blue text-brand-blue min-w-0 flex-1 border-[1.5px] px-3 text-base"
+                onClick={openAiSheet}
+              >
+                일정 수정
+              </Button>
+              <Button
+                variant="primary"
+                className="min-w-0 flex-1 px-3 text-base"
+                disabled={days.length === 0 || confirmSchedule.isPending}
+                onClick={() => void handleConfirm()}
+              >
+                {confirmSchedule.isPending ? '확정하는 중…' : '이 일정으로 확정'}
+              </Button>
+            </div>
           </>
         ) : isGuest ? (
           <Button
@@ -578,6 +597,87 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
               onClick={() => void handleSubmitPlace()}
             >
               {createPlace.isPending || updatePlace.isPending ? '저장하는 중…' : '저장하기'}
+            </Button>
+          </div>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={aiSheetOpen}
+        title="어떻게 바꿔드릴까요?"
+        onOpenChange={(open) => {
+          if (!open) {
+            closeAiSheet();
+          }
+        }}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex items-end gap-2">
+            <TextField
+              label="요청 내용"
+              containerClassName="flex-1"
+              value={aiPrompt}
+              placeholder="예: 오후 스케줄을 더 느긋하게"
+              maxLength={200}
+              onChange={(event) => setAiPrompt(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="전송"
+              className="bg-button-primary-fill flex size-11 shrink-0 items-center justify-center rounded-full text-lg text-white disabled:opacity-50"
+              disabled={!aiPrompt.trim() || suggestAiUpdate.isPending}
+              onClick={handleSuggestAiUpdate}
+            >
+              {suggestAiUpdate.isPending ? '…' : '➤'}
+            </button>
+          </div>
+
+          {suggestAiUpdate.isError ? (
+            <p className="text-sm font-medium text-[#e08300]">
+              {getErrorMessage(suggestAiUpdate.error, 'AI 제안을 만들지 못했어요.')}
+            </p>
+          ) : null}
+
+          {suggestAiUpdate.data ? (
+            <div className="rounded-2xl bg-[rgba(51,102,255,0.05)] p-4">
+              <p className="text-brand-blue text-sm font-bold">
+                AI 제안{suggestAiUpdate.data.summaryTitle ? ` - ${suggestAiUpdate.data.summaryTitle}` : ''}
+              </p>
+              {suggestAiUpdate.data.originalPlace ? (
+                <p className="text-text-secondary-soft mt-2 text-[13px] font-medium line-through">
+                  {suggestAiUpdate.data.originalPlace.visitTime ?? ''}{' '}
+                  {suggestAiUpdate.data.originalPlace.placeName ?? ''}
+                </p>
+              ) : null}
+              <ul className="mt-1 flex flex-col gap-1">
+                {suggestAiUpdate.data.newPlaces.map((place, index) => (
+                  <li key={place.contentId ?? index} className="text-ink-900 text-[13.5px] font-medium">
+                    → {place.visitTime ? `${place.visitTime} · ` : ''}
+                    {place.placeType ?? '일정'}
+                    {place.reason ? ` (${place.reason})` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {applyAiUpdate.isError ? (
+            <p className="text-sm font-medium text-[#e08300]">
+              {getErrorMessage(applyAiUpdate.error, '일정에 반영하지 못했어요.')}
+            </p>
+          ) : null}
+
+          <div className="flex gap-2.5">
+            <Button variant="outline" className="min-w-0 flex-1" onClick={closeAiSheet}>
+              초안 유지
+            </Button>
+            <Button
+              variant="primary"
+              className="min-w-0 flex-1"
+              disabled={!suggestAiUpdate.data || applyAiUpdate.isPending}
+              onClick={() => void handleApplyAiUpdate()}
+            >
+              {applyAiUpdate.isPending ? '반영하는 중…' : '이걸로 반영하기'}
             </Button>
           </div>
         </div>
