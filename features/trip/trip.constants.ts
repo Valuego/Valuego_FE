@@ -79,6 +79,8 @@ export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {
           address: '부산 해운대구',
           placeType: '관광',
           reason: '첫날 바다를 보고 숨을 고르는 코스',
+          latitude: 35.1586,
+          longitude: 129.1603,
         },
         {
           travelPlaceId: 9002,
@@ -87,6 +89,8 @@ export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {
           address: '부산 수영구',
           placeType: '식사',
           reason: '이동이 짧고 다 같이 먹기 좋은 점심',
+          latitude: 35.1532,
+          longitude: 129.1186,
         },
         {
           travelPlaceId: 9003,
@@ -95,6 +99,8 @@ export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {
           address: '부산 사하구',
           placeType: '관광',
           reason: '사진 찍기 좋은 골목 산책',
+          latitude: 35.0975,
+          longitude: 129.0106,
         },
       ],
     },

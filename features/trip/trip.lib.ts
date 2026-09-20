@@ -136,6 +136,25 @@ export const destinationFromLabel = (label: string): Destination => {
 
 export const destinationToLabel = (destination: Destination) => DESTINATION_LABEL[destination];
 
+const DESTINATION_MAP_CENTER: Record<string, { lat: number; lng: number }> = {
+  부산: { lat: 35.1796, lng: 129.0756 },
+  BUSAN: { lat: 35.1796, lng: 129.0756 },
+  강릉: { lat: 37.7519, lng: 128.8761 },
+  GANGNEUNG: { lat: 37.7519, lng: 128.8761 },
+  경주: { lat: 35.8562, lng: 129.2247 },
+  GYEONGJU: { lat: 35.8562, lng: 129.2247 },
+  여수: { lat: 34.7604, lng: 127.6622 },
+  YEOSU: { lat: 34.7604, lng: 127.6622 },
+  전주: { lat: 35.8242, lng: 127.148 },
+  JEONJU: { lat: 35.8242, lng: 127.148 },
+  속초: { lat: 38.207, lng: 128.5918 },
+  SOKCHO: { lat: 38.207, lng: 128.5918 },
+};
+
+export const getDestinationMapCenter = (destination?: string) => {
+  return DESTINATION_MAP_CENTER[destination ?? '부산'] ?? { lat: 35.1796, lng: 129.0756 };
+};
+
 export const transportFromUi = (transport: Transport): TransportType => {
   return transport === 'transit' ? 'PUBLIC' : 'RENT';
 };

@@ -46,6 +46,14 @@ export const styleInfoSchema = z.object({
   activityIntensity: z.number(),
 });
 
+const coordSchema = z.preprocess((value) => {
+  if (value === '' || value == null) {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}, z.number().nullable().optional());
+
 export const schedulePlaceSchema = z.object({
   travelPlaceId: z.coerce.number(),
   contentId: z.string().nullable().optional(),
@@ -53,8 +61,8 @@ export const schedulePlaceSchema = z.object({
   name: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),
-  latitude: z.number().nullable().optional(),
-  longitude: z.number().nullable().optional(),
+  latitude: coordSchema,
+  longitude: coordSchema,
   scheduleOrder: z.number().nullable().optional(),
   placeType: z.string().nullable().optional(),
   reason: z.string().nullable().optional(),

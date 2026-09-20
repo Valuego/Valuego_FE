@@ -34,6 +34,7 @@ import {
   formatDayChipDate,
   formatScheduleSummary,
   formatVisitTime,
+  getDestinationMapCenter,
   getPlaceTypeStyle,
   isHostStyleComplete,
   isScheduleNotFound,
@@ -72,6 +73,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const updatePlace = useUpdatePlace(groupId);
   const deletePlace = useDeletePlace(groupId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [editing, setEditing] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [sheetMode, setSheetMode] = useState<{ type: 'add' } | { type: 'edit'; place: SchedulePlace } | null>(null);
   const [formValue, setFormValue] = useState<PlaceFormValue>(EMPTY_FORM);
@@ -88,12 +90,13 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const voteQueries = useQueries({
     queries: (activeDay?.places ?? []).map((place) => placeVoteQueryOptions(place.travelPlaceId)),
   });
-  const mapPlaces = (activeDay?.places ?? [])
-    .filter(
-      (place): place is SchedulePlace & { latitude: number; longitude: number } =>
-        typeof place.latitude === 'number' && typeof place.longitude === 'number',
-    )
-    .map((place) => ({ id: place.travelPlaceId, lat: place.latitude, lng: place.longitude }));
+  const mapPlaces = (activeDay?.places ?? []).map((place) => ({
+    id: place.travelPlaceId,
+    lat: place.latitude,
+    lng: place.longitude,
+    name: place.name,
+    address: place.address,
+  }));
 
   const notFound =
     days.length === 0 &&
@@ -102,7 +105,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const totalDistance = activeDay?.totalDistanceKm;
   const isHost = !isGuest;
   const isConfirmable = isHost && trip?.phase !== 'ongoing' && trip?.phase !== 'settling' && trip?.phase !== 'settled';
-  const canEditPlaces = Boolean(isConfirmable && activeDay);
+  const canEditPlaces = Boolean(isConfirmable && activeDay && editing);
 
   useEffect(() => {
     if (redirectedRef.current || isGuest || isTripLoading || scheduleQuery.isPending || !trip) {
@@ -290,8 +293,12 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
           </p>
         ) : null}
 
-        {activeDay && mapPlaces.length > 0 ? (
-          <KakaoMap places={mapPlaces} badge={`Day ${activeDay.dayNumber} · 경유지 ${mapPlaces.length}곳`} />
+        {activeDay ? (
+          <KakaoMap
+            places={mapPlaces}
+            badge={`Day ${activeDay.dayNumber} · 경유지 ${activeDay.places.length}곳`}
+            fallbackCenter={getDestinationMapCenter(trip?.destination)}
+          />
         ) : null}
 
         {isGuest && notFound ? (
