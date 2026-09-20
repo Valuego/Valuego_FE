@@ -108,11 +108,20 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
             )}
             <div className="flex flex-col gap-2 px-[18px] py-4">
               <div className="flex items-center gap-2">
-                <h2 className="text-ink-900 flex-1 text-[18px] font-bold">{place.name ?? '장소 정보 없음'}</h2>
-                <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', typeStyle.pillClassName)}>
+                <h2 className="text-ink-900 min-w-0 flex-1 truncate text-[18px] font-bold">
+                  {place.name ?? '장소 정보 없음'}
+                </h2>
+                <span
+                  className={cn('shrink-0 rounded-full px-2.5 py-[5px] text-xs font-medium', typeStyle.pillClassName)}
+                >
                   {typeStyle.label}
                 </span>
               </div>
+              {blogQuery.data?.totalCount ? (
+                <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">
+                  리뷰 {blogQuery.data.totalCount.toLocaleString('ko-KR')}개
+                </p>
+              ) : null}
               <p className="text-text-secondary-soft text-sm font-medium">
                 {formatVisitTime(place.visitTime)}
                 {place.address ? ` · ${place.address}` : ''}
@@ -128,10 +137,14 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
         ) : null}
 
         <section className="border-line-hairline rounded-2xl border bg-white p-[18px]">
-          <p className="text-ink-900 text-sm font-bold">이 경유지 어때요?</p>
-          <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
-            좋아요/별로예요로 의견을 남겨 주세요.
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-ink-900 text-[16px] font-bold tracking-[-0.2px]">이 경유지, 어때요?</p>
+            {vote ? (
+              <span className="rounded-full bg-[rgba(51,102,255,0.08)] px-2.5 py-1 text-[11px] font-bold text-[#3366ff]">
+                {vote.totalParticipantCount}/{vote.totalGroupMemberCount} 참여
+              </span>
+            ) : null}
+          </div>
           <div className="mt-4 flex gap-2">
             <button
               type="button"
@@ -144,20 +157,20 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               disabled={toggleVote.isPending}
               onClick={() => handleVote('LIKE')}
             >
-              👍 좋아요 {vote ? vote.likeCount : ''}
+              👍 좋아요
             </button>
             <button
               type="button"
               className={cn(
                 'flex h-12 flex-1 items-center justify-center rounded-xl text-sm font-bold',
                 vote?.voteStatus === 'DISLIKE'
-                  ? 'bg-element-error text-white'
+                  ? 'bg-[#ff4242] text-white'
                   : 'border-line-hairline text-ink-900 border bg-white',
               )}
               disabled={toggleVote.isPending}
               onClick={() => handleVote('DISLIKE')}
             >
-              👎 별로예요 {vote ? vote.dislikeCount : ''}
+              👎 별로예요
             </button>
           </div>
           {toggleVote.isError ? (
@@ -200,7 +213,12 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
         ) : null}
 
         <section className="border-line-hairline rounded-2xl border bg-white p-[18px]">
-          <p className="text-ink-900 text-sm font-bold">의견 {commentsQuery.data?.commentCount ?? ''}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-ink-900 text-sm font-bold">멤버 의견</p>
+            <span className="text-text-secondary-soft text-[12.5px] font-medium">
+              {commentsQuery.data?.commentCount ?? 0}
+            </span>
+          </div>
           {commentsQuery.data?.comments.length ? (
             <ul className="mt-3 flex flex-col gap-3">
               {commentsQuery.data.comments.map((comment) => (
@@ -215,16 +233,16 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
           )}
           <div className="mt-4 flex items-end gap-2">
             <TextField
-              label="의견 남기기"
+              label="한줄 의견"
               containerClassName="flex-1"
-              placeholder="이 경유지에 대한 의견을 남겨 주세요"
+              placeholder="한줄 의견 남기기"
               value={commentDraft}
               onChange={(event) => setCommentDraft(event.target.value)}
               maxLength={500}
             />
             <Button
               variant="primary"
-              className="self-end"
+              className="h-14 self-end px-5"
               disabled={!commentDraft.trim() || createComment.isPending}
               onClick={() => void handleSubmitComment()}
             >

@@ -82,7 +82,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const updatePlace = useUpdatePlace(groupId);
   const deletePlace = useDeletePlace(groupId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [editing, setEditing] = useState(true);
+  const [editing, setEditing] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [sheetMode, setSheetMode] = useState<{ type: 'add' } | { type: 'edit'; place: SchedulePlace } | null>(null);
   const [formValue, setFormValue] = useState<PlaceFormValue>(EMPTY_FORM);
@@ -114,7 +114,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const totalDistance = activeDay?.totalDistanceKm;
   const isHost = !isGuest;
   const isConfirmable = isHost && trip?.phase !== 'ongoing' && trip?.phase !== 'settling' && trip?.phase !== 'settled';
-  const canEditPlaces = Boolean(isConfirmable && activeDay && editing);
+  const canManagePlaces = Boolean(isConfirmable && activeDay);
 
   useEffect(() => {
     if (redirectedRef.current || isGuest || isTripLoading || scheduleQuery.isPending || !trip) {
@@ -302,7 +302,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
         ) : null}
 
         {activeDay ? (
-          <p className="text-ink-900 text-center text-sm font-medium">
+          <p className="text-ink-900 text-center text-sm leading-[1.5] font-medium">
             {formatScheduleSummary(activeDay.places.length, trip?.transport ?? 'car', totalDistance)}
           </p>
         ) : null}
@@ -331,15 +331,16 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
             {activeDay.places.map((place, placeIndex) => {
               const typeStyle = getPlaceTypeStyle(place.placeType);
               const vote = voteQueries[placeIndex]?.data;
+              const hasVotes = Boolean(vote && (vote.likeCount > 0 || vote.dislikeCount > 0));
               return (
                 <li key={place.travelPlaceId} className="relative flex items-start gap-2.5">
-                  <p className="text-text-secondary-soft w-[38px] shrink-0 pt-4 text-right text-[11.5px] font-bold">
+                  <p className="text-text-secondary-soft w-[38px] shrink-0 pt-0.5 text-right text-[11.5px] leading-4 font-bold">
                     {formatVisitTime(place.visitTime)}
                   </p>
                   <div className="relative min-w-0 flex-1">
                     <button
                       type="button"
-                      className="border-line-hairline flex w-full min-w-0 gap-3 rounded-[14px] border bg-white px-3.5 py-3 text-left"
+                      className="border-line-hairline flex w-full min-w-0 gap-3 rounded-[14px] border bg-white px-3.5 py-[13px] text-left"
                       onClick={() => router.push(buildTripHref(tripId, 'schedule', String(place.travelPlaceId)))}
                     >
                       {place.imageUrl ? (
@@ -349,69 +350,74 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                           width={80}
                           height={80}
                           unoptimized
-                          className="size-20 shrink-0 rounded-[14px] object-cover"
+                          className="border-line-hairline size-20 shrink-0 rounded-[14px] border object-cover"
                         />
                       ) : (
                         <div
                           className={cn(
-                            'flex size-20 shrink-0 items-center justify-center rounded-[14px] text-[40px]',
+                            'border-line-hairline flex size-20 shrink-0 items-center justify-center rounded-[14px] border text-[40px]',
                             typeStyle.thumbClassName,
                           )}
                         >
                           <span aria-hidden>{typeStyle.emoji}</span>
                         </div>
                       )}
-                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex min-w-0 flex-1 flex-col gap-[9px]">
                         <div className="flex items-center gap-2">
                           <p className="text-ink-900 min-w-0 flex-1 truncate text-[14.5px] font-bold">
                             {place.name ?? '장소 정보 없음'}
                           </p>
                           <span
                             className={cn(
-                              'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
+                              'shrink-0 rounded-full px-2.5 py-[5px] text-xs font-medium',
                               typeStyle.pillClassName,
                             )}
                           >
                             {typeStyle.label}
                           </span>
-                          {canEditPlaces ? <span className="size-6 shrink-0" aria-hidden /> : null}
+                          {canManagePlaces ? <span className="size-[18px] shrink-0" aria-hidden /> : null}
                         </div>
                         {place.address ? (
-                          <p className="text-text-secondary-soft truncate text-xs font-medium">{place.address}</p>
+                          <p className="text-[12px] font-medium text-[rgba(55,56,60,0.28)]">{place.address}</p>
                         ) : null}
-                        {vote ? (
+                        {place.memoUrl ? (
+                          <p className="text-text-secondary-soft truncate text-[12px] font-medium">
+                            🔗 {place.memoUrl}
+                          </p>
+                        ) : null}
+                        {hasVotes ? (
                           <div className="flex items-center gap-1.5">
                             <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
-                              👍 {vote.likeCount}
+                              👍 {vote?.likeCount}
                             </span>
                             <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
-                              👎 {vote.dislikeCount}
+                              👎 {vote?.dislikeCount}
                             </span>
                           </div>
                         ) : null}
                       </div>
                     </button>
-                    {canEditPlaces ? (
+                    {canManagePlaces ? (
                       <button
                         type="button"
                         aria-label="장소 메뉴"
-                        className="absolute top-2 right-2 flex size-6 items-center justify-center"
+                        className="absolute top-[16px] right-[14px] flex size-[18px] items-center justify-center"
                         onClick={(event) => {
                           event.stopPropagation();
                           setOpenMenuId((current) => (current === place.travelPlaceId ? null : place.travelPlaceId));
                         }}
                       >
-                        <EllipsisVerticalIcon aria-hidden />
+                        <EllipsisVerticalIcon className="size-[18px]" aria-hidden />
                       </button>
                     ) : null}
                     {openMenuId === place.travelPlaceId ? (
                       <div
-                        className="absolute top-9 right-1 z-10 flex min-w-[160px] flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-2 shadow-[0px_4px_12px_rgba(23,23,25,0.12)]"
+                        className="absolute top-11 right-2 z-10 flex min-w-[168px] flex-col overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-1.5 shadow-[0px_8px_24px_rgba(23,23,25,0.16)]"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <button
                           type="button"
-                          className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                          className="flex h-12 w-full items-center justify-between rounded-lg px-3.5 text-left text-[15px] text-[#111827]"
                           onClick={() => openEditSheet(place)}
                         >
                           수정
@@ -419,7 +425,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                         </button>
                         <button
                           type="button"
-                          className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                          className="flex h-12 w-full items-center justify-between rounded-lg px-3.5 text-left text-[15px] text-[#111827]"
                           onClick={() => handleDeletePlace(place.travelPlaceId)}
                         >
                           삭제
@@ -431,41 +437,69 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                 </li>
               );
             })}
+            {canManagePlaces ? (
+              <li className="flex items-start gap-2.5">
+                <p
+                  className="w-[38px] shrink-0 text-right text-[11.5px] leading-4 font-bold text-transparent"
+                  aria-hidden
+                >
+                  00:00
+                </p>
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 rounded-[14px] border border-[#4164ff] bg-[#edf0fa] px-3.5 py-[13px] text-center text-[14.5px] font-bold text-[#3366ff]"
+                  onClick={openAddSheet}
+                >
+                  장소 직접 추가
+                </button>
+              </li>
+            ) : null}
           </ul>
-        ) : null}
-
-        {canEditPlaces ? (
-          <button
-            type="button"
-            className="ml-12 rounded-[14px] border border-[#4164ff] bg-[#edf0fa] px-3.5 py-3 text-center text-[14.5px] font-bold text-[#3366ff]"
-            onClick={openAddSheet}
-          >
-            장소 직접 추가
-          </button>
         ) : null}
       </div>
 
       <div className="border-line-hairline fixed right-0 bottom-0 left-0 z-20 mx-auto flex w-full max-w-[430px] flex-col gap-2 border-t bg-white px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {isConfirmable ? (
           <>
-            {placeError ? <p className="text-sm font-medium text-[#e08300]">{placeError}</p> : null}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="border-brand-blue text-brand-blue flex-1 border-[1.5px] text-base"
-                onClick={() => setEditing((prev) => !prev)}
-              >
-                일정 수정
-              </Button>
-              <Button
-                variant="primary"
-                className="flex-1 text-base"
-                disabled={days.length === 0 || confirmSchedule.isPending}
-                onClick={() => void handleConfirm()}
-              >
-                {confirmSchedule.isPending ? '확정하는 중…' : '이 일정으로 확정'}
-              </Button>
-            </div>
+            {placeError && sheetMode === null ? (
+              <p className="text-sm font-medium text-[#e08300]">{placeError}</p>
+            ) : null}
+            {editing ? (
+              <div className="flex gap-2.5">
+                <Button
+                  variant="outline"
+                  className="border-brand-blue text-brand-blue w-[125px] shrink-0 border-[1.5px] px-3 text-base"
+                  onClick={() => {
+                    setEditing(false);
+                    closeSheet();
+                    setOpenMenuId(null);
+                  }}
+                >
+                  취소
+                </Button>
+                <Button variant="primary" className="min-w-0 flex-1 text-base" onClick={() => setEditing(false)}>
+                  저장하기
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2.5">
+                <Button
+                  variant="outline"
+                  className="border-brand-blue text-brand-blue min-w-0 flex-1 border-[1.5px] px-3 text-base"
+                  onClick={() => setEditing(true)}
+                >
+                  일정 수정
+                </Button>
+                <Button
+                  variant="primary"
+                  className="min-w-0 flex-1 px-3 text-base"
+                  disabled={days.length === 0 || confirmSchedule.isPending}
+                  onClick={() => void handleConfirm()}
+                >
+                  {confirmSchedule.isPending ? '확정하는 중…' : '이 일정으로 확정'}
+                </Button>
+              </div>
+            )}
           </>
         ) : isGuest ? (
           <Button
@@ -499,30 +533,39 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
           <TextField
             label="장소 이름"
             value={formValue.name}
-            placeholder="예: 흰여울문화마을"
+            placeholder="예: 해상케이블카"
             onChange={(event) => setFormValue((prev) => ({ ...prev, name: event.target.value }))}
           />
-          <TextField
-            label="방문 시간 (선택)"
-            value={formValue.visitTime}
-            placeholder="예: 14:30"
-            onChange={(event) => setFormValue((prev) => ({ ...prev, visitTime: event.target.value }))}
-          />
-          <TextField
-            label="참고 링크 (선택)"
-            value={formValue.memoUrl}
-            placeholder="예: 네이버 지도 링크"
-            onChange={(event) => setFormValue((prev) => ({ ...prev, memoUrl: event.target.value }))}
-          />
+          <div className="flex gap-2.5">
+            <TextField
+              label="시간"
+              containerClassName="w-[162px] shrink-0"
+              value={formValue.visitTime}
+              placeholder="15:30"
+              onChange={(event) => setFormValue((prev) => ({ ...prev, visitTime: event.target.value }))}
+            />
+            <TextField
+              label="참고 링크(선택)"
+              containerClassName="min-w-0 flex-1"
+              value={formValue.memoUrl}
+              placeholder="https://"
+              onChange={(event) => setFormValue((prev) => ({ ...prev, memoUrl: event.target.value }))}
+            />
+          </div>
           {placeError ? <p className="text-sm font-medium text-[#e08300]">{placeError}</p> : null}
-          <Button
-            variant="primary"
-            fullWidth
-            disabled={!formValue.name.trim() || createPlace.isPending || updatePlace.isPending}
-            onClick={() => void handleSubmitPlace()}
-          >
-            {createPlace.isPending || updatePlace.isPending ? '저장하는 중…' : '저장하기'}
-          </Button>
+          <div className="flex gap-2.5">
+            <Button variant="outline" className="min-w-0 flex-1" onClick={closeSheet}>
+              취소
+            </Button>
+            <Button
+              variant="primary"
+              className="min-w-0 flex-1"
+              disabled={!formValue.name.trim() || createPlace.isPending || updatePlace.isPending}
+              onClick={() => void handleSubmitPlace()}
+            >
+              {createPlace.isPending || updatePlace.isPending ? '저장하는 중…' : '저장하기'}
+            </Button>
+          </div>
         </div>
       </BottomSheet>
     </MobileShell>

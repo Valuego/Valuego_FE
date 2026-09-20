@@ -346,7 +346,7 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
         </div>
       ) : null}
       {badge ? (
-        <span className="bg-ink-900 pointer-events-none absolute top-3 left-3 z-10 rounded-md px-2 py-1 text-[10.5px] font-bold text-white shadow-[0px_1px_4px_rgba(23,23,25,0.12)]">
+        <span className="pointer-events-none absolute top-3 left-3 z-10 rounded-md bg-white px-2 py-1 text-[10.5px] font-bold text-[#171717] shadow-[0px_1px_4px_rgba(23,23,25,0.08)]">
           {badge}
         </span>
       ) : null}

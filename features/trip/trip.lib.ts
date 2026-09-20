@@ -204,12 +204,33 @@ export const formatDayChipDate = (startDate: string, dayNumber: number) => {
   return `${date.getMonth() + 1}.${date.getDate()} ${WEEKDAYS[date.getDay()]}`;
 };
 
+export const formatTravelDuration = (distanceKm?: number | null, transport: Transport = 'car') => {
+  if (typeof distanceKm !== 'number' || distanceKm <= 0) {
+    return null;
+  }
+  const kmPerHour = transport === 'transit' ? 20 : 24;
+  const minutes = Math.max(1, Math.round((distanceKm / kmPerHour) * 60));
+  if (minutes < 60) {
+    return `약 ${minutes}분`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest > 0 ? `약 ${hours}시간 ${rest}분` : `약 ${hours}시간`;
+};
+
 export const formatScheduleSummary = (placeCount: number, transport: Transport, distanceKm?: number | null) => {
   const transportLabel = transport === 'transit' ? '대중교통' : '렌터카';
-  if (typeof distanceKm === 'number') {
-    return `경유지 ${placeCount}곳 · ${transportLabel} ${distanceKm.toFixed(1)}km`;
+  const duration = formatTravelDuration(distanceKm, transport);
+  const parts = [`경유지 ${placeCount}곳`];
+  if (duration) {
+    parts.push(`총 이동 ${duration}`);
   }
-  return `경유지 ${placeCount}곳 · ${transportLabel}`;
+  if (typeof distanceKm === 'number') {
+    parts.push(`${transportLabel} ${distanceKm.toFixed(1)}km`);
+  } else {
+    parts.push(transportLabel);
+  }
+  return parts.join(' · ');
 };
 
 export const resolvePlanningPath = ({
