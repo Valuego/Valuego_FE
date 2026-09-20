@@ -59,9 +59,9 @@ export const expenseCategoryEmoji = (category: ExpenseCategory | null) =>
   EXPENSE_CATEGORY_OPTIONS.find((item) => item.category === category)?.emoji ?? '💳';
 
 export const INVITE_HIGHLIGHTS = [
-  { id: 'ai', label: 'AI가 짜는 우리 그룹 맞춤 일정' },
-  { id: 'game', label: '애매한 결정은 게임으로' },
-  { id: 'settle', label: '보이지 않는 수고까지 정산' },
+  { id: 'map', label: '지도로 한눈에 보는 동선' },
+  { id: 'vote', label: '가고 싶은 곳 투표' },
+  { id: 'settle', label: '정산은 가치가자에게 맡기기' },
 ] as const;
 
 export const LOCAL_DEMO_SCHEDULE: TravelSchedule = {

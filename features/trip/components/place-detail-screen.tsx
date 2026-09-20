@@ -15,6 +15,7 @@ import type { PlaceVoteStatus, SchedulePlace } from '../trip.types';
 
 import {
   useCreatePlaceComment,
+  usePlaceBlogReviewsQuery,
   usePlaceCommentsQuery,
   usePlaceVoteQuery,
   useScheduleQuery,
@@ -27,6 +28,8 @@ type PlaceDetailScreenProps = {
   tripId: string;
   placeId: string;
 };
+
+const stripHtmlTags = (value: string) => value.replace(/<[^>]*>/g, '');
 
 const findPlace = (days: { places: SchedulePlace[] }[] | undefined, placeId: number) => {
   if (!days) {
@@ -48,6 +51,7 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
   const scheduleQuery = useScheduleQuery(tripId);
   const voteQuery = usePlaceVoteQuery(parsedPlaceId);
   const commentsQuery = usePlaceCommentsQuery(parsedPlaceId);
+  const blogQuery = usePlaceBlogReviewsQuery(parsedPlaceId);
   const toggleVote = useTogglePlaceVote(parsedPlaceId);
   const createComment = useCreatePlaceComment(parsedPlaceId);
   const place = findPlace(scheduleQuery.data?.days, parsedPlaceId);
@@ -177,8 +181,8 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               ) : null}
             </div>
             <ul className="mt-3 flex flex-col gap-3">
-              {blogQuery.data.reviews.map((post, index) => (
-                <li key={`${post.link}-${index}`}>
+              {blogQuery.data.reviews.map((post) => (
+                <li key={post.link}>
                   <a href={post.link} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
                     <p className="text-ink-900 text-sm font-bold">{stripHtmlTags(post.title)}</p>
                     <p className="text-text-secondary-soft text-[12.5px] font-medium">

@@ -17,7 +17,7 @@ type SettlementStartScreenProps = {
 
 export const SettlementStartScreen = ({ tripId }: SettlementStartScreenProps) => {
   const router = useRouter();
-  const { trip, isLoading, isError, error } = useTripView(tripId);
+  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId);
 
   useEffect(() => {
     rememberActiveTrip(tripId);
@@ -25,9 +25,9 @@ export const SettlementStartScreen = ({ tripId }: SettlementStartScreenProps) =>
 
   useEffect(() => {
     if (!isLoading && !trip) {
-      router.replace('/home');
+      router.replace(isGuest ? '/join' : '/home');
     }
-  }, [isLoading, router, trip]);
+  }, [isGuest, isLoading, router, trip]);
 
   if (isLoading) {
     return (
@@ -46,8 +46,8 @@ export const SettlementStartScreen = ({ tripId }: SettlementStartScreenProps) =>
           <p className="text-sm font-medium text-[#e08300]">
             {isError ? getErrorMessage(error) : '여행을 찾을 수 없어요.'}
           </p>
-          <Button variant="outline" onClick={() => router.push('/home')}>
-            홈으로
+          <Button variant="outline" onClick={() => router.push(isGuest ? '/join' : '/home')}>
+            {isGuest ? '초대 링크로' : '홈으로'}
           </Button>
         </div>
       </MobileShell>

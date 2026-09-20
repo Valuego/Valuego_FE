@@ -47,17 +47,30 @@ export const applyAuthenticatedUser = (user: UserProfile) => {
     ...prev,
     isAuthenticated: true,
     isGuest: false,
+    guestMemberId: null,
     user,
   }));
 };
 
-export const enterGuestSession = (trip: Trip) => {
+export const enterGuestSession = (
+  trip: Trip,
+  profile?: { name: string; member: MemberKey; guestMemberId?: number },
+) => {
   setSession((prev) => ({
     ...prev,
     isGuest: true,
     isAuthenticated: false,
+    guestMemberId: profile?.guestMemberId ?? prev.guestMemberId ?? null,
     activeTripId: trip.id,
-    trips: [trip, ...prev.trips.filter((item) => item.id !== trip.id)],
+    trips: [trip],
+    user: profile
+      ? {
+          ...prev.user,
+          name: profile.name,
+          greetingName: profile.name,
+          member: profile.member,
+        }
+      : prev.user,
   }));
 };
 
@@ -197,12 +210,12 @@ export const enterDemoGuestSession = (guestName?: string, member?: MemberKey) =>
     const trip =
       acceptInviteFromLink(existing?.inviteCode ?? DEMO_GUEST_INVITE_CODE, { name: guestName, member }) ??
       createDemoGuestTrip(guestName, member);
-    enterGuestSession(trip);
+    enterGuestSession(trip, guestName ? { name: guestName, member: member ?? 'seojun' } : undefined);
     return trip;
   }
 
   const trip = existing ?? createDemoGuestTrip();
-  enterGuestSession(trip);
+  enterGuestSession(trip, guestName ? { name: guestName, member: member ?? 'seojun' } : undefined);
   return trip;
 };
 
@@ -216,7 +229,7 @@ export const joinInviteLocally = (rawCode: string, guestName: string, member?: M
       id: token === DEMO_GUEST_INVITE_CODE ? 'demo-guest-trip' : `invite-${token}`,
       inviteCode: token,
     });
-  enterGuestSession(trip);
+  enterGuestSession(trip, { name: guestName, member: member ?? 'seojun' });
   return trip;
 };
 

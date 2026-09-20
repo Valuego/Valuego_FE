@@ -67,8 +67,15 @@ const toVisitTimePayload = (value: string) => {
 
 export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const router = useRouter();
-  const { trip, group, isGuest, isLoading: isTripLoading } = useTripView(tripId);
-  const scheduleQuery = useScheduleQuery(tripId);
+  const {
+    trip,
+    group,
+    isGuest,
+    isLoading: isTripLoading,
+  } = useTripView(tripId, {
+    refetchInterval: 4000,
+  });
+  const scheduleQuery = useScheduleQuery(tripId, { refetchInterval: isGuest ? 4000 : false });
   const groupId = parseGroupId(tripId) ?? 0;
   const confirmSchedule = useConfirmSchedule(groupId);
   const createPlace = useCreatePlace(groupId);
@@ -126,6 +133,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
         isGuest,
         hasSchedule: false,
         hostStyleComplete: isHostStyleComplete(trip),
+        phase: trip.phase,
       }),
     );
   }, [
@@ -460,8 +468,16 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
             </div>
           </>
         ) : isGuest ? (
-          <Button variant="primary" fullWidth onClick={() => router.push('/home')}>
-            홈으로
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() =>
+              router.push(
+                trip && (trip.phase === 'ongoing' || trip.phase === 'settling') ? buildTripHref(tripId) : '/home',
+              )
+            }
+          >
+            {trip && (trip.phase === 'ongoing' || trip.phase === 'settling') ? '여행 중 홈으로' : '홈으로'}
           </Button>
         ) : (
           <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId))}>

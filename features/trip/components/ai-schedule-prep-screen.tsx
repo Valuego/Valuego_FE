@@ -44,6 +44,12 @@ export const AiSchedulePrepScreen = ({ tripId }: AiSchedulePrepScreenProps) => {
     rememberActiveTrip(tripId);
   }, [tripId]);
 
+  useEffect(() => {
+    if (isGuest) {
+      router.replace(buildTripHref(tripId));
+    }
+  }, [isGuest, router, tripId]);
+
   const handleGenerate = async () => {
     if (!groupId) {
       router.replace(buildTripHref(tripId, 'schedule'));

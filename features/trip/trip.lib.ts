@@ -53,7 +53,7 @@ const FOOD_FROM_LABEL: Record<string, FoodType> = {
   중식: 'CHINESE',
 };
 
-const MEMBER_COLOR_TO_KEY: Record<MemberColor, MemberKey> = {
+export const MEMBER_COLOR_TO_KEY: Record<MemberColor, MemberKey> = {
   BLUE: 'doyeon',
   PURPLE: 'seojun',
   SKYBLUE: 'hayeong',
@@ -217,13 +217,24 @@ export const resolvePlanningPath = ({
   isGuest,
   hasSchedule,
   hostStyleComplete,
+  phase,
 }: {
   tripId: string;
   isGuest: boolean;
   hasSchedule: boolean;
   hostStyleComplete: boolean;
+  phase?: TripPhase;
 }) => {
-  if (hasSchedule || isGuest) {
+  if (phase === 'settled') {
+    return buildTripHref(tripId, 'settlement', 'recap');
+  }
+  if (phase === 'ongoing' || phase === 'settling') {
+    return buildTripHref(tripId);
+  }
+  if (hasSchedule) {
+    return buildTripHref(tripId, 'schedule');
+  }
+  if (isGuest) {
     return buildTripHref(tripId, 'schedule');
   }
   if (!hostStyleComplete) {
@@ -268,6 +279,7 @@ const groupStatusToPhase = (status: GroupStatus): TripPhase => {
 
 type GroupToTripOptions = {
   viewerIsGuest?: boolean;
+  viewerMemberId?: number | null;
 };
 
 const memberStatusLabel = (status: GroupMemberInfo['memberStatus']) => {
@@ -280,14 +292,15 @@ const memberStatusLabel = (status: GroupMemberInfo['memberStatus']) => {
   return '대기 중';
 };
 
-const toTripMember = (member: GroupMemberInfo, viewerIsGuest = false): TripMember => {
+const toTripMember = (member: GroupMemberInfo, options?: GroupToTripOptions): TripMember => {
   const isLeader = member.memberRole === 'LEADER';
   const isDone = member.memberStatus === 'COMPLETED';
+  const isViewer = options?.viewerMemberId != null && member.groupMemberId === options.viewerMemberId;
 
   return {
     id: String(member.groupMemberId),
     name: member.memberName,
-    role: isLeader ? (viewerIsGuest ? '호스트' : '나 · 호스트') : '친구',
+    role: isViewer ? '나' : isLeader ? (options?.viewerIsGuest ? '호스트' : '나 · 호스트') : '친구',
     member: MEMBER_COLOR_TO_KEY[member.memberColor],
     status: isDone ? 'done' : isLeader ? 'host' : 'pending',
     statusLabel: memberStatusLabel(member.memberStatus),
@@ -312,7 +325,6 @@ export const groupToTrip = (group: GroupInfo, options?: GroupToTripOptions): Tri
   const start = parseIsoDate(group.startDate);
   const end = parseIsoDate(group.endDate);
   const phase = groupStatusToPhase(group.groupStatus);
-  const viewerIsGuest = options?.viewerIsGuest ?? false;
 
   return {
     id: String(group.groupId),
@@ -328,7 +340,7 @@ export const groupToTrip = (group: GroupInfo, options?: GroupToTripOptions): Tri
     budget: '적당히',
     foods: [],
     activity: 50,
-    members: group.members.map((member) => toTripMember(member, viewerIsGuest)),
+    members: group.members.map((member) => toTripMember(member, options)),
     inviteCode: group.groupLink,
     timeline: [],
     roles: [],
@@ -358,6 +370,27 @@ export const formatVisitTime = (visitTime?: string | null) => {
     return '시간 미정';
   }
   return visitTime.slice(0, 5);
+};
+
+export const isGuestPreferencePending = (trip: Trip) => {
+  const self = trip.members.find((member) => member.role === '나');
+  if (!self) {
+    return false;
+  }
+  return self.statusLabel === '성향 입력 전' || self.statusLabel === '대기 중';
+};
+
+export const resolveGuestResumePath = (code: string, trip: Trip) => {
+  if (trip.phase === 'ongoing' || trip.phase === 'settling') {
+    return buildTripHref(trip.id);
+  }
+  if (trip.phase === 'settled') {
+    return buildTripHref(trip.id, 'settlement', 'recap');
+  }
+  if (isGuestPreferencePending(trip)) {
+    return `${buildInvitePath(code)}/style`;
+  }
+  return `${buildInvitePath(code)}/complete`;
 };
 
 export const toInviteToken = (groupLink: string) => {

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { isApiError } from '@/shared/lib/api';
+import { getErrorMessage, isApiError } from '@/shared/lib/api';
 import { isDemoInviteCode, normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { useCreateGuestStyle } from '../trip.hooks';
@@ -53,7 +53,7 @@ export const GuestStyleScreen = ({ code }: GuestStyleScreenProps) => {
         goComplete();
         return;
       }
-      goComplete();
+      setErrorMessage(getErrorMessage(error, '여행 스타일을 저장하지 못했어요. 다시 시도해 주세요.'));
     }
   };
 

@@ -38,6 +38,7 @@ import {
   generateAiSchedule,
   getSchedule,
   groupDetailQueryOptions,
+  groupSummaryQueryOptions,
   joinGroupAsGuest,
   leaderGroupListQueryOptions,
   myGroupsQueryOptions,
@@ -55,7 +56,7 @@ import {
   userTimelineQueryOptions,
 } from './trip.api';
 import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
-import { decodeTripId, groupToTrip, mergeTripWithLocal, parseGroupId } from './trip.lib';
+import { decodeTripId, groupToTrip, MEMBER_COLOR_TO_KEY, mergeTripWithLocal, parseGroupId } from './trip.lib';
 
 export const useMyGroupsQuery = (enabled = true) => {
   return useQuery({
@@ -73,7 +74,14 @@ export const useGroupDetailQuery = (tripId: string, enabled = true, refetchInter
   });
 };
 
-export const useScheduleQuery = (tripId: string) => {
+export const useGroupSummaryQuery = (groupLink: string, enabled = true) => {
+  return useQuery({
+    ...groupSummaryQueryOptions(groupLink),
+    enabled: enabled && Boolean(groupLink),
+  });
+};
+
+export const useScheduleQuery = (tripId: string, options?: { refetchInterval?: number | false; enabled?: boolean }) => {
   const groupId = parseGroupId(tripId) ?? 0;
   const isRemote = groupId > 0;
   return useQuery({
@@ -84,8 +92,10 @@ export const useScheduleQuery = (tripId: string) => {
       }
       return LOCAL_DEMO_SCHEDULE;
     },
+    enabled: Boolean(tripId) && (options?.enabled ?? true),
     retry: 0,
     throwOnError: false,
+    refetchInterval: options?.refetchInterval,
   });
 };
 
@@ -189,7 +199,7 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
   const session = useAppSession();
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
-  const groupQuery = useGroupDetailQuery(tripId, !session.isGuest, options?.refetchInterval);
+  const groupQuery = useGroupDetailQuery(tripId, Boolean(groupId), options?.refetchInterval);
   const listQuery = useMyGroupsQuery(!session.isGuest);
   const groupFromList = useMemo(() => {
     const groups = [...(listQuery.data?.ongoingGroups ?? []), ...(listQuery.data?.pastGroups ?? [])];
@@ -197,8 +207,14 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
   }, [listQuery.data, tripId]);
   const resolvedGroup = groupQuery.data ?? groupFromList;
   const tripFromGroup = useMemo(
-    () => (resolvedGroup ? groupToTrip(resolvedGroup, { viewerIsGuest: session.isGuest }) : null),
-    [resolvedGroup, session.isGuest],
+    () =>
+      resolvedGroup
+        ? groupToTrip(resolvedGroup, {
+            viewerIsGuest: session.isGuest,
+            viewerMemberId: session.guestMemberId,
+          })
+        : null,
+    [resolvedGroup, session.guestMemberId, session.isGuest],
   );
   const trip = useMemo(
     () => (tripFromGroup ? mergeTripWithLocal(tripFromGroup, localTrip) : localTrip),
@@ -215,7 +231,7 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
     upsertLocalTrip(trip);
   }, [persistedKey, trip]);
 
-  const waitingForRemote = Boolean(groupId) && !session.isGuest && groupQuery.isPending && listQuery.isPending && !trip;
+  const waitingForRemote = Boolean(groupId) && groupQuery.isPending && !trip;
 
   return {
     trip,
@@ -223,7 +239,7 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
     groupId,
     isGuest: session.isGuest,
     isLoading: waitingForRemote,
-    isError: Boolean(groupId) && !session.isGuest && groupQuery.isError && !trip,
+    isError: Boolean(groupId) && groupQuery.isError && !trip,
     error: groupQuery.error,
     refetch: groupQuery.refetch,
   };
@@ -313,8 +329,13 @@ export const useCreateLeaderStyle = (groupId: number) => {
 };
 
 export const useCreateGuestStyle = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (body: StyleCreateRequest) => createGuestStyle(body),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.details() });
+    },
   });
 };
 
@@ -326,8 +347,15 @@ export const useJoinGroupAsGuest = () => {
       joinGroupAsGuest(groupLink, body),
     onSuccess: (result) => {
       queryClient.setQueryData(tripQueryKeys.detail(result.group.groupId), result.group);
-      const trip = groupToTrip(result.group, { viewerIsGuest: true });
-      enterGuestSession(trip);
+      const trip = groupToTrip(result.group, {
+        viewerIsGuest: true,
+        viewerMemberId: result.groupMemberId,
+      });
+      enterGuestSession(trip, {
+        name: result.memberName,
+        member: MEMBER_COLOR_TO_KEY[result.memberColor],
+        guestMemberId: result.groupMemberId,
+      });
     },
   });
 };

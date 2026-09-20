@@ -12,8 +12,8 @@ import { advanceTripPhase } from '@/shared/session';
 
 import type { SchedulePlace } from '../trip.types';
 
-import { rememberActiveTrip, useExpensesQuery, useScheduleQuery, useTripView } from '../trip.hooks';
-import { buildTripHref, formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
+import { rememberActiveTrip, useExpensesQuery, useScheduleQuery, useSettlementQuery, useTripView } from '../trip.hooks';
+import { buildTripHref, formatVisitTime, getPlaceTypeStyle, isTripPeriodOver, parseGroupId } from '../trip.lib';
 
 type OngoingTripHomeScreenProps = {
   tripId: string;
@@ -33,16 +33,23 @@ const getRemainingPlaces = (places: SchedulePlace[]) => {
 
 export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) => {
   const router = useRouter();
-  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId);
-  const scheduleQuery = useScheduleQuery(tripId);
+  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId, { refetchInterval: 4000 });
+  const scheduleQuery = useScheduleQuery(tripId, { refetchInterval: isGuest ? 4000 : false });
   const groupId = parseGroupId(tripId) ?? 0;
   const expensesQuery = useExpensesQuery(groupId);
+  const settlementQuery = useSettlementQuery(groupId, isGuest && groupId > 0);
   const days = scheduleQuery.data?.days ?? [];
   const firstDay = days[0];
   const remainingPlaces = getRemainingPlaces(firstDay?.places ?? []);
   const nextPlace = remainingPlaces[0];
   const localTotalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
   const totalSpent = groupId ? (expensesQuery.data?.totalAmount ?? 0) : localTotalSpent;
+  const canJoinSettlement =
+    Boolean(trip) &&
+    (trip?.phase === 'settling' ||
+      trip?.phase === 'settled' ||
+      Boolean(trip && isTripPeriodOver(trip)) ||
+      Boolean(settlementQuery.data));
 
   useEffect(() => {
     rememberActiveTrip(tripId);
@@ -178,11 +185,17 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
               variant="primary"
               fullWidth
               onClick={() => {
-                advanceTripPhase(tripId, 'settling');
+                if (trip.phase !== 'settling' && trip.phase !== 'settled') {
+                  advanceTripPhase(tripId, 'settling');
+                }
                 router.push(`/trips/${tripId}/settlement`);
               }}
             >
-              여행 끝 — 정산 시작하기
+              {trip.phase === 'settling' || trip.phase === 'settled' ? '정산 이어하기' : '여행 끝 — 정산 시작하기'}
+            </Button>
+          ) : canJoinSettlement ? (
+            <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/settlement`)}>
+              정산 참여하기
             </Button>
           ) : null}
         </div>

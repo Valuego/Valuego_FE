@@ -8,7 +8,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
 
 import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { isHostStyleComplete, isScheduleNotFound, resolvePlanningPath } from '../trip.lib';
+import { buildTripHref, isHostStyleComplete, isScheduleNotFound, resolvePlanningPath } from '../trip.lib';
 import { OngoingTripHomeScreen } from './ongoing-trip-home-screen';
 
 type TripLobbyScreenProps = {
@@ -17,9 +17,12 @@ type TripLobbyScreenProps = {
 
 export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   const router = useRouter();
-  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId);
-  const scheduleQuery = useScheduleQuery(tripId);
+  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId, {
+    refetchInterval: 4000,
+  });
+  const scheduleQuery = useScheduleQuery(tripId, { refetchInterval: isGuest ? 4000 : false });
   const isOngoing = trip?.phase === 'ongoing' || trip?.phase === 'settling';
+  const isSettled = trip?.phase === 'settled';
 
   useEffect(() => {
     rememberActiveTrip(tripId);
@@ -32,7 +35,13 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
   }, [isError, isGuest, isLoading, router, trip]);
 
   useEffect(() => {
-    if (isLoading || isOngoing || !trip || scheduleQuery.isPending) {
+    if (isSettled) {
+      router.replace(buildTripHref(tripId, 'settlement', 'recap'));
+    }
+  }, [isSettled, router, tripId]);
+
+  useEffect(() => {
+    if (isLoading || isOngoing || isSettled || !trip || scheduleQuery.isPending) {
       return;
     }
 
@@ -47,12 +56,14 @@ export const TripLobbyScreen = ({ tripId }: TripLobbyScreenProps) => {
         isGuest,
         hasSchedule,
         hostStyleComplete: isHostStyleComplete(trip),
+        phase: trip.phase,
       }),
     );
   }, [
     isGuest,
     isLoading,
     isOngoing,
+    isSettled,
     router,
     scheduleQuery.data,
     scheduleQuery.error,

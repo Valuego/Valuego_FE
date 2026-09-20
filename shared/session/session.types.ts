@@ -121,6 +121,7 @@ export type AppSession = {
   isAuthenticated: boolean;
   isGuest: boolean;
   hasCompletedOnboarding: boolean;
+  guestMemberId: number | null;
   user: UserProfile;
   draft: TripDraft | null;
   trips: Trip[];

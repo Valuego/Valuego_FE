@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DESTINATIONS } from '@/features/home/home.constants';
 import CalendarIcon from '@/shared/assets/icons/calendar.svg';
@@ -13,7 +13,7 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { useTripDraft } from '@/shared/session';
+import { useAppSession, useTripDraft } from '@/shared/session';
 import type { Transport } from '@/shared/session';
 
 import { useCreateGroup } from '../trip.hooks';
@@ -31,9 +31,16 @@ import {
 
 export const CreateGroupScreen = () => {
   const router = useRouter();
+  const session = useAppSession();
   const draft = useTripDraft();
   const createGroup = useCreateGroup();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (session.isGuest) {
+      router.replace(session.activeTripId ? `/trips/${session.activeTripId}` : '/join');
+    }
+  }, [router, session.activeTripId, session.isGuest]);
   const defaultDates = useMemo(() => getDefaultTripDates(), []);
   const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>(
     (draft?.destination as (typeof DESTINATIONS)[number]) ?? '부산',

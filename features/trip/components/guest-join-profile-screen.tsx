@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
-import { getErrorMessage } from '@/shared/lib/api';
+import { getErrorMessage, isApiError } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
 import { isDemoInviteCode, joinInviteLocally, normalizeInviteInput, useAppSession } from '@/shared/session';
 
@@ -55,8 +55,10 @@ export const GuestJoinProfileScreen = ({ code }: GuestJoinProfileScreenProps) =>
         body: { memberName: trimmedName, memberColor: color },
       });
       goStyle();
-    } catch {
-      // 에러 메시지는 아래 joinGroup.isError 영역에서 그대로 보여준다.
+    } catch (error) {
+      if (isApiError(error) && (error.status === 409 || error.errorData?.code === 'GROUP-003')) {
+        goStyle();
+      }
     }
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { getErrorMessage, isApiError } from '@/shared/lib/api';
 import { completeHostStyle } from '@/shared/session';
@@ -16,9 +16,15 @@ type GroupStyleScreenProps = {
 
 export const GroupStyleScreen = ({ tripId }: GroupStyleScreenProps) => {
   const router = useRouter();
-  const { trip, groupId } = useTripView(tripId);
+  const { trip, groupId, isGuest } = useTripView(tripId);
   const createStyle = useCreateLeaderStyle(groupId ?? 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isGuest) {
+      router.replace(buildTripHref(tripId));
+    }
+  }, [isGuest, router, tripId]);
 
   const handleSubmit = async (value: { budget: string; foods: string[]; activity: number }) => {
     if (!groupId) {

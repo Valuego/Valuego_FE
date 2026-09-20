@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
-import { useActiveTrip, useTripById } from '@/shared/session';
+import { useActiveTrip, useAppSession, useTripById } from '@/shared/session';
 
 import { GAMES } from '../minigame.constants';
 
@@ -16,6 +16,7 @@ type MinigameHubScreenProps = {
 
 export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
   const router = useRouter();
+  const session = useAppSession();
   const activeTrip = useActiveTrip();
   const tripFromId = useTripById(tripId ?? '');
   const trip = tripId ? tripFromId : activeTrip;
@@ -39,9 +40,15 @@ export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
             <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
               여행이 시작되면 미니게임을 열 수 있어요.
             </p>
-            <Link href="/trips/new" className="text-brand-blue mt-3 inline-block text-sm font-bold">
-              새 여행 만들기 →
-            </Link>
+            {session.isGuest ? (
+              <Link href="/join" className="text-brand-blue mt-3 inline-block text-sm font-bold">
+                초대 링크로 참여하기 →
+              </Link>
+            ) : (
+              <Link href="/trips/new" className="text-brand-blue mt-3 inline-block text-sm font-bold">
+                새 여행 만들기 →
+              </Link>
+            )}
           </div>
         ) : !isOngoing ? (
           <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">

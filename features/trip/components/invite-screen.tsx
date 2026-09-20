@@ -47,8 +47,14 @@ const isShareAbort = (error: unknown) => {
 export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   const router = useRouter();
   const session = useAppSession();
-  const { trip, isLoading, isError, error } = useTripView(tripId, { refetchInterval: 4000 });
+  const { trip, isLoading, isError, error, isGuest } = useTripView(tripId, { refetchInterval: 4000 });
   const [toast, setToast] = useState<InviteToast>(null);
+
+  useEffect(() => {
+    if (isGuest) {
+      router.replace(buildTripHref(tripId));
+    }
+  }, [isGuest, router, tripId]);
 
   useEffect(() => {
     if (!isLoading && !isError && !trip) {

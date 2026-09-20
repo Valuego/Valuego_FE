@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { MEMBER_COLOR_TO_KEY, useLogout, useUserProfileQuery } from '@/features/auth';
+import { resolveTripEntryPath } from '@/features/trip';
 import KakaoIcon from '@/shared/assets/icons/kakao.svg';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
@@ -42,29 +43,59 @@ export const MyPageScreen = () => {
         <div className="border-line-hairline flex items-center gap-3.5 rounded-2xl border bg-white p-[18px]">
           <Avatar member={member} size="lg" initial={name.slice(0, 1)} />
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <p className="text-ink-900 text-lg font-bold tracking-[-0.3px]">{name}</p>
-            <div className="flex items-center gap-2">
-              <p className="text-text-secondary-soft text-[13px] font-medium">{email}</p>
-              <span className="bg-brand-kakao flex size-[18px] items-center justify-center rounded-full">
-                <KakaoIcon className="h-2.5 w-3" aria-hidden />
-              </span>
-            </div>
+            <p className="text-ink-900 text-lg font-bold tracking-[-0.3px]">
+              {session.isGuest ? session.user.greetingName : name}
+            </p>
+            {session.isGuest ? (
+              <p className="text-text-secondary-soft text-[13px] font-medium">로그인 없이 참여 중</p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="text-text-secondary-soft text-[13px] font-medium">{email}</p>
+                <span className="bg-brand-kakao flex size-[18px] items-center justify-center rounded-full">
+                  <KakaoIcon className="h-2.5 w-3" aria-hidden />
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
-          {MENU_ITEMS.map((item, index) => (
-            <li key={item.href} className={index < MENU_ITEMS.length - 1 ? 'border-line-hairline border-b' : ''}>
-              <Link href={item.href} className="text-ink-900 flex h-[62px] items-center px-[18px] text-sm font-medium">
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {session.isGuest ? (
+          <Button asChild variant="primary" fullWidth>
+            <Link
+              href={
+                session.activeTripId
+                  ? resolveTripEntryPath(
+                      session.trips.find((item) => item.id === session.activeTripId) ?? {
+                        id: session.activeTripId,
+                        phase: 'planning',
+                      },
+                    )
+                  : '/join'
+              }
+            >
+              여행으로 돌아가기
+            </Link>
+          </Button>
+        ) : (
+          <>
+            <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
+              {MENU_ITEMS.map((item, index) => (
+                <li key={item.href} className={index < MENU_ITEMS.length - 1 ? 'border-line-hairline border-b' : ''}>
+                  <Link
+                    href={item.href}
+                    className="text-ink-900 flex h-[62px] items-center px-[18px] text-sm font-medium"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
 
-        <Button variant="outline" fullWidth disabled={logout.isPending} onClick={() => void handleLogout()}>
-          {logout.isPending ? '로그아웃 중…' : '로그아웃'}
-        </Button>
+            <Button variant="outline" fullWidth disabled={logout.isPending} onClick={() => void handleLogout()}>
+              {logout.isPending ? '로그아웃 중…' : '로그아웃'}
+            </Button>
+          </>
+        )}
       </div>
       <TabBar />
     </MobileShell>

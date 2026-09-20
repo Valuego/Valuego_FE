@@ -24,6 +24,16 @@ export type GroupMemberInfo = {
   memberStatus: MemberStatus;
 };
 
+export type GroupSummary = {
+  inviterName: string;
+  title: string;
+  destination?: Destination;
+  startDate?: string;
+  endDate?: string;
+  memberCount: number;
+  duration: string;
+};
+
 export type GroupInfo = {
   groupId: number;
   title: string;

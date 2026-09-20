@@ -69,7 +69,7 @@ export const HomeScreen = () => {
           </Link>
         </div>
 
-        {groupsQuery.isPending ? (
+        {groupsQuery.isLoading ? (
           <p className="text-text-secondary-soft text-sm font-medium">여행 목록을 불러오는 중…</p>
         ) : null}
 
@@ -109,9 +109,11 @@ export const HomeScreen = () => {
               </div>
             </Link>
 
-            <Button asChild variant="primary" fullWidth>
-              <Link href="/trips/new">새 여행 계획 만들기</Link>
-            </Button>
+            {session.isGuest ? null : (
+              <Button asChild variant="primary" fullWidth>
+                <Link href="/trips/new">새 여행 계획 만들기</Link>
+              </Button>
+            )}
           </>
         ) : (
           <div className="border-line-hairline flex flex-col items-center gap-2 rounded-2xl border bg-white px-6 pt-5 pb-7">
@@ -121,14 +123,28 @@ export const HomeScreen = () => {
             >
               ✈️
             </div>
-            <p className="text-ink-900 text-base font-bold">아직 여행이 없어요</p>
+            <p className="text-ink-900 text-base font-bold">
+              {session.isGuest ? '참여 중인 여행이 없어요' : '아직 여행이 없어요'}
+            </p>
             <p className="text-text-subtle text-center text-sm leading-[1.5]">
-              날짜와 도시만 정해도 시작할 수 있어요.
-              <br />
-              나머지는 친구들과 채워 가면 돼요.
+              {session.isGuest ? (
+                <>
+                  친구가 보낸 초대 링크로 들어오면
+                  <br />
+                  바로 여행에 참여할 수 있어요.
+                </>
+              ) : (
+                <>
+                  날짜와 도시만 정해도 시작할 수 있어요.
+                  <br />
+                  나머지는 친구들과 채워 가면 돼요.
+                </>
+              )}
             </p>
             <Button asChild variant="primary" fullWidth className="mt-1">
-              <Link href="/trips/new">새 여행 계획 만들기</Link>
+              <Link href={session.isGuest ? '/join' : '/trips/new'}>
+                {session.isGuest ? '초대 코드로 참여하기' : '새 여행 계획 만들기'}
+              </Link>
             </Button>
           </div>
         )}

@@ -15,6 +15,7 @@ import type {
   GroupCreateRequest,
   GroupInfo,
   GroupList,
+  GroupSummary,
   GuestJoinRequest,
   GuestJoinResult,
   LeaderGroupSummary,
@@ -45,6 +46,7 @@ import {
   expenseListSchema,
   groupInfoSchema,
   groupListSchema,
+  groupSummarySchema,
   guestJoinResultSchema,
   leaderGroupListSchema,
   myStyleCardSchema,
@@ -69,6 +71,8 @@ export const tripQueryKeys = {
   lists: () => [...tripQueryKeys.all(), 'list'] as const,
   details: () => [...tripQueryKeys.all(), 'detail'] as const,
   detail: (groupId: number) => [...tripQueryKeys.details(), groupId] as const,
+  summaries: () => [...tripQueryKeys.all(), 'summary'] as const,
+  summary: (groupLink: string) => [...tripQueryKeys.summaries(), groupLink] as const,
   schedules: () => [...tripQueryKeys.all(), 'schedule'] as const,
   schedule: (groupId: number) => [...tripQueryKeys.schedules(), groupId] as const,
   votes: () => [...tripQueryKeys.all(), 'vote'] as const,
@@ -115,6 +119,13 @@ export const getMyGroups = async (): Promise<GroupList> => {
 export const getGroupDetail = async (groupId: number): Promise<GroupInfo> => {
   const data = await apiRequest<GroupInfo>(`/groups?groupId=${groupId}`);
   return groupInfoSchema.parse(data);
+};
+
+export const getGroupSummary = async (groupLink: string): Promise<GroupSummary> => {
+  const data = await apiRequest<GroupSummary>(`/groups/summary?groupLink=${encodeURIComponent(groupLink)}`, {
+    skipAuthRetry: true,
+  });
+  return groupSummarySchema.parse(data);
 };
 
 export const createGroup = async (body: GroupCreateRequest): Promise<GroupInfo> => {
@@ -292,6 +303,15 @@ export const groupDetailQueryOptions = (groupId: number) =>
     queryKey: tripQueryKeys.detail(groupId),
     queryFn: () => getGroupDetail(groupId),
     enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const groupSummaryQueryOptions = (groupLink: string) =>
+  queryOptions({
+    queryKey: tripQueryKeys.summary(groupLink),
+    queryFn: () => getGroupSummary(groupLink),
+    enabled: Boolean(groupLink),
     retry: 0,
     throwOnError: false,
   });

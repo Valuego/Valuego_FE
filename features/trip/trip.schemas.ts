@@ -37,6 +37,16 @@ export const groupListSchema = z.object({
   pastGroups: z.array(groupInfoSchema),
 });
 
+export const groupSummarySchema = z.object({
+  inviterName: z.string().optional().default('친구'),
+  title: z.string().optional().default('우정여행'),
+  destination: destinationSchema.optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  memberCount: z.coerce.number().optional().default(4),
+  duration: z.string().optional().default(''),
+});
+
 export const styleInfoSchema = z.object({
   styleId: z.number(),
   groupId: z.number(),
