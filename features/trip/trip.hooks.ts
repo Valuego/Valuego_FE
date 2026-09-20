@@ -5,22 +5,44 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
 
-import type { CreateTripPayload, GroupInfo, GuestJoinRequest, PlaceVoteStatus, StyleCreateRequest } from './trip.types';
+import type {
+  CreateCommentRequest,
+  CreateEffortItemRequest,
+  CreateEffortRequest,
+  CreateExpenseRequest,
+  CreateTripPayload,
+  GroupInfo,
+  GuestJoinRequest,
+  PlaceVoteStatus,
+  StyleCreateRequest,
+} from './trip.types';
 
 import {
   confirmSchedule,
+  confirmSettlement,
+  createEffort,
+  createEffortItem,
+  createExpense,
   createGuestStyle,
   createLeaderStyle,
+  createPlaceComment,
   createTripWithAiSchedule,
+  deleteEffortItem,
+  effortItemsQueryOptions,
+  effortResultQueryOptions,
+  expensesQueryOptions,
   generateAiSchedule,
   getSchedule,
   groupDetailQueryOptions,
   joinGroupAsGuest,
   leaderGroupListQueryOptions,
   myGroupsQueryOptions,
+  pastSettlementsQueryOptions,
   placeCommentsQueryOptions,
   placeVoteQueryOptions,
   remainingScheduleQueryOptions,
+  settlementQueryOptions,
+  settlementRecapQueryOptions,
   styleCardQueryOptions,
   togglePlaceVote,
   tripQueryKeys,
@@ -95,6 +117,46 @@ export const useRemainingScheduleQuery = (tripId: string, enabled = true) => {
     ...remainingScheduleQueryOptions(groupId),
     enabled: enabled && Number.isFinite(groupId) && groupId > 0,
   });
+};
+
+export const useEffortItemsQuery = (groupId: number, enabled = true) => {
+  return useQuery({
+    ...effortItemsQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const useEffortResultQuery = (groupId: number, targetMemberId: number, enabled = true) => {
+  return useQuery({
+    ...effortResultQueryOptions(groupId, targetMemberId),
+    enabled:
+      enabled && Number.isFinite(groupId) && groupId > 0 && Number.isFinite(targetMemberId) && targetMemberId > 0,
+  });
+};
+
+export const useExpensesQuery = (groupId: number, enabled = true) => {
+  return useQuery({
+    ...expensesQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const useSettlementQuery = (groupId: number, enabled = true) => {
+  return useQuery({
+    ...settlementQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const useSettlementRecapQuery = (groupId: number, enabled = true) => {
+  return useQuery({
+    ...settlementRecapQueryOptions(groupId),
+    enabled: enabled && Number.isFinite(groupId) && groupId > 0,
+  });
+};
+
+export const usePastSettlementsQuery = (enabled = true) => {
+  return useQuery({ ...pastSettlementsQueryOptions, enabled });
 };
 
 const findGroupByTripId = (groups: GroupInfo[] | undefined, tripId: string) => {
@@ -225,6 +287,68 @@ export const useJoinGroupAsGuest = () => {
       queryClient.setQueryData(tripQueryKeys.detail(result.group.groupId), result.group);
       const trip = groupToTrip(result.group, { viewerIsGuest: true });
       enterGuestSession(trip);
+    },
+  });
+};
+
+export const useCreatePlaceComment = (placeId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: CreateCommentRequest) => createPlaceComment(placeId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.comment(placeId) });
+    },
+  });
+};
+
+export const useCreateEffortItem = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: CreateEffortItemRequest) => createEffortItem(groupId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.effortItemsForGroup(groupId) });
+    },
+  });
+};
+
+export const useDeleteEffortItem = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (effortItemId: number) => deleteEffortItem(groupId, effortItemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.effortItemsForGroup(groupId) });
+    },
+  });
+};
+
+export const useCreateEffort = () => {
+  return useMutation({
+    mutationFn: (body: CreateEffortRequest) => createEffort(body),
+  });
+};
+
+export const useCreateExpense = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: CreateExpenseRequest) => createExpense(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.expensesForGroup(groupId) });
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.settlement(groupId) });
+    },
+  });
+};
+
+export const useConfirmSettlement = (groupId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => confirmSettlement(groupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.settlement(groupId) });
     },
   });
 };

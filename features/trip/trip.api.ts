@@ -3,7 +3,15 @@ import { queryOptions } from '@tanstack/react-query';
 import { apiRequest, isApiError } from '@/shared/lib/api';
 
 import type {
+  CreateCommentRequest,
+  CreateEffortItemRequest,
+  CreateEffortRequest,
+  CreateExpenseRequest,
   CreateTripPayload,
+  EffortItem,
+  EffortResult,
+  ExpenseInfo,
+  ExpenseList,
   GroupCreateRequest,
   GroupInfo,
   GroupList,
@@ -11,9 +19,13 @@ import type {
   GuestJoinResult,
   LeaderGroupSummary,
   MyStyleCard,
+  PastSettlement,
+  PlaceComment,
   PlaceCommentList,
   PlaceVote,
   PlaceVoteStatus,
+  Settlement,
+  SettlementRecap,
   StyleCreateRequest,
   StyleInfo,
   TravelSchedule,
@@ -23,13 +35,23 @@ import type {
 
 import { toCreateGroupRequest, toCreateStyleRequest } from './trip.lib';
 import {
+  effortInfoSchema,
+  effortItemListSchema,
+  effortItemSchema,
+  effortResultSchema,
+  expenseInfoSchema,
+  expenseListSchema,
   groupInfoSchema,
   groupListSchema,
   guestJoinResultSchema,
   leaderGroupListSchema,
   myStyleCardSchema,
+  pastSettlementListSchema,
   placeCommentListSchema,
+  placeCommentSchema,
   placeVoteSchema,
+  settlementRecapSchema,
+  settlementSchema,
   styleInfoSchema,
   travelScheduleSchema,
   userRemainingScheduleSchema,
@@ -56,6 +78,18 @@ export const tripQueryKeys = {
   timeline: (groupId: number) => [...tripQueryKeys.timelines(), groupId] as const,
   remainingSchedules: () => [...tripQueryKeys.all(), 'remaining-schedule'] as const,
   remainingSchedule: (groupId: number) => [...tripQueryKeys.remainingSchedules(), groupId] as const,
+  effortItems: () => [...tripQueryKeys.all(), 'effort-item'] as const,
+  effortItemsForGroup: (groupId: number) => [...tripQueryKeys.effortItems(), groupId] as const,
+  effortResults: () => [...tripQueryKeys.all(), 'effort-result'] as const,
+  effortResult: (groupId: number, targetMemberId: number) =>
+    [...tripQueryKeys.effortResults(), groupId, targetMemberId] as const,
+  expenses: () => [...tripQueryKeys.all(), 'expense'] as const,
+  expensesForGroup: (groupId: number) => [...tripQueryKeys.expenses(), groupId] as const,
+  settlements: () => [...tripQueryKeys.all(), 'settlement'] as const,
+  settlement: (groupId: number) => [...tripQueryKeys.settlements(), groupId] as const,
+  settlementRecaps: () => [...tripQueryKeys.all(), 'settlement-recap'] as const,
+  settlementRecap: (groupId: number) => [...tripQueryKeys.settlementRecaps(), groupId] as const,
+  pastSettlements: () => [...tripQueryKeys.all(), 'past-settlement'] as const,
 };
 
 export const joinGroupAsGuest = async (groupLink: string, body: GuestJoinRequest): Promise<GuestJoinResult> => {
@@ -134,6 +168,14 @@ export const getPlaceComments = async (travelPlaceId: number): Promise<PlaceComm
   return placeCommentListSchema.parse(data);
 };
 
+export const createPlaceComment = async (travelPlaceId: number, body: CreateCommentRequest): Promise<PlaceComment> => {
+  const data = await apiRequest<PlaceComment>(`/comments?travelPlaceId=${travelPlaceId}`, {
+    method: 'POST',
+    body,
+  });
+  return placeCommentSchema.parse(data);
+};
+
 export const getLeaderGroupList = async (): Promise<LeaderGroupSummary[]> => {
   const data = await apiRequest<LeaderGroupSummary[]>('/groups/styles/groups');
   return leaderGroupListSchema.parse(data);
@@ -152,6 +194,62 @@ export const getUserTimeline = async (groupId: number): Promise<UserTimeline> =>
 export const getRemainingSchedule = async (groupId: number): Promise<UserRemainingSchedule> => {
   const data = await apiRequest<UserRemainingSchedule>(`/users/timeline/remaining?groupId=${groupId}`);
   return userRemainingScheduleSchema.parse(data);
+};
+
+export const getEffortItems = async (groupId: number): Promise<EffortItem[]> => {
+  const data = await apiRequest<EffortItem[]>(`/effort-items?groupId=${groupId}`);
+  return effortItemListSchema.parse(data);
+};
+
+export const createEffortItem = async (groupId: number, body: CreateEffortItemRequest): Promise<EffortItem> => {
+  const data = await apiRequest<EffortItem>(`/effort-items?groupId=${groupId}`, {
+    method: 'POST',
+    body,
+  });
+  return effortItemSchema.parse(data);
+};
+
+export const deleteEffortItem = async (groupId: number, effortItemId: number): Promise<void> => {
+  await apiRequest(`/effort-items/${effortItemId}?groupId=${groupId}`, { method: 'DELETE' });
+};
+
+export const createEffort = async (body: CreateEffortRequest) => {
+  const data = await apiRequest(`/efforts`, { method: 'POST', body });
+  return effortInfoSchema.parse(data);
+};
+
+export const getEffortResult = async (groupId: number, targetMemberId: number): Promise<EffortResult> => {
+  const data = await apiRequest<EffortResult>(`/efforts/result?groupId=${groupId}&targetMemberId=${targetMemberId}`);
+  return effortResultSchema.parse(data);
+};
+
+export const createExpense = async (body: CreateExpenseRequest): Promise<ExpenseInfo> => {
+  const data = await apiRequest<ExpenseInfo>(`/expenses`, { method: 'POST', body });
+  return expenseInfoSchema.parse(data);
+};
+
+export const getExpenses = async (groupId: number): Promise<ExpenseList> => {
+  const data = await apiRequest<ExpenseList>(`/expenses/all?groupId=${groupId}`);
+  return expenseListSchema.parse(data);
+};
+
+export const getSettlement = async (groupId: number): Promise<Settlement> => {
+  const data = await apiRequest<Settlement>(`/settlements?groupId=${groupId}`);
+  return settlementSchema.parse(data);
+};
+
+export const confirmSettlement = async (groupId: number): Promise<void> => {
+  await apiRequest(`/settlements/confirm?groupId=${groupId}`, { method: 'POST' });
+};
+
+export const getSettlementRecap = async (groupId: number): Promise<SettlementRecap> => {
+  const data = await apiRequest<SettlementRecap>(`/settlements/recap?groupId=${groupId}`);
+  return settlementRecapSchema.parse(data);
+};
+
+export const getPastSettlements = async (): Promise<PastSettlement[]> => {
+  const data = await apiRequest<PastSettlement[]>(`/settlements/history`);
+  return pastSettlementListSchema.parse(data);
 };
 
 export const createGroupWithStyle = async (payload: CreateTripPayload): Promise<GroupInfo> => {
@@ -253,3 +351,55 @@ export const remainingScheduleQueryOptions = (groupId: number) =>
     retry: 0,
     throwOnError: false,
   });
+
+export const effortItemsQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.effortItemsForGroup(groupId),
+    queryFn: () => getEffortItems(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const effortResultQueryOptions = (groupId: number, targetMemberId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.effortResult(groupId, targetMemberId),
+    queryFn: () => getEffortResult(groupId, targetMemberId),
+    enabled: Number.isFinite(groupId) && groupId > 0 && Number.isFinite(targetMemberId) && targetMemberId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const expensesQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.expensesForGroup(groupId),
+    queryFn: () => getExpenses(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const settlementQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.settlement(groupId),
+    queryFn: () => getSettlement(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const settlementRecapQueryOptions = (groupId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.settlementRecap(groupId),
+    queryFn: () => getSettlementRecap(groupId),
+    enabled: Number.isFinite(groupId) && groupId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const pastSettlementsQueryOptions = queryOptions({
+  queryKey: tripQueryKeys.pastSettlements(),
+  queryFn: getPastSettlements,
+  retry: 0,
+  throwOnError: false,
+});

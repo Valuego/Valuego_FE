@@ -1,6 +1,6 @@
 import type { MemberKey } from '@/shared/session';
 
-import type { MemberColor, TravelSchedule } from './trip.types';
+import type { ExpenseCategory, MemberColor, TravelSchedule } from './trip.types';
 
 export const GUEST_COLOR_OPTIONS: {
   color: MemberColor;
@@ -43,6 +43,20 @@ export const DEFAULT_PLACE_TYPE_STYLE = {
   pillClassName: 'bg-brand-blue/8 text-brand-blue',
   thumbClassName: 'bg-[#edf0fa]',
 };
+
+export const EXPENSE_CATEGORY_OPTIONS: { category: ExpenseCategory; label: string; emoji: string }[] = [
+  { category: 'MEAL', label: '식사', emoji: '🍽️' },
+  { category: 'GAS', label: '이동', emoji: '🚕' },
+  { category: 'ACCOMMODATION', label: '숙소', emoji: '🏨' },
+  { category: 'CAFE', label: '카페', emoji: '☕' },
+  { category: 'OTHER', label: '기타', emoji: '💳' },
+];
+
+export const expenseCategoryLabel = (category: ExpenseCategory | null) =>
+  EXPENSE_CATEGORY_OPTIONS.find((item) => item.category === category)?.label ?? '기타';
+
+export const expenseCategoryEmoji = (category: ExpenseCategory | null) =>
+  EXPENSE_CATEGORY_OPTIONS.find((item) => item.category === category)?.emoji ?? '💳';
 
 export const INVITE_HIGHLIGHTS = [
   { id: 'ai', label: 'AI가 짜는 우리 그룹 맞춤 일정' },

@@ -8,8 +8,8 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { advanceTripPhase } from '@/shared/session';
 
-import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
+import { rememberActiveTrip, useExpensesQuery, useScheduleQuery, useTripView } from '../trip.hooks';
+import { formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
 
 type TimelineScreenProps = {
   tripId: string;
@@ -28,8 +28,11 @@ export const TimelineScreen = ({ tripId }: TimelineScreenProps) => {
   const router = useRouter();
   const { trip, isGuest, isLoading } = useTripView(tripId);
   const scheduleQuery = useScheduleQuery(tripId);
+  const groupId = parseGroupId(tripId) ?? 0;
+  const expensesQuery = useExpensesQuery(groupId);
   const firstDay = scheduleQuery.data?.days[0];
-  const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
+  const localTotalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
+  const totalSpent = groupId ? (expensesQuery.data?.totalAmount ?? 0) : localTotalSpent;
 
   useEffect(() => {
     rememberActiveTrip(tripId);

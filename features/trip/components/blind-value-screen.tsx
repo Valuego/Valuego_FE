@@ -1,13 +1,14 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/shared/components/button';
 import { Slider } from '@/shared/components/slider';
-import { saveLaborValue } from '@/shared/session';
+import { getErrorMessage } from '@/shared/lib/api';
 
-import { rememberActiveTrip, useTripView } from '../trip.hooks';
+import { useCreateEffort, useEffortItemsQuery, useTripView } from '../trip.hooks';
+import { parseGroupId } from '../trip.lib';
 
 type BlindValueScreenProps = {
   tripId: string;
@@ -15,52 +16,61 @@ type BlindValueScreenProps = {
 
 const MAX_AMOUNT = 30000;
 
-export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
-  const router = useRouter();
-  const { trip, isLoading } = useTripView(tripId);
-  const [index, setIndex] = useState(0);
-  const [draftAmount, setDraftAmount] = useState<number | null>(null);
-  const [draftNote, setDraftNote] = useState<string | null>(null);
+type Pick = { itemId: number; memberId: number };
 
-  const cards = useMemo(() => {
-    if (!trip) {
+const parsePicks = (raw: string | null): Pick[] => {
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(decodeURIComponent(raw));
+    if (!Array.isArray(parsed)) {
       return [];
     }
-    return trip.laborCategories
-      .map((category) => {
-        const member = trip.members.find((item) => item.id === category.assigneeId);
-        if (!member) {
+    return parsed.filter(
+      (item): item is Pick => item && typeof item.itemId === 'number' && typeof item.memberId === 'number',
+    );
+  } catch {
+    return [];
+  }
+};
+
+export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupId = parseGroupId(tripId) ?? 0;
+  const { trip, isLoading: tripLoading } = useTripView(tripId);
+  const itemsQuery = useEffortItemsQuery(groupId);
+  const createEffort = useCreateEffort();
+  const [index, setIndex] = useState(0);
+  const [draftAmount, setDraftAmount] = useState(15000);
+  const [draftNote, setDraftNote] = useState('덕분에 편하게 다녔어 🙏 다음엔 내가 할게!');
+  const [submittedCount, setSubmittedCount] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const picks = useMemo(() => parsePicks(searchParams.get('picks')), [searchParams]);
+
+  const cards = useMemo(() => {
+    if (!trip || !itemsQuery.data) {
+      return [];
+    }
+    return picks
+      .map((pick) => {
+        const member = trip.members.find((item) => Number(item.id) === pick.memberId);
+        const item = itemsQuery.data.find((entry) => entry.effortItemId === pick.itemId);
+        if (!member || !item) {
           return null;
         }
-        return { category, member };
+        return { itemId: item.effortItemId, title: item.title, member };
       })
-      .filter(
-        (item): item is { category: (typeof trip.laborCategories)[number]; member: (typeof trip.members)[number] } =>
-          Boolean(item),
+      .filter((card): card is { itemId: number; title: string; member: (typeof trip.members)[number] } =>
+        Boolean(card),
       );
-  }, [trip]);
+  }, [itemsQuery.data, picks, trip]);
 
   const current = cards[index];
-  const submittedCount = trip?.laborValues.length ?? 0;
-  const saved = current && trip ? trip.laborValues.find((item) => item.memberId === current.member.id) : undefined;
-  const amount = draftAmount ?? saved?.amount ?? 15000;
-  const note = draftNote ?? saved?.note ?? '덕분에 편하게 다녔어 🙏 다음엔 내가 할게!';
 
-  useEffect(() => {
-    rememberActiveTrip(tripId);
-  }, [tripId]);
-
-  useEffect(() => {
-    if (!isLoading && !trip) {
-      router.replace('/home');
-    }
-  }, [isLoading, router, trip]);
-
-  const moveTo = (nextIndex: number) => {
-    setIndex(nextIndex);
-    setDraftAmount(null);
-    setDraftNote(null);
-  };
+  const isLoading = tripLoading || itemsQuery.isPending;
 
   if (isLoading || !trip) {
     return (
@@ -70,15 +80,35 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
     );
   }
 
-  const handleSubmit = () => {
-    if (current) {
-      saveLaborValue(tripId, current.member.id, amount, note);
-    }
-    if (index < cards.length - 1) {
-      moveTo(index + 1);
+  const moveTo = (nextIndex: number) => {
+    setIndex(nextIndex);
+    setDraftAmount(15000);
+    setDraftNote('덕분에 편하게 다녔어 🙏 다음엔 내가 할게!');
+    setErrorMessage(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!current) {
       return;
     }
-    router.push(`/trips/${tripId}/settlement/status`);
+    setErrorMessage(null);
+    try {
+      await createEffort.mutateAsync({
+        groupId,
+        targetMemberId: current.member.id ? Number(current.member.id) : 0,
+        effortAmount: draftAmount,
+        comment: draftNote.trim() || undefined,
+        effortItemId: current.itemId,
+      });
+      setSubmittedCount((count) => count + 1);
+      if (index < cards.length - 1) {
+        moveTo(index + 1);
+        return;
+      }
+      router.push(`/trips/${tripId}/settlement/status`);
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '수고 가치를 제출하지 못했어요.'));
+    }
   };
 
   return (
@@ -130,7 +160,7 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
                   {current.member.name.slice(0, 1)}
                 </div>
                 <p className="text-lg font-bold tracking-[-0.3px] text-white">
-                  {current.member.name}님의 {current.category.title}
+                  {current.member.name}님의 {current.title}
                 </p>
                 <p className="text-[13px] font-medium text-[#c9bcff]">여행 중 보이지 않은 수고를 인정해요.</p>
               </div>
@@ -145,9 +175,11 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
               </button>
             </div>
 
-            <p className="text-[38px] font-extrabold tracking-[-1px] text-white">{amount.toLocaleString('ko-KR')}원</p>
+            <p className="text-[38px] font-extrabold tracking-[-1px] text-white">
+              {draftAmount.toLocaleString('ko-KR')}원
+            </p>
             <div className="w-full max-w-[355px]">
-              <Slider value={amount} min={0} max={MAX_AMOUNT} step={1000} onValueChange={setDraftAmount} />
+              <Slider value={draftAmount} min={0} max={MAX_AMOUNT} step={1000} onValueChange={setDraftAmount} />
               <div className="mt-2 flex justify-between text-xs text-[#f2f2f7]">
                 <span>0원</span>
                 <span>{MAX_AMOUNT.toLocaleString('ko-KR')}원</span>
@@ -157,13 +189,14 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
             <label className="flex w-full flex-col gap-2 rounded-[14px] bg-white/6 p-3.5">
               <span className="text-sm font-bold text-[#c9bcff]">고마운 한마디 (선택)</span>
               <textarea
-                value={note}
+                value={draftNote}
                 rows={2}
                 className="resize-none bg-transparent text-sm leading-[1.5] font-medium text-white outline-none"
                 onChange={(event) => setDraftNote(event.target.value)}
               />
             </label>
             <p className="text-xs font-medium text-white/40">제출하면 수정할 수 없어요 · 블라인드 집계</p>
+            {errorMessage ? <p className="text-sm font-medium text-[#ff9a9a]">{errorMessage}</p> : null}
           </>
         ) : (
           <p className="text-sm font-medium text-[#c9bcff]">먼저 수고 기록에서 친구를 골라 주세요.</p>
@@ -178,8 +211,13 @@ export const BlindValueScreen = ({ tripId }: BlindValueScreenProps) => {
         >
           정산 진행상태 확인
         </Button>
-        <Button variant="primary" className="bg-brand-purple h-[52px] flex-1 px-3 text-[15px]" onClick={handleSubmit}>
-          비공개로 제출하기
+        <Button
+          variant="primary"
+          className="bg-brand-purple h-[52px] flex-1 px-3 text-[15px]"
+          disabled={!current || createEffort.isPending}
+          onClick={() => void handleSubmit()}
+        >
+          {createEffort.isPending ? '제출하는 중…' : '비공개로 제출하기'}
         </Button>
       </div>
     </div>

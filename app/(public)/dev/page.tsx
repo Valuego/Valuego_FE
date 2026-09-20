@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 import { PageContainer } from '@/shared/components/page-container';
 
@@ -23,6 +24,10 @@ const LINKS = [
 ] as const;
 
 const DevPreviewPage = () => {
+  if (process.env.NODE_ENV !== 'development') {
+    notFound();
+  }
+
   return (
     <PageContainer className="flex flex-col items-start gap-6 py-16">
       <div className="flex flex-col gap-2">

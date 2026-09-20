@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
+import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
 import { isDemoInviteCode, joinInviteLocally, normalizeInviteInput, useAppSession } from '@/shared/session';
 
@@ -42,21 +43,21 @@ export const GuestJoinProfileScreen = ({ code }: GuestJoinProfileScreenProps) =>
     }
     const selectedMember = GUEST_COLOR_OPTIONS.find((option) => option.color === color)?.member ?? 'seojun';
 
-    if (!isDemoInviteCode(code)) {
-      try {
-        await joinGroup.mutateAsync({
-          groupLink: code,
-          body: { memberName: trimmedName, memberColor: color },
-        });
-        goStyle();
-        return;
-      } catch {
-        // 백엔드 참여가 실패해도 초대 링크 흐름은 로컬로 이어간다.
-      }
+    if (isDemoInviteCode(code)) {
+      joinInviteLocally(code, trimmedName, selectedMember);
+      goStyle();
+      return;
     }
 
-    joinInviteLocally(code, trimmedName, selectedMember);
-    goStyle();
+    try {
+      await joinGroup.mutateAsync({
+        groupLink: code,
+        body: { memberName: trimmedName, memberColor: color },
+      });
+      goStyle();
+    } catch {
+      // 에러 메시지는 아래 joinGroup.isError 영역에서 그대로 보여준다.
+    }
   };
 
   return (
@@ -104,7 +105,9 @@ export const GuestJoinProfileScreen = ({ code }: GuestJoinProfileScreenProps) =>
           </div>
         </div>
         {joinGroup.isError ? (
-          <p className="text-text-secondary-soft text-xs font-medium">서버 참여에 실패해서 로컬로 이어서 진행해요.</p>
+          <p className="text-xs font-medium text-[#e08300]">
+            {getErrorMessage(joinGroup.error, '참여에 실패했어요. 링크가 만료되었거나 인원이 가득 찼을 수 있어요.')}
+          </p>
         ) : null}
       </div>
       <div className="fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] bg-white px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">

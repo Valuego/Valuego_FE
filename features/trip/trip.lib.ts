@@ -379,15 +379,3 @@ export const getPlaceTypeStyle = (placeType?: string | null) => {
   }
   return PLACE_TYPE_STYLE[placeType] ?? { ...DEFAULT_PLACE_TYPE_STYLE, label: placeType };
 };
-
-export const laborRewardFor = (trip: Trip, memberId: string) => {
-  const saved = trip.laborValues.find((item) => item.memberId === memberId);
-  if (saved) {
-    return saved.amount;
-  }
-  const assignedCount = trip.laborCategories.filter((item) => item.assigneeId === memberId).length;
-  if (assignedCount > 0) {
-    return assignedCount * 15000;
-  }
-  return 15000;
-};

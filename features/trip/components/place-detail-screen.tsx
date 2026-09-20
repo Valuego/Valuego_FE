@@ -2,16 +2,19 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
+import { TextField } from '@/shared/components/text-field';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
 
 import type { PlaceVoteStatus, SchedulePlace } from '../trip.types';
 
 import {
+  useCreatePlaceComment,
   usePlaceCommentsQuery,
   usePlaceVoteQuery,
   useScheduleQuery,
@@ -41,17 +44,32 @@ const findPlace = (days: { places: SchedulePlace[] }[] | undefined, placeId: num
 export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) => {
   const router = useRouter();
   const parsedPlaceId = Number(placeId);
-  const { trip, isGuest } = useTripView(tripId);
+  const { trip } = useTripView(tripId);
   const scheduleQuery = useScheduleQuery(tripId);
   const voteQuery = usePlaceVoteQuery(parsedPlaceId);
   const commentsQuery = usePlaceCommentsQuery(parsedPlaceId);
   const toggleVote = useTogglePlaceVote(parsedPlaceId);
+  const createComment = useCreatePlaceComment(parsedPlaceId);
   const place = findPlace(scheduleQuery.data?.days, parsedPlaceId);
   const typeStyle = getPlaceTypeStyle(place?.placeType);
   const vote = voteQuery.data;
+  const [commentDraft, setCommentDraft] = useState('');
 
   const handleVote = (voteStatus: PlaceVoteStatus) => {
     void toggleVote.mutateAsync(voteStatus);
+  };
+
+  const handleSubmitComment = async () => {
+    const content = commentDraft.trim();
+    if (!content || createComment.isPending) {
+      return;
+    }
+    try {
+      await createComment.mutateAsync({ content });
+      setCommentDraft('');
+    } catch {
+      // 에러 메시지는 아래 createComment.isError 영역에서 그대로 보여준다.
+    }
   };
 
   return (
@@ -156,10 +174,28 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               ))}
             </ul>
           ) : (
-            <p className="text-text-secondary-soft mt-2 text-[12.5px] font-medium">
-              {isGuest ? '아직 의견이 없어요. 호스트가 남긴 의견을 여기서 볼 수 있어요.' : '아직 의견이 없어요.'}
-            </p>
+            <p className="text-text-secondary-soft mt-2 text-[12.5px] font-medium">아직 의견이 없어요.</p>
           )}
+          <div className="mt-4 flex items-end gap-2">
+            <TextField
+              label="의견 남기기"
+              containerClassName="flex-1"
+              placeholder="이 경유지에 대한 의견을 남겨 주세요"
+              value={commentDraft}
+              onChange={(event) => setCommentDraft(event.target.value)}
+              maxLength={500}
+            />
+            <Button
+              variant="primary"
+              disabled={!commentDraft.trim() || createComment.isPending}
+              onClick={() => void handleSubmitComment()}
+            >
+              {createComment.isPending ? '등록 중…' : '등록'}
+            </Button>
+          </div>
+          {createComment.isError ? (
+            <p className="mt-2 text-sm font-medium text-[#e08300]">{getErrorMessage(createComment.error)}</p>
+          ) : null}
         </section>
       </div>
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">

@@ -143,6 +143,10 @@ export type PlaceCommentList = {
   comments: PlaceComment[];
 };
 
+export type CreateCommentRequest = {
+  content: string;
+};
+
 export type LeaderGroupSummary = {
   groupId: number;
   title: string;
@@ -177,6 +181,111 @@ export type UserTimeline = {
   currentDay: number;
   totalExpense: number;
   items: UserTimelineItem[];
+};
+
+export type EffortItemCategory = 'DRIVING' | 'RESERVATION' | 'ETC';
+
+export type EffortItemMember = {
+  groupMemberId: number;
+  memberName: string;
+};
+
+export type EffortItem = {
+  effortItemId: number;
+  title: string;
+  isCustom: boolean;
+  memberList: EffortItemMember[];
+};
+
+export type CreateEffortItemRequest = {
+  itemCategory: EffortItemCategory;
+  title?: string;
+};
+
+export type CreateEffortRequest = {
+  groupId: number;
+  targetMemberId: number;
+  effortAmount: number;
+  comment?: string;
+  effortItemId: number;
+};
+
+export type EffortResult = {
+  targetMemberId: number;
+  targetMemberName: string;
+  totalRewardAmount: number;
+  evaluatorCount: number;
+  comments: string[];
+};
+
+export type ExpenseCategory = 'MEAL' | 'GAS' | 'ACCOMMODATION' | 'CAFE' | 'OTHER';
+
+export type CreateExpenseRequest = {
+  groupId: number;
+  amount: number;
+  category?: ExpenseCategory;
+  expenseDate?: string;
+  payers: { groupMemberId: number }[];
+  participants: { groupMemberId: number; isIncluded: boolean }[];
+};
+
+export type ExpenseInfo = {
+  expenseId: number;
+  amount: number;
+  category: ExpenseCategory | null;
+  expenseDate: string | null;
+  payerName: string;
+  participantCount: number;
+};
+
+export type ExpenseList = {
+  totalAmount: number;
+  expenseInfoResDtos: ExpenseInfo[];
+};
+
+export type SettlementEffortReward = {
+  groupMemberId: number;
+  memberName: string;
+  effortTitle: string;
+  rewardAmount: number;
+};
+
+export type SettlementType = 'SEND' | 'GIVE' | 'ZERO';
+
+export type SettlementMemberRow = {
+  groupMemberId: number;
+  memberName: string;
+  settlementType: SettlementType;
+  amount: number;
+};
+
+export type Settlement = {
+  totalExpense: number;
+  expensePerMember: number;
+  isConfirmed: boolean;
+  effortRewards: SettlementEffortReward[];
+  memberSettlements: SettlementMemberRow[];
+};
+
+export type SettlementRecap = {
+  groupId: number;
+  groupTitle: string;
+  groupPeriod: string;
+  durationText: string;
+  memberCount: number;
+  totalDistance: string;
+  totalExpenseAmount: number;
+  gameResult: string;
+  totalEffortAmount: number;
+};
+
+export type PastSettlement = {
+  groupId: number;
+  settlementId: number;
+  groupTitle: string;
+  groupPeriod: string;
+  totalExpense: number;
+  expensePerMember: number;
 };
 
 export type RemainingScheduleItem = {

@@ -1,5 +1,6 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { useState } from 'react';
 
 import { Avatar } from '@/shared/components/avatar';
@@ -16,6 +17,10 @@ import { TextField } from '@/shared/components/text-field';
 import { Toggle } from '@/shared/components/toggle';
 
 const ComponentsPage = () => {
+  if (process.env.NODE_ENV !== 'development') {
+    notFound();
+  }
+
   const [toggleOn, setToggleOn] = useState(true);
   const [chipSelected, setChipSelected] = useState(true);
   const [sliderValue, setSliderValue] = useState(52);

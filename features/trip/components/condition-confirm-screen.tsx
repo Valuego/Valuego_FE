@@ -7,7 +7,8 @@ import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { InfoBanner } from '@/shared/components/info-banner';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { createTripFromDraft, DEFAULT_DRAFT, useTripDraft } from '@/shared/session';
+import { getErrorMessage } from '@/shared/lib/api';
+import { DEFAULT_DRAFT, useTripDraft } from '@/shared/session';
 
 import { useCreateTripWithAiSchedule } from '../trip.hooks';
 import { buildTripHref } from '../trip.lib';
@@ -55,9 +56,8 @@ export const ConditionConfirmScreen = () => {
         activitySlider: summary.activity,
       });
       router.push(buildTripHref(String(group.groupId), 'schedule'));
-    } catch {
-      const trip = createTripFromDraft();
-      router.push(buildTripHref(trip.id, 'schedule'));
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '그룹을 만들지 못했어요. 잠시 후 다시 시도해 주세요.'));
     }
   };
 

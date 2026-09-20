@@ -29,6 +29,7 @@ export {
   rememberActiveTrip,
   useLeaderGroupListQuery,
   useMyGroupsQuery,
+  usePastSettlementsQuery,
   useRemainingScheduleQuery,
   useStyleCardQuery,
   useTripView,

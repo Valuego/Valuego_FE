@@ -12,8 +12,8 @@ import { advanceTripPhase } from '@/shared/session';
 
 import type { SchedulePlace } from '../trip.types';
 
-import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { buildTripHref, formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
+import { rememberActiveTrip, useExpensesQuery, useScheduleQuery, useTripView } from '../trip.hooks';
+import { buildTripHref, formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
 
 type OngoingTripHomeScreenProps = {
   tripId: string;
@@ -35,11 +35,14 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
   const router = useRouter();
   const { trip, isGuest, isLoading, isError, error } = useTripView(tripId);
   const scheduleQuery = useScheduleQuery(tripId);
+  const groupId = parseGroupId(tripId) ?? 0;
+  const expensesQuery = useExpensesQuery(groupId);
   const days = scheduleQuery.data?.days ?? [];
   const firstDay = days[0];
   const remainingPlaces = getRemainingPlaces(firstDay?.places ?? []);
   const nextPlace = remainingPlaces[0];
-  const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
+  const localTotalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
+  const totalSpent = groupId ? (expensesQuery.data?.totalAmount ?? 0) : localTotalSpent;
 
   useEffect(() => {
     rememberActiveTrip(tripId);

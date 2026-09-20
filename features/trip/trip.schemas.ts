@@ -147,6 +147,106 @@ export const remainingScheduleItemSchema = z.object({
   category: z.string(),
 });
 
+const expenseCategorySchema = z.enum(['MEAL', 'GAS', 'ACCOMMODATION', 'CAFE', 'OTHER']);
+const settlementTypeSchema = z.enum(['SEND', 'GIVE', 'ZERO']);
+
+export const effortItemMemberSchema = z.object({
+  groupMemberId: z.coerce.number(),
+  memberName: z.string(),
+});
+
+export const effortItemSchema = z.object({
+  effortItemId: z.coerce.number(),
+  title: z.string(),
+  isCustom: z.boolean(),
+  memberList: z
+    .array(effortItemMemberSchema)
+    .nullable()
+    .transform((list) => list ?? []),
+});
+
+export const effortItemListSchema = z.array(effortItemSchema);
+
+export const effortInfoSchema = z.object({
+  effortId: z.coerce.number(),
+  writerMemberId: z.coerce.number(),
+  targetMemberId: z.coerce.number(),
+  targetMemberName: z.string(),
+  effortItemId: z.coerce.number(),
+  effortAmount: z.coerce.number().nullable().optional(),
+  comment: z.string().nullable().optional(),
+});
+
+export const effortResultSchema = z.object({
+  targetMemberId: z.coerce.number(),
+  targetMemberName: z.string(),
+  totalRewardAmount: z.coerce
+    .number()
+    .nullable()
+    .transform((value) => value ?? 0),
+  evaluatorCount: z.number(),
+  comments: z.array(z.string()),
+});
+
+export const expenseInfoSchema = z.object({
+  expenseId: z.coerce.number(),
+  amount: z.coerce.number(),
+  category: expenseCategorySchema.nullable(),
+  expenseDate: z.string().nullable(),
+  payerName: z.string(),
+  participantCount: z.number(),
+});
+
+export const expenseListSchema = z.object({
+  totalAmount: z.coerce.number(),
+  expenseInfoResDtos: z.array(expenseInfoSchema),
+});
+
+export const settlementEffortRewardSchema = z.object({
+  groupMemberId: z.coerce.number(),
+  memberName: z.string(),
+  effortTitle: z.string(),
+  rewardAmount: z.coerce.number(),
+});
+
+export const settlementMemberRowSchema = z.object({
+  groupMemberId: z.coerce.number(),
+  memberName: z.string(),
+  settlementType: settlementTypeSchema,
+  amount: z.coerce.number(),
+});
+
+export const settlementSchema = z.object({
+  totalExpense: z.coerce.number(),
+  expensePerMember: z.coerce.number(),
+  isConfirmed: z.boolean(),
+  effortRewards: z.array(settlementEffortRewardSchema),
+  memberSettlements: z.array(settlementMemberRowSchema),
+});
+
+export const settlementRecapSchema = z.object({
+  groupId: z.coerce.number(),
+  groupTitle: z.string(),
+  groupPeriod: z.string(),
+  durationText: z.string(),
+  memberCount: z.number(),
+  totalDistance: z.string(),
+  totalExpenseAmount: z.coerce.number(),
+  gameResult: z.string(),
+  totalEffortAmount: z.coerce.number(),
+});
+
+export const pastSettlementSchema = z.object({
+  groupId: z.coerce.number(),
+  settlementId: z.coerce.number(),
+  groupTitle: z.string(),
+  groupPeriod: z.string(),
+  totalExpense: z.coerce.number(),
+  expensePerMember: z.coerce.number(),
+});
+
+export const pastSettlementListSchema = z.array(pastSettlementSchema);
+
 export const userRemainingScheduleSchema = z.object({
   groupId: z.coerce.number(),
   scheduleStatus: z.string(),

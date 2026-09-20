@@ -1,16 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { InfoBanner } from '@/shared/components/info-banner';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { advanceTripPhase } from '@/shared/session';
 
-import { rememberActiveTrip, useScheduleQuery, useTripView } from '../trip.hooks';
-import { buildInvitePath, buildInviteUrl, laborRewardFor } from '../trip.lib';
+import { useSettlementRecapQuery, useTripView } from '../trip.hooks';
+import { buildInvitePath, buildInviteUrl, parseGroupId } from '../trip.lib';
 
 type RecapCardScreenProps = {
   tripId: string;
@@ -18,31 +17,16 @@ type RecapCardScreenProps = {
 
 export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
   const router = useRouter();
+  const groupId = parseGroupId(tripId) ?? 0;
   const { trip, isLoading } = useTripView(tripId);
-  const scheduleQuery = useScheduleQuery(tripId);
+  const recapQuery = useSettlementRecapQuery(groupId);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    rememberActiveTrip(tripId);
-  }, [tripId]);
-
-  useEffect(() => {
-    if (!isLoading && !trip) {
-      router.replace('/home');
-    }
-  }, [isLoading, router, trip]);
-
-  const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
-  const laborTotal = useMemo(
-    () => trip?.members.reduce((acc, member) => acc + laborRewardFor(trip, member.id), 0) ?? 0,
-    [trip],
-  );
-  const distance = scheduleQuery.data?.days.reduce((acc, day) => acc + (day.totalDistanceKm ?? 0), 0) ?? 0;
   const invitePath = trip ? buildInvitePath(trip.inviteCode) : '/join';
   const inviteUrl =
     trip && typeof window !== 'undefined' ? buildInviteUrl(window.location.origin, trip.inviteCode) : invitePath;
 
-  if (isLoading || !trip) {
+  if (isLoading || recapQuery.isPending || !trip) {
     return (
       <MobileShell className="bg-white">
         <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
@@ -51,6 +35,8 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
       </MobileShell>
     );
   }
+
+  const recap = recapQuery.data;
 
   const handleCopy = async () => {
     if (!inviteUrl) {
@@ -65,16 +51,11 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
     }
   };
 
-  const handleHome = () => {
-    advanceTripPhase(tripId, 'settled');
-    router.push('/home');
-  };
-
   const rows = [
-    { label: '총 이동', value: `${distance > 0 ? Math.round(distance) : 340}km` },
-    { label: '총 지출', value: `${(totalSpent || 100000).toLocaleString('ko-KR')}원` },
-    { label: '미니게임', value: `룰렛·사다리 ${Math.max(trip.timeline.length, 1)}판` },
-    { label: '인정한 수고 가치', value: `${(laborTotal || 72000).toLocaleString('ko-KR')}원` },
+    { label: '총 이동', value: recap?.totalDistance ?? '-' },
+    { label: '총 지출', value: `${(recap?.totalExpenseAmount ?? 0).toLocaleString('ko-KR')}원` },
+    { label: '미니게임', value: recap?.gameResult ?? '-' },
+    { label: '인정한 수고 가치', value: `${(recap?.totalEffortAmount ?? 0).toLocaleString('ko-KR')}원` },
   ] as const;
 
   return (
@@ -87,9 +68,10 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
           style={{ backgroundImage: 'linear-gradient(128deg, #2f2f2f 0%, #5b3dbe 43%, #7a4fe0 71%)' }}
         >
           <p className="text-[11.5px] font-bold tracking-[1px] text-[#c9bcff]">가치가자 RECAP</p>
-          <h2 className="text-[24px] font-extrabold tracking-[-0.5px] text-white">{trip.title}</h2>
+          <h2 className="text-[24px] font-extrabold tracking-[-0.5px] text-white">{recap?.groupTitle ?? trip.title}</h2>
           <p className="text-[13px] font-medium text-white/75">
-            {trip.dateLabel} · {trip.nightsLabel} · {trip.memberCount}명
+            {recap?.groupPeriod ?? trip.dateLabel} · {recap?.durationText ?? trip.nightsLabel} ·{' '}
+            {recap?.memberCount ?? trip.memberCount}명
           </p>
           <div className="overflow-hidden rounded-[14px] bg-white/8">
             {rows.map((row, index) => (
@@ -124,7 +106,7 @@ export const RecapCardScreen = ({ tripId }: RecapCardScreenProps) => {
         ) : null}
 
         <div className="mt-auto">
-          <Button variant="primary" fullWidth onClick={handleHome}>
+          <Button variant="primary" fullWidth onClick={() => router.push('/home')}>
             홈으로 돌아가기
           </Button>
         </div>

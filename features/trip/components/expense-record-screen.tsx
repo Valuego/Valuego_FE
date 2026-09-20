@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
@@ -10,11 +10,10 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { addTripExpense } from '@/shared/session';
 
-import { rememberActiveTrip, useTripView } from '../trip.hooks';
-
-const EXPENSE_CATEGORIES = ['🍽️ 식사', '🚕 이동', '🏨 숙소'] as const;
+import { EXPENSE_CATEGORY_OPTIONS, expenseCategoryEmoji, expenseCategoryLabel } from '../trip.constants';
+import { useCreateExpense, useExpensesQuery, useTripView } from '../trip.hooks';
+import { parseGroupId, toIsoDate } from '../trip.lib';
 
 type ExpenseRecordScreenProps = {
   tripId: string;
@@ -26,48 +25,21 @@ const parseAmount = (raw: string) => {
   return digits ? Number(digits) : 0;
 };
 
-const expenseEmoji = (title: string) => {
-  if (title.includes('식사')) {
-    return '🍜';
-  }
-  if (title.includes('이동')) {
-    return '🚕';
-  }
-  if (title.includes('숙소')) {
-    return '🏨';
-  }
-  return '💳';
-};
-
 export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRecordScreenProps) => {
   const router = useRouter();
+  const groupId = parseGroupId(tripId) ?? 0;
   const { trip, isLoading, isError, error } = useTripView(tripId);
+  const expensesQuery = useExpensesQuery(groupId);
+  const createExpense = useCreateExpense(groupId);
   const [view, setView] = useState<'form' | 'list'>(initialView);
   const [amountInput, setAmountInput] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-  const [category, setCategory] = useState<(typeof EXPENSE_CATEGORIES)[number] | null>(null);
+  const [category, setCategory] = useState<(typeof EXPENSE_CATEGORY_OPTIONS)[number] | null>(null);
   const amount = parseAmount(amountInput);
 
-  useEffect(() => {
-    rememberActiveTrip(tripId);
-  }, [tripId]);
-
-  useEffect(() => {
-    if (!isLoading && !trip) {
-      router.replace('/home');
-    }
-  }, [isLoading, router, trip]);
-
-  const canSubmit = Boolean(trip && amount > 0 && selectedMemberIds.length > 0 && category);
-
-  const selectedNames = useMemo(() => {
-    if (!trip) {
-      return [];
-    }
-    return trip.members.filter((member) => selectedMemberIds.includes(member.id)).map((member) => member.name);
-  }, [selectedMemberIds, trip]);
-
-  const totalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
+  const canSubmit = Boolean(
+    groupId && amount > 0 && selectedMemberIds.length > 0 && category && !createExpense.isPending,
+  );
 
   if (isLoading) {
     return (
@@ -79,7 +51,7 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
     );
   }
 
-  if (!trip) {
+  if (!trip || !groupId) {
     return (
       <MobileShell className="bg-surface-gray">
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 text-center">
@@ -100,42 +72,54 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit || !category) {
       return;
     }
-    addTripExpense(tripId, {
-      title: category,
-      amount,
-      payerName: selectedNames[0] ?? trip.members[0]?.name ?? '나',
-    });
-    setAmountInput('');
-    setSelectedMemberIds([]);
-    setCategory(null);
-    setView('list');
+    try {
+      await createExpense.mutateAsync({
+        groupId,
+        amount,
+        category: category.category,
+        expenseDate: toIsoDate(new Date()),
+        payers: [{ groupMemberId: Number(selectedMemberIds[0]) }],
+        participants: selectedMemberIds.map((id) => ({ groupMemberId: Number(id), isIncluded: true })),
+      });
+      setAmountInput('');
+      setSelectedMemberIds([]);
+      setCategory(null);
+      setView('list');
+    } catch {
+      // 에러 메시지는 아래 createExpense.isError 영역에서 그대로 보여준다.
+    }
   };
+
+  const expenses = expensesQuery.data?.expenseInfoResDtos ?? [];
+  const totalSpent = expensesQuery.data?.totalAmount ?? 0;
 
   if (view === 'list') {
     return (
       <MobileShell className="bg-surface-gray">
         <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-8">
           <Header title="지출 기록" onBack={() => router.push(`/trips/${tripId}`)} />
-          <p className="text-text-secondary-soft text-sm font-bold">오늘 기록</p>
+          <p className="text-text-secondary-soft text-sm font-bold">전체 기록</p>
           <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
-            {trip.expenses.length === 0 ? (
+            {expensesQuery.isPending ? (
+              <li className="text-text-secondary-soft px-3.5 py-4 text-sm font-medium">불러오는 중…</li>
+            ) : expenses.length === 0 ? (
               <li className="text-text-secondary-soft px-3.5 py-4 text-sm font-medium">아직 지출 기록이 없어요</li>
             ) : (
-              trip.expenses.map((expense, index) => (
+              expenses.map((expense, index) => (
                 <li
-                  key={expense.id}
+                  key={expense.expenseId}
                   className={cn(
                     'flex items-center gap-3 px-3.5 py-3',
                     index === 0 ? '' : 'border-line-hairline border-t',
                   )}
                 >
-                  <span className="text-xl">{expenseEmoji(expense.title)}</span>
+                  <span className="text-xl">{expenseCategoryEmoji(expense.category)}</span>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <p className="text-ink-900 text-sm font-bold">{expense.title}</p>
+                    <p className="text-ink-900 text-sm font-bold">{expenseCategoryLabel(expense.category)}</p>
                     <p className="text-text-secondary-soft text-xs font-medium">{expense.payerName}</p>
                   </div>
                   <p className="text-ink-900 text-sm font-bold">{expense.amount.toLocaleString('ko-KR')}원</p>
@@ -200,16 +184,25 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
 
         <section className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white p-[18px]">
           <p className="text-ink-900 text-[15px] font-bold tracking-[-0.2px]">분류</p>
-          <div className="flex gap-2">
-            {EXPENSE_CATEGORIES.map((item) => (
-              <Chip key={item} label={item} selected={category === item} onClick={() => setCategory(item)} />
+          <div className="flex flex-wrap gap-2">
+            {EXPENSE_CATEGORY_OPTIONS.map((item) => (
+              <Chip
+                key={item.category}
+                label={`${item.emoji} ${item.label}`}
+                selected={category?.category === item.category}
+                onClick={() => setCategory(item)}
+              />
             ))}
           </div>
         </section>
+
+        {createExpense.isError ? (
+          <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(createExpense.error)}</p>
+        ) : null}
       </div>
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
-        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={handleSubmit}>
-          지출 기록하기
+        <Button variant="primary" fullWidth disabled={!canSubmit} onClick={() => void handleSubmit()}>
+          {createExpense.isPending ? '기록하는 중…' : '지출 기록하기'}
         </Button>
       </div>
     </MobileShell>

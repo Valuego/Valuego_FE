@@ -1,16 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { confirmSettlementBoard } from '@/shared/session';
+import { getErrorMessage } from '@/shared/lib/api';
 
-import { rememberActiveTrip, useTripView } from '../trip.hooks';
-import { laborRewardFor } from '../trip.lib';
+import { useConfirmSettlement, useSettlementQuery, useTripView } from '../trip.hooks';
+import { parseGroupId } from '../trip.lib';
 
 type SettlementBoardScreenProps = {
   tripId: string;
@@ -18,33 +18,18 @@ type SettlementBoardScreenProps = {
 
 export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) => {
   const router = useRouter();
-  const { trip, isLoading } = useTripView(tripId);
+  const groupId = parseGroupId(tripId) ?? 0;
+  const { trip, isLoading: tripLoading } = useTripView(tripId);
+  const settlementQuery = useSettlementQuery(groupId);
+  const confirmSettlement = useConfirmSettlement(groupId);
 
   useEffect(() => {
-    rememberActiveTrip(tripId);
-  }, [tripId]);
-
-  useEffect(() => {
-    if (!isLoading && !trip) {
+    if (!tripLoading && !trip) {
       router.replace('/home');
     }
-  }, [isLoading, router, trip]);
+  }, [router, trip, tripLoading]);
 
-  const total = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
-  const perPerson = trip && trip.members.length > 0 ? Math.round(total / trip.members.length) : 0;
-
-  const memberRows = useMemo(() => {
-    if (!trip) {
-      return [];
-    }
-    return trip.members.map((member) => {
-      const reward = laborRewardFor(trip, member.id);
-      const net = reward - perPerson;
-      return { member, reward, net };
-    });
-  }, [perPerson, trip]);
-
-  if (isLoading || !trip) {
+  if (tripLoading || settlementQuery.isPending || !trip) {
     return (
       <MobileShell className="bg-surface-gray">
         <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
@@ -53,6 +38,9 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
       </MobileShell>
     );
   }
+
+  const settlement = settlementQuery.data;
+  const findMember = (memberId: number) => trip.members.find((member) => Number(member.id) === memberId);
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -66,7 +54,7 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
           >
             <p className="text-[12.5px] font-bold text-white/88">총 지출</p>
             <p className="text-[22px] font-extrabold tracking-[-0.5px] text-white">
-              {(total || 100000).toLocaleString('ko-KR')}원
+              {(settlement?.totalExpense ?? 0).toLocaleString('ko-KR')}원
             </p>
           </div>
           <div
@@ -75,30 +63,30 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
           >
             <p className="text-[12.5px] font-bold text-white/88">1인당</p>
             <p className="text-[22px] font-extrabold tracking-[-0.5px] text-white">
-              {(perPerson || 25000).toLocaleString('ko-KR')}원
+              {(settlement?.expensePerMember ?? 0).toLocaleString('ko-KR')}원
             </p>
           </div>
         </div>
 
         <p className="text-ink-900 text-sm font-bold tracking-[-0.2px]">멤버별 수고 보상</p>
         <ul className="flex flex-col gap-3.5">
-          {trip.laborCategories.map((category) => {
-            const member = trip.members.find((item) => item.id === category.assigneeId);
-            if (!member) {
-              return null;
-            }
+          {(settlement?.effortRewards ?? []).map((reward) => {
+            const member = findMember(reward.groupMemberId);
             return (
               <li
-                key={category.id}
+                key={reward.groupMemberId}
                 className="border-line-hairline flex items-center justify-between rounded-[14px] border bg-white py-2.5 pr-3 pl-3.5"
               >
-                <Avatar member={member.member} size="sm" initial={member.name.slice(0, 1)} className="size-10" />
-                <p className="text-ink-900 min-w-0 flex-1 px-3 text-sm font-bold">
-                  {member.name}의 {category.title}
-                </p>
-                <p className="text-ink-900 text-sm font-bold">
-                  {laborRewardFor(trip, member.id).toLocaleString('ko-KR')}원
-                </p>
+                {member ? (
+                  <Avatar
+                    member={member.member}
+                    size="sm"
+                    initial={reward.memberName.slice(0, 1)}
+                    className="size-10"
+                  />
+                ) : null}
+                <p className="text-ink-900 min-w-0 flex-1 px-3 text-sm font-bold">{reward.effortTitle}</p>
+                <p className="text-ink-900 text-sm font-bold">{reward.rewardAmount.toLocaleString('ko-KR')}원</p>
               </li>
             );
           })}
@@ -111,28 +99,40 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
           </p>
         </div>
         <ul className="flex flex-col gap-3.5">
-          {memberRows.map(({ member, net }) => {
-            const receives = net >= 0;
+          {(settlement?.memberSettlements ?? []).map((row) => {
+            const member = findMember(row.groupMemberId);
+            const receives = row.settlementType === 'GIVE';
             return (
               <li
-                key={member.id}
+                key={row.groupMemberId}
                 className="border-line-hairline flex items-center gap-3 rounded-[14px] border bg-white px-4 py-3.5"
               >
-                <Avatar member={member.member} size="sm" initial={member.name.slice(0, 1)} className="size-10" />
+                {member ? (
+                  <Avatar member={member.member} size="sm" initial={row.memberName.slice(0, 1)} className="size-10" />
+                ) : null}
                 <div className="min-w-0 flex-1">
-                  <p className="text-ink-900 text-[15px] font-bold tracking-[-0.2px]">{member.name}</p>
+                  <p className="text-ink-900 text-[15px] font-bold tracking-[-0.2px]">{row.memberName}</p>
                   <p className="text-text-secondary-soft text-[12.5px] font-medium">
-                    {receives ? '받을 금액' : '보낼 금액'}
+                    {row.settlementType === 'ZERO' ? '정산 없음' : receives ? '받을 금액' : '보낼 금액'}
                   </p>
                 </div>
-                <p className={`text-sm font-bold tracking-[-0.2px] ${receives ? 'text-brand-blue' : 'text-[#ff4242]'}`}>
-                  {receives ? '받아요' : '보내요'} {Math.abs(net || (receives ? 45000 : 41500)).toLocaleString('ko-KR')}
-                  원
-                </p>
+                {row.settlementType === 'ZERO' ? (
+                  <p className="text-text-secondary-soft text-sm font-bold tracking-[-0.2px]">0원</p>
+                ) : (
+                  <p
+                    className={`text-sm font-bold tracking-[-0.2px] ${receives ? 'text-brand-blue' : 'text-[#ff4242]'}`}
+                  >
+                    {receives ? '받아요' : '보내요'} {row.amount.toLocaleString('ko-KR')}원
+                  </p>
+                )}
               </li>
             );
           })}
         </ul>
+
+        {confirmSettlement.isError ? (
+          <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(confirmSettlement.error)}</p>
+        ) : null}
       </div>
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
@@ -140,14 +140,15 @@ export const SettlementBoardScreen = ({ tripId }: SettlementBoardScreenProps) =>
           variant="outline"
           fullWidth
           className="border-brand-blue text-brand-blue border-[1.5px]"
-          onClick={() => confirmSettlementBoard(tripId)}
+          disabled={confirmSettlement.isPending || Boolean(settlement?.isConfirmed)}
+          onClick={() => confirmSettlement.mutate()}
         >
-          {trip.settlementConfirmed ? '확인 완료' : '확인하기 (1/4)'}
+          {settlement?.isConfirmed ? '확인 완료' : confirmSettlement.isPending ? '확인하는 중…' : '확인하기'}
         </Button>
         <Button
           variant="primary"
           fullWidth
-          disabled={!trip.settlementConfirmed}
+          disabled={!settlement?.isConfirmed}
           onClick={() => router.push(`/trips/${tripId}/settlement/recap`)}
         >
           리캡 카드 보기

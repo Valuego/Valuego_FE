@@ -1,20 +1,8 @@
-import type {
-  GameResult,
-  MemberKey,
-  Trip,
-  TripDraft,
-  TripExpense,
-  TripMember,
-  TripPhase,
-  UserProfile,
-} from './session.types';
+import type { GameResult, MemberKey, Trip, TripDraft, TripMember, TripPhase, UserProfile } from './session.types';
 
 import {
   createInitialSession,
   DEFAULT_DRAFT,
-  DEFAULT_LABOR_CATEGORIES,
-  DEFAULT_ROLES,
-  DEFAULT_TODOS,
   DEMO_GUEST_INVITE_CODE,
   createDemoGuestTrip,
   withTripDefaults,
@@ -26,20 +14,6 @@ const FRIEND_POOL: Omit<TripMember, 'id'>[] = [
   { name: '하영', role: '친구', member: 'hayeong', status: 'done', statusLabel: '완료' },
   { name: '민재', role: '친구', member: 'minjae', status: 'pending', statusLabel: '대기 중' },
 ];
-
-const slugifyDestination = (destination: string) => {
-  const map: Record<string, string> = {
-    부산: 'busan',
-    강릉: 'gangneung',
-    경주: 'gyeongju',
-    여수: 'yeosu',
-    전주: 'jeonju',
-    속초: 'sokcho',
-  };
-  return map[destination] ?? 'trip';
-};
-
-const createInviteCode = () => Math.random().toString(36).slice(2, 8);
 
 const hostMember = (greetingName: string, member: MemberKey): TripMember => ({
   id: 'host',
@@ -300,43 +274,6 @@ export const updateTripDraft = (partial: Partial<TripDraft>) => {
   }));
 };
 
-export const createTripFromDraft = (): Trip => {
-  const session = getSessionSnapshot();
-  const draft = session.draft ?? DEFAULT_DRAFT;
-  const id = `${slugifyDestination(draft.destination)}-${Date.now().toString(36)}`;
-
-  const trip = withTripDefaults({
-    id,
-    title: `${draft.destination} 우정여행`,
-    destination: draft.destination,
-    dateLabel: draft.dateLabel,
-    nightsLabel: draft.nightsLabel,
-    phase: 'inviting',
-    dDayLabel: '초대 중',
-    memberCount: draft.memberCount,
-    transport: draft.transport,
-    budget: draft.budget,
-    foods: draft.foods,
-    activity: draft.activity,
-    inviteCode: createInviteCode(),
-    members: [hostMember(session.user.greetingName, session.user.member)],
-    roles: DEFAULT_ROLES.map((role) =>
-      role.id === 'role-host' ? { ...role, assigneeId: 'host', assigneeName: session.user.greetingName } : { ...role },
-    ),
-    todos: DEFAULT_TODOS.map((todo) => ({ ...todo })),
-    expenses: [],
-  });
-
-  setSession((prev) => ({
-    ...prev,
-    draft: null,
-    activeTripId: trip.id,
-    trips: [trip, ...prev.trips.filter((item) => item.id !== trip.id)],
-  }));
-
-  return trip;
-};
-
 export const getTripById = (tripId: string) => {
   const trip = getSessionSnapshot().trips.find((item) => item.id === tripId);
   return trip ? withTripDefaults(trip) : undefined;
@@ -525,126 +462,6 @@ export const addTripTodo = (tripId: string, title: string) => {
       return withTripDefaults({
         ...trip,
         todos: [...trip.todos, { id: `todo-${Date.now().toString(36)}`, title: trimmed, done: false }],
-      });
-    }),
-  }));
-};
-
-export const addTripExpense = (tripId: string, input: { title: string; amount: number; payerName: string }) => {
-  const expense: TripExpense = {
-    id: `exp-${Date.now().toString(36)}`,
-    title: input.title.trim(),
-    amount: input.amount,
-    payerName: input.payerName,
-    createdAt: new Date().toISOString(),
-  };
-
-  if (!expense.title || expense.amount <= 0) {
-    return;
-  }
-
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      const expenses = [expense, ...trip.expenses];
-      const sum = expenses.reduce((acc, item) => acc + item.amount, 0);
-      const per = trip.members.length > 0 ? Math.round(sum / trip.members.length) : 0;
-      return withTripDefaults({
-        ...trip,
-        expenses,
-        totalAmount: `${sum.toLocaleString('ko-KR')}원`,
-        perPersonAmount: `${per.toLocaleString('ko-KR')}원`,
-      });
-    }),
-  }));
-};
-
-export const assignLaborMember = (tripId: string, categoryId: string, memberId: string | null) => {
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      const categories = trip.laborCategories.length
-        ? trip.laborCategories
-        : DEFAULT_LABOR_CATEGORIES.map((item) => ({ ...item }));
-      return withTripDefaults({
-        ...trip,
-        laborCategories: categories.map((item) => (item.id === categoryId ? { ...item, assigneeId: memberId } : item)),
-      });
-    }),
-  }));
-};
-
-export const addLaborCategory = (tripId: string, title: string) => {
-  const trimmed = title.trim();
-  if (!trimmed) {
-    return;
-  }
-
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      return withTripDefaults({
-        ...trip,
-        laborCategories: [
-          ...trip.laborCategories,
-          { id: `labor-${Date.now().toString(36)}`, title: trimmed, assigneeId: null },
-        ],
-      });
-    }),
-  }));
-};
-
-export const removeLaborCategory = (tripId: string, categoryId: string) => {
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      return withTripDefaults({
-        ...trip,
-        laborCategories: trip.laborCategories.filter((item) => item.id !== categoryId),
-      });
-    }),
-  }));
-};
-
-export const saveLaborValue = (tripId: string, memberId: string, amount: number, note: string) => {
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      const nextValues = trip.laborValues.filter((item) => item.memberId !== memberId);
-      nextValues.push({ memberId, amount, note });
-      return withTripDefaults({
-        ...trip,
-        laborValues: nextValues,
-      });
-    }),
-  }));
-};
-
-export const confirmSettlementBoard = (tripId: string) => {
-  setSession((prev) => ({
-    ...prev,
-    trips: prev.trips.map((trip) => {
-      if (trip.id !== tripId) {
-        return trip;
-      }
-      return withTripDefaults({
-        ...trip,
-        settlementConfirmed: true,
       });
     }),
   }));

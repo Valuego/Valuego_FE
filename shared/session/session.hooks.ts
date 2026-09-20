@@ -36,8 +36,3 @@ export const useTripById = (tripId: string): Trip | null => {
   );
   return useMemo(() => (trip ? withTripDefaults(trip) : null), [trip]);
 };
-
-export const useSettledTrips = (): Trip[] => {
-  const session = useAppSession();
-  return session.trips.filter((trip) => trip.phase === 'settled').map((trip) => withTripDefaults(trip));
-};
