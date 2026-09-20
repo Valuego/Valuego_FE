@@ -232,6 +232,21 @@ export const resolvePlanningPath = ({
   return buildTripHref(tripId, 'prep');
 };
 
+export const resolveTripEntryPath = (trip: { id: string; phase: TripPhase }) => {
+  if (trip.phase === 'settled') {
+    return buildTripHref(trip.id, 'settlement', 'recap');
+  }
+  return buildTripHref(trip.id);
+};
+
+/** 백엔드가 그룹 상태를 자동으로 완료 처리하지 않아도, 여행 종료일이 지났으면 지난 여행으로 취급한다 */
+export const isTripPeriodOver = (trip: Pick<Trip, 'endDate'>): boolean => {
+  if (!trip.endDate) {
+    return false;
+  }
+  return parseIsoDate(trip.endDate).getTime() < startOfDay(new Date()).getTime();
+};
+
 export const foodFromLabels = (labels: string[]): FoodType => {
   const first = labels[0];
   return (first ? FOOD_FROM_LABEL[first] : undefined) ?? 'KOREAN';
@@ -305,6 +320,7 @@ export const groupToTrip = (group: GroupInfo, options?: GroupToTripOptions): Tri
     destination: destinationToLabel(group.destination),
     dateLabel: formatDateRangeLabel(start, end),
     nightsLabel: formatNightsLabel(start, end),
+    endDate: group.endDate,
     phase,
     dDayLabel: phase === 'settled' ? undefined : startDateDday(group.startDate),
     memberCount: group.memberCount,

@@ -21,7 +21,7 @@ import {
   useTogglePlaceVote,
   useTripView,
 } from '../trip.hooks';
-import { formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
+import { buildTripHref, formatVisitTime, getPlaceTypeStyle } from '../trip.lib';
 
 type PlaceDetailScreenProps = {
   tripId: string;
@@ -76,7 +76,10 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
-        <Header title={place?.name ?? '경유지 상세'} onBack={() => router.push(`/trips/${tripId}/schedule`)} />
+        <Header
+          title={place?.name ?? '경유지 상세'}
+          onBack={() => router.push(isOngoing ? buildTripHref(tripId) : buildTripHref(tripId, 'schedule'))}
+        />
 
         {scheduleQuery.isPending ? (
           <p className="text-text-secondary-soft text-sm font-medium">장소 정보를 불러오는 중…</p>
@@ -158,6 +161,40 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
           ) : null}
         </section>
 
+        {blogQuery.data?.reviews.length ? (
+          <section className="border-line-hairline rounded-2xl border bg-white p-[18px]">
+            <div className="flex items-center justify-between">
+              <p className="text-ink-900 text-sm font-bold">블로그 리뷰 {blogQuery.data.totalCount}</p>
+              {blogQuery.data.totalReviewUrl ? (
+                <a
+                  href={blogQuery.data.totalReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-blue text-xs font-bold"
+                >
+                  네이버에서 더보기 →
+                </a>
+              ) : null}
+            </div>
+            <ul className="mt-3 flex flex-col gap-3">
+              {blogQuery.data.reviews.map((post, index) => (
+                <li key={`${post.link}-${index}`}>
+                  <a href={post.link} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
+                    <p className="text-ink-900 text-sm font-bold">{stripHtmlTags(post.title)}</p>
+                    <p className="text-text-secondary-soft text-[12.5px] font-medium">
+                      {stripHtmlTags(post.description)}
+                    </p>
+                    <p className="text-text-secondary-soft text-xs font-medium">
+                      {post.bloggerName}
+                      {post.postDate ? ` · ${post.postDate}` : ''}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         <section className="border-line-hairline rounded-2xl border bg-white p-[18px]">
           <p className="text-ink-900 text-sm font-bold">의견 {commentsQuery.data?.commentCount ?? ''}</p>
           {commentsQuery.data?.comments.length ? (
@@ -197,18 +234,14 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
       </div>
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {isOngoing ? (
-          <Button variant="primary" fullWidth onClick={() => router.push(`/trips/${tripId}/games`)}>
+          <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId, 'games'))}>
             게임 하러가기
           </Button>
         ) : null}
         <Button
           variant="outline"
           fullWidth
-          onClick={() =>
-            router.push(
-              trip ? (isOngoing ? `/trips/${trip.id}` : `/trips/${trip.id}/schedule`) : `/trips/${tripId}/schedule`,
-            )
-          }
+          onClick={() => router.push(isOngoing ? buildTripHref(tripId) : buildTripHref(tripId, 'schedule'))}
         >
           {isOngoing ? '여행 중 홈으로' : '일정으로'}
         </Button>

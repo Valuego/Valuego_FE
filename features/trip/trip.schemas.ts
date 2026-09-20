@@ -144,6 +144,39 @@ export const placeCommentListSchema = z.object({
   comments: z.array(placeCommentSchema),
 });
 
+const nullishString = () =>
+  z
+    .string()
+    .nullish()
+    .transform((value) => value ?? '');
+
+export const placeBlogPostSchema = z.object({
+  title: nullishString(),
+  description: nullishString(),
+  bloggerName: nullishString(),
+  postDate: nullishString(),
+  link: nullishString(),
+});
+
+export const placeBlogReviewsSchema = z.object({
+  keyword: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  totalReviewUrl: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  totalCount: z
+    .number()
+    .nullish()
+    .transform((value) => value ?? 0),
+  reviews: z
+    .array(placeBlogPostSchema)
+    .nullish()
+    .transform((value) => value ?? []),
+});
+
 export const leaderGroupSummarySchema = z.object({
   groupId: z.coerce.number(),
   title: z.string(),

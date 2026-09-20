@@ -40,7 +40,7 @@ export const SettlementStatusScreen = ({ tripId }: SettlementStatusScreenProps) 
   return (
     <MobileShell className="bg-white">
       <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
-        <Header title="정산" onBack={() => router.push(`/trips/${tripId}/settlement/values`)} />
+        <Header title="정산" onBack={() => router.push(`/trips/${tripId}/settlement/labor`)} />
         <div className="flex flex-col gap-1.5">
           <h2 className="text-ink-900 text-[22px] font-bold tracking-[-0.5px]">수고 회고를 제출했어요</h2>
           <p className="text-text-secondary-soft text-[13.5px] leading-[1.5] font-medium">

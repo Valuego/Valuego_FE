@@ -2,51 +2,55 @@
 
 import Link from 'next/link';
 
-import { buildTripHref, groupToTrip, mergeTripWithLocal, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
+import {
+  groupToTrip,
+  isTripPeriodOver,
+  mergeTripWithLocal,
+  rememberActiveTrip,
+  resolveTripEntryPath,
+  useMyGroupsQuery,
+} from '@/features/trip';
 import BellIcon from '@/shared/assets/icons/bell.svg';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
 import { getErrorMessage } from '@/shared/lib/api';
+import { cn } from '@/shared/lib/cn';
 import { useAppSession } from '@/shared/session';
 
 export const HomeScreen = () => {
   const session = useAppSession();
   const groupsQuery = useMyGroupsQuery(!session.isGuest);
-  const remoteOngoing = (groupsQuery.data?.ongoingGroups ?? []).map((group) => groupToTrip(group));
-  const remotePast = (groupsQuery.data?.pastGroups ?? []).map((group) => groupToTrip(group));
+  const withLocal = (trip: ReturnType<typeof groupToTrip>) =>
+    mergeTripWithLocal(
+      trip,
+      session.trips.find((item) => item.id === trip.id),
+    );
+  const remoteOngoing = (groupsQuery.data?.ongoingGroups ?? []).map((group) => withLocal(groupToTrip(group)));
+  const remotePast = (groupsQuery.data?.pastGroups ?? []).map((group) => withLocal(groupToTrip(group)));
   const remoteIds = new Set([...remoteOngoing, ...remotePast].map((trip) => trip.id));
   const localOnlyTrips = session.trips.filter(
     (trip) => !remoteIds.has(trip.id) && trip.phase !== 'settled' && trip.phase !== 'drafting',
   );
-  const ongoingTrips = [
-    ...remoteOngoing.map((trip) =>
-      mergeTripWithLocal(
-        trip,
-        session.trips.find((item) => item.id === trip.id),
-      ),
-    ),
-    ...localOnlyTrips,
-  ].filter((trip) => trip.phase !== 'settled');
-  const pastTrips = [
-    ...remotePast.map((trip) =>
-      mergeTripWithLocal(
-        trip,
-        session.trips.find((item) => item.id === trip.id),
-      ),
-    ),
-    ...remoteOngoing
-      .map((trip) =>
-        mergeTripWithLocal(
-          trip,
-          session.trips.find((item) => item.id === trip.id),
-        ),
-      )
-      .filter((trip) => trip.phase === 'settled'),
-  ];
-  const activeTrip = ongoingTrips[0] ?? null;
+
+  // 백엔드가 그룹 상태를 자동으로 완료 처리하지 않는 경우가 있어, 종료일이 지난 여행은 phase와 무관하게 지난 여행으로 분류한다.
+  const activeCandidates = [...remoteOngoing, ...localOnlyTrips].filter((trip) => trip.phase !== 'settled');
+  const stillOngoing = activeCandidates
+    .filter((trip) => !isTripPeriodOver(trip))
+    .sort((a, b) => (a.endDate ?? '').localeCompare(b.endDate ?? ''));
+  const endedAmongOngoing = activeCandidates.filter((trip) => isTripPeriodOver(trip));
+
+  const activeTrip = stillOngoing[0] ?? null;
+  const extraOngoing = stillOngoing.slice(1);
   const hasActiveTrip = Boolean(activeTrip);
+
+  const pastTrips = [
+    ...remotePast,
+    ...remoteOngoing.filter((trip) => trip.phase === 'settled'),
+    ...endedAmongOngoing,
+    ...extraOngoing,
+  ].sort((a, b) => (b.endDate ?? '').localeCompare(a.endDate ?? ''));
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -76,7 +80,7 @@ export const HomeScreen = () => {
         {hasActiveTrip && activeTrip ? (
           <>
             <Link
-              href={buildTripHref(activeTrip.id, 'schedule')}
+              href={resolveTripEntryPath(activeTrip)}
               className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white px-6 pt-5 pb-7 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
               onClick={() => rememberActiveTrip(activeTrip.id)}
             >
@@ -99,7 +103,9 @@ export const HomeScreen = () => {
                     />
                   ))}
                 </div>
-                <span className="text-text-body text-sm font-medium">일정 보기 →</span>
+                <span className="text-text-body text-sm font-medium">
+                  {activeTrip.phase === 'ongoing' || activeTrip.phase === 'settling' ? '여행 보기 →' : '이어서 하기 →'}
+                </span>
               </div>
             </Link>
 
@@ -134,14 +140,21 @@ export const HomeScreen = () => {
             {pastTrips.slice(0, 2).map((trip) => (
               <li key={trip.id}>
                 <Link
-                  href={buildTripHref(trip.id, 'schedule')}
+                  href={resolveTripEntryPath(trip)}
                   className="border-line-hairline flex h-20 items-center gap-3 rounded-xl border bg-white px-4 py-3.5 shadow-[0px_1px_8px_rgba(23,23,25,0.08)]"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <p className="text-ink-900 text-base font-bold tracking-[-0.2px]">{trip.title}</p>
                     <p className="text-text-secondary-soft text-xs font-medium">{trip.dateLabel}</p>
                   </div>
-                  <span className="text-brand-success shrink-0 text-[12.5px] font-bold">종료</span>
+                  <span
+                    className={cn(
+                      'shrink-0 text-[12.5px] font-bold',
+                      trip.phase === 'settled' || isTripPeriodOver(trip) ? 'text-brand-success' : 'text-brand-blue',
+                    )}
+                  >
+                    {trip.phase === 'settled' || isTripPeriodOver(trip) ? '종료' : (trip.dDayLabel ?? '진행 중')}
+                  </span>
                 </Link>
               </li>
             ))}

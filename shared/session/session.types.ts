@@ -64,6 +64,7 @@ export type Trip = {
   destination: string;
   dateLabel: string;
   nightsLabel: string;
+  endDate?: string;
   phase: TripPhase;
   dDayLabel?: string;
   memberCount: number;

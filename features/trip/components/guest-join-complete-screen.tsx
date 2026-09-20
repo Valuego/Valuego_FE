@@ -40,13 +40,17 @@ export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) 
     if (!trip || !canViewSchedule) {
       return;
     }
-    router.push(buildTripHref(trip.id, 'schedule'));
+    router.push(
+      trip.phase === 'ongoing' || trip.phase === 'settling'
+        ? buildTripHref(trip.id)
+        : buildTripHref(trip.id, 'schedule'),
+    );
   };
 
   return (
     <MobileShell className="bg-white">
       <div className="border-line-hairline flex h-16 items-center justify-between border-b px-5">
-        <Header title="뒤로가기" onBack={() => router.push(`${buildInvitePath(code)}/profile`)} />
+        <Header title="뒤로가기" onBack={() => router.push(`${buildInvitePath(code)}/style`)} />
         {trip ? <GuestMemberBadge members={trip.members} memberCount={trip.memberCount} /> : <span />}
       </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">

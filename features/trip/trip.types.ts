@@ -163,6 +163,21 @@ export type CreateCommentRequest = {
   content: string;
 };
 
+export type PlaceBlogPost = {
+  title: string;
+  description: string;
+  bloggerName: string;
+  postDate: string;
+  link: string;
+};
+
+export type PlaceBlogReviews = {
+  keyword?: string;
+  totalReviewUrl?: string;
+  totalCount: number;
+  reviews: PlaceBlogPost[];
+};
+
 export type LeaderGroupSummary = {
   groupId: number;
   title: string;

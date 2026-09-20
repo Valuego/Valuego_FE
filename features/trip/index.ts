@@ -23,7 +23,14 @@ export { SettlementStatusScreen } from './components/settlement-status-screen';
 export { TimelineScreen } from './components/timeline-screen';
 export { TodosScreen } from './components/todos-screen';
 export { TripLobbyScreen } from './components/trip-lobby-screen';
-export { buildInvitePath, buildTripHref, groupToTrip, mergeTripWithLocal } from './trip.lib';
+export {
+  buildInvitePath,
+  buildTripHref,
+  groupToTrip,
+  isTripPeriodOver,
+  mergeTripWithLocal,
+  resolveTripEntryPath,
+} from './trip.lib';
 export {
   rememberActiveTrip,
   useLeaderGroupListQuery,

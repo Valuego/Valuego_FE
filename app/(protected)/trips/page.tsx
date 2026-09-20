@@ -12,7 +12,7 @@ const TripsIndexPage = () => {
 
   useEffect(() => {
     if (session.activeTripId) {
-      router.replace(buildTripHref(session.activeTripId, 'schedule'));
+      router.replace(buildTripHref(session.activeTripId));
       return;
     }
     router.replace('/home');

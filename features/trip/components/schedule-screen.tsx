@@ -40,6 +40,7 @@ import {
   isHostStyleComplete,
   isScheduleNotFound,
   parseGroupId,
+  resolvePlanningPath,
 } from '../trip.lib';
 
 const EMPTY_DAYS: ScheduleDay[] = [];
@@ -119,7 +120,14 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
       return;
     }
     redirectedRef.current = true;
-    router.replace(isHostStyleComplete(trip) ? buildTripHref(tripId, 'prep') : buildTripHref(tripId, 'style'));
+    router.replace(
+      resolvePlanningPath({
+        tripId,
+        isGuest,
+        hasSchedule: false,
+        hostStyleComplete: isHostStyleComplete(trip),
+      }),
+    );
   }, [
     days.length,
     isGuest,
@@ -149,7 +157,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     try {
       await confirmSchedule.mutateAsync();
       advanceTripPhase(tripId, 'ongoing');
-      router.push(buildTripHref(tripId));
+      router.replace(buildTripHref(tripId));
     } catch (error) {
       setPlaceError(getErrorMessage(error, '일정을 확정하지 못했어요.'));
     }
@@ -221,7 +229,11 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
       router.push(buildTripHref(trip.id));
       return;
     }
-    router.push('/home');
+    if (isGuest) {
+      router.push('/home');
+      return;
+    }
+    router.push(buildTripHref(tripId, 'prep'));
   };
 
   if (isTripLoading || scheduleQuery.isPending) {

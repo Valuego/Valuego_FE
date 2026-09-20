@@ -20,6 +20,7 @@ import type {
   LeaderGroupSummary,
   MyStyleCard,
   PastSettlement,
+  PlaceBlogReviews,
   PlaceComment,
   PlaceCommentList,
   PlaceVote,
@@ -48,6 +49,7 @@ import {
   leaderGroupListSchema,
   myStyleCardSchema,
   pastSettlementListSchema,
+  placeBlogReviewsSchema,
   placeCommentListSchema,
   placeCommentSchema,
   placeVoteSchema,
@@ -73,6 +75,8 @@ export const tripQueryKeys = {
   vote: (placeId: number) => [...tripQueryKeys.votes(), placeId] as const,
   comments: () => [...tripQueryKeys.all(), 'comment'] as const,
   comment: (placeId: number) => [...tripQueryKeys.comments(), placeId] as const,
+  blogReviews: () => [...tripQueryKeys.all(), 'blog-review'] as const,
+  blogReview: (placeId: number) => [...tripQueryKeys.blogReviews(), placeId] as const,
   leaderGroups: () => [...tripQueryKeys.all(), 'leader-group-list'] as const,
   styleCards: () => [...tripQueryKeys.all(), 'style-card'] as const,
   styleCard: (groupId: number) => [...tripQueryKeys.styleCards(), groupId] as const,
@@ -195,6 +199,11 @@ export const createPlaceComment = async (travelPlaceId: number, body: CreateComm
   return placeCommentSchema.parse(data);
 };
 
+export const getPlaceBlogReviews = async (travelPlaceId: number): Promise<PlaceBlogReviews> => {
+  const data = await apiRequest<{ blogResDto?: unknown }>(`/schedules/detail?travelPlaceId=${travelPlaceId}`);
+  return placeBlogReviewsSchema.parse(data.blogResDto ?? {});
+};
+
 export const getLeaderGroupList = async (): Promise<LeaderGroupSummary[]> => {
   const data = await apiRequest<LeaderGroupSummary[]>('/groups/styles/groups');
   return leaderGroupListSchema.parse(data);
@@ -309,6 +318,15 @@ export const placeCommentsQueryOptions = (placeId: number) =>
   queryOptions({
     queryKey: tripQueryKeys.comment(placeId),
     queryFn: () => getPlaceComments(placeId),
+    enabled: Number.isFinite(placeId) && placeId > 0,
+    retry: 0,
+    throwOnError: false,
+  });
+
+export const placeBlogReviewsQueryOptions = (placeId: number) =>
+  queryOptions({
+    queryKey: tripQueryKeys.blogReview(placeId),
+    queryFn: () => getPlaceBlogReviews(placeId),
     enabled: Number.isFinite(placeId) && placeId > 0,
     retry: 0,
     throwOnError: false,

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-import { buildTripHref, groupToTrip, rememberActiveTrip, useMyGroupsQuery } from '@/features/trip';
+import { groupToTrip, rememberActiveTrip, resolveTripEntryPath, useMyGroupsQuery } from '@/features/trip';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
@@ -47,7 +47,7 @@ export const SearchScreen = () => {
             {results.map((trip) => (
               <li key={trip.id}>
                 <Link
-                  href={buildTripHref(trip.id, 'schedule')}
+                  href={resolveTripEntryPath(trip)}
                   className="border-line-hairline flex flex-col gap-1 rounded-2xl border bg-white px-4 py-3.5"
                   onClick={() => rememberActiveTrip(trip.id)}
                 >

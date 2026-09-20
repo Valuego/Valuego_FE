@@ -42,6 +42,7 @@ import {
   leaderGroupListQueryOptions,
   myGroupsQueryOptions,
   pastSettlementsQueryOptions,
+  placeBlogReviewsQueryOptions,
   placeCommentsQueryOptions,
   placeVoteQueryOptions,
   remainingScheduleQueryOptions,
@@ -94,6 +95,10 @@ export const usePlaceVoteQuery = (placeId: number) => {
 
 export const usePlaceCommentsQuery = (placeId: number) => {
   return useQuery(placeCommentsQueryOptions(placeId));
+};
+
+export const usePlaceBlogReviewsQuery = (placeId: number) => {
+  return useQuery(placeBlogReviewsQueryOptions(placeId));
 };
 
 export const useLeaderGroupListQuery = (enabled = true) => {

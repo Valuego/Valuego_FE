@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/settlements/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 정산표 확인 완료 처리
+         * @description 통합 정산표의 '정산표 확인하기' 버튼을 눌러 정산 확정을 처리합니다.
+         */
+        post: operations["confirmSettlement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedules/places": {
         parameters: {
             query?: never;
@@ -593,6 +613,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 통합 정산표 조회
+         * @description 그룹의 총 지출, 1인당 지출 및 수고 가치가 합산된 멤버별 최종 정산 내역을 조회합니다.
+         */
+        get: operations["getIntegratedSettlement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/recap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 그룹 리캡 카드 조회
+         * @description 그룹의 총 지출, 수고 가치 총액, 상위 지출 항목 및 정산 정보를 조회합니다.
+         */
+        get: operations["getSettlementRecap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settlements/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 지난 정산 내역 목록 조회
+         * @description 카카오 로그인 사용자가 참여한 그룹 중 정산 확정이 완료된 지난 정산 내역 목록을 최신순으로 조회합니다.
+         */
+        get: operations["getPastSettlements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/schedules/detail": {
         parameters: {
             query?: never;
@@ -817,6 +897,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApiResTemplateVoid: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: unknown;
+        };
         TravelPlaceCreateReqDto: {
             /** Format: int64 */
             travelDayId?: number;
@@ -832,6 +919,20 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["TravelPlaceInfoResDto"];
+        };
+        NaverBlogItemResDto: {
+            title?: string;
+            description?: string;
+            bloggerName?: string;
+            postDate?: string;
+            link?: string;
+        };
+        NaverBlogResDto: {
+            keyword?: string;
+            totalReviewUrl?: string;
+            /** Format: int32 */
+            totalCount?: number;
+            reviews?: components["schemas"]["NaverBlogItemResDto"][];
         };
         TravelPlaceInfoResDto: {
             /** Format: int64 */
@@ -852,6 +953,7 @@ export interface components {
             longitude?: number;
             /** Format: double */
             distanceFromPreviousKm?: number;
+            blogResDto?: components["schemas"]["NaverBlogResDto"];
         };
         ApiResTemplateTravelScheduleResDto: {
             /** Format: int32 */
@@ -1400,6 +1502,76 @@ export interface components {
             totalExpense?: number;
             todaySchedules?: components["schemas"]["RemainingScheduleResDto"][];
         };
+        ApiResTemplateSettlementResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SettlementResDto"];
+        };
+        EffortRewardResDto: {
+            /** Format: int64 */
+            groupMemberId?: number;
+            memberName?: string;
+            effortTitle?: string;
+            /** Format: int64 */
+            rewardAmount?: number;
+        };
+        MemberSettlementResDto: {
+            /** Format: int64 */
+            groupMemberId?: number;
+            memberName?: string;
+            /** @enum {string} */
+            settlementType?: "SEND" | "GIVE" | "ZERO";
+            /** Format: int64 */
+            amount?: number;
+        };
+        SettlementResDto: {
+            /** Format: int64 */
+            totalExpense?: number;
+            /** Format: int64 */
+            expensePerMember?: number;
+            isConfirmed?: boolean;
+            effortRewards?: components["schemas"]["EffortRewardResDto"][];
+            memberSettlements?: components["schemas"]["MemberSettlementResDto"][];
+        };
+        ApiResTemplateSettlementRecapResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SettlementRecapResDto"];
+        };
+        SettlementRecapResDto: {
+            /** Format: int64 */
+            groupId?: number;
+            groupTitle?: string;
+            groupPeriod?: string;
+            durationText?: string;
+            /** Format: int32 */
+            memberCount?: number;
+            totalDistance?: string;
+            totalExpenseAmount?: number;
+            gameResult?: string;
+            totalEffortAmount?: number;
+        };
+        ApiResTemplateListPastSettlementResDto: {
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PastSettlementResDto"][];
+        };
+        PastSettlementResDto: {
+            /** Format: int64 */
+            groupId?: number;
+            /** Format: int64 */
+            settlementId?: number;
+            groupTitle?: string;
+            groupPeriod?: string;
+            totalExpense?: number;
+            expensePerMember?: number;
+        };
         ApiResTemplateListNotificationResDto: {
             /** Format: int32 */
             status?: number;
@@ -1532,13 +1704,6 @@ export interface components {
             commentCount?: number;
             comments?: components["schemas"]["CommentInfoResDto"][];
         };
-        ApiResTemplateVoid: {
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: unknown;
-        };
     };
     responses: never;
     parameters: never;
@@ -1548,6 +1713,30 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    confirmSettlement: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateVoid"];
+                };
+            };
+        };
+    };
     createCustomPlace: {
         parameters: {
             query?: never;
@@ -2434,6 +2623,74 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResTemplateUserScheduleResDto"];
+                };
+            };
+        };
+    };
+    getIntegratedSettlement: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateSettlementResDto"];
+                };
+            };
+        };
+    };
+    getSettlementRecap: {
+        parameters: {
+            query: {
+                groupId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                guestAccessToken?: string;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateSettlementRecapResDto"];
+                };
+            };
+        };
+    };
+    getPastSettlements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResTemplateListPastSettlementResDto"];
                 };
             };
         };

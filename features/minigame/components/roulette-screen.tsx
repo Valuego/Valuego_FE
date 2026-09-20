@@ -36,7 +36,7 @@ export const RouletteScreen = ({ tripId }: { tripId?: string }) => {
 
   useEffect(() => {
     if (trip && isBlocked) {
-      router.replace(`/trips/${trip.id}/schedule`);
+      router.replace(`/trips/${trip.id}`);
     }
   }, [isBlocked, router, trip]);
 
