@@ -1,4 +1,5 @@
-import { formatDateDot, startOfDay } from '@/shared/components/date-picker';
+import { formatDateDot, startOfDay, WEEKDAYS } from '@/shared/components/date-picker';
+import { isApiError } from '@/shared/lib/api';
 import {
   normalizeInviteInput,
   type MemberKey,
@@ -145,6 +146,71 @@ export const transportToUi = (transportType: TransportType): Transport => {
 
 export const budgetFromLabel = (label: string): BudgetType => {
   return BUDGET_FROM_LABEL[label] ?? 'MODERATE';
+};
+
+const BUDGET_TO_LABEL: Record<BudgetType, string> = {
+  ECONOMICAL: '알뜰하게',
+  MODERATE: '적당히',
+  LUXURY: '플렉스',
+};
+
+const FOOD_TO_LABEL: Record<FoodType, string> = {
+  KOREAN: '한식',
+  JAPANESE: '일식',
+  CHINESE: '중식',
+};
+
+export const budgetToLabel = (type: BudgetType) => BUDGET_TO_LABEL[type];
+
+export const foodToLabel = (type: FoodType) => FOOD_TO_LABEL[type];
+
+export const isScheduleNotFound = (error: unknown) => {
+  if (!isApiError(error)) {
+    return false;
+  }
+  return error.status === 404 || error.errorData?.code === 'TRAVEL-001';
+};
+
+export const isHostStyleComplete = (trip: Trip) => {
+  const host = trip.members.find((member) => member.role.includes('호스트'));
+  if (host) {
+    return host.statusLabel === '완료';
+  }
+  return trip.foods.length > 0;
+};
+
+export const formatDayChipDate = (startDate: string, dayNumber: number) => {
+  const date = parseIsoDate(startDate);
+  date.setDate(date.getDate() + Math.max(0, dayNumber - 1));
+  return `${date.getMonth() + 1}.${date.getDate()} ${WEEKDAYS[date.getDay()]}`;
+};
+
+export const formatScheduleSummary = (placeCount: number, transport: Transport, distanceKm?: number | null) => {
+  const transportLabel = transport === 'transit' ? '대중교통' : '렌터카';
+  if (typeof distanceKm === 'number') {
+    return `경유지 ${placeCount}곳 · ${transportLabel} ${distanceKm.toFixed(1)}km`;
+  }
+  return `경유지 ${placeCount}곳 · ${transportLabel}`;
+};
+
+export const resolvePlanningPath = ({
+  tripId,
+  isGuest,
+  hasSchedule,
+  hostStyleComplete,
+}: {
+  tripId: string;
+  isGuest: boolean;
+  hasSchedule: boolean;
+  hostStyleComplete: boolean;
+}) => {
+  if (hasSchedule || isGuest) {
+    return buildTripHref(tripId, 'schedule');
+  }
+  if (!hostStyleComplete) {
+    return buildTripHref(tripId, 'invite');
+  }
+  return buildTripHref(tripId, 'prep');
 };
 
 export const foodFromLabels = (labels: string[]): FoodType => {
@@ -347,6 +413,9 @@ export const mergeTripWithLocal = (remote: Trip, local?: Trip | null): Trip => {
   return {
     ...remote,
     members,
+    budget: local.budget,
+    foods: local.foods.length ? local.foods : remote.foods,
+    activity: local.activity,
     expenses: local.expenses.length ? local.expenses : remote.expenses,
     timeline: local.timeline.length ? local.timeline : remote.timeline,
     todos: local.todos.length ? local.todos : remote.todos,

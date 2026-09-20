@@ -5,13 +5,16 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import EditIcon from '@/shared/assets/icons/edit.svg';
+import EllipsisVerticalIcon from '@/shared/assets/icons/ellipsis-vertical.svg';
+import TrashIcon from '@/shared/assets/icons/trash.svg';
 import { BottomSheet } from '@/shared/components/bottom-sheet';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { KakaoMap } from '@/shared/components/kakao-map';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
-import { getErrorMessage, isApiError } from '@/shared/lib/api';
+import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
 
 import type { ScheduleDay, SchedulePlace } from '../trip.types';
@@ -22,12 +25,20 @@ import {
   useConfirmSchedule,
   useCreatePlace,
   useDeletePlace,
-  useGenerateAiSchedule,
   useScheduleQuery,
   useTripView,
   useUpdatePlace,
 } from '../trip.hooks';
-import { buildTripHref, formatVisitTime, getPlaceTypeStyle, parseGroupId } from '../trip.lib';
+import {
+  buildTripHref,
+  formatDayChipDate,
+  formatScheduleSummary,
+  formatVisitTime,
+  getPlaceTypeStyle,
+  isHostStyleComplete,
+  isScheduleNotFound,
+  parseGroupId,
+} from '../trip.lib';
 
 const EMPTY_DAYS: ScheduleDay[] = [];
 
@@ -53,27 +64,25 @@ const toVisitTimePayload = (value: string) => {
 
 export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const router = useRouter();
-  const { trip, isGuest, isLoading: isTripLoading } = useTripView(tripId);
+  const { trip, group, isGuest, isLoading: isTripLoading } = useTripView(tripId);
   const scheduleQuery = useScheduleQuery(tripId);
   const groupId = parseGroupId(tripId) ?? 0;
-  const generateSchedule = useGenerateAiSchedule(groupId);
   const confirmSchedule = useConfirmSchedule(groupId);
   const createPlace = useCreatePlace(groupId);
   const updatePlace = useUpdatePlace(groupId);
   const deletePlace = useDeletePlace(groupId);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [editing, setEditing] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [sheetMode, setSheetMode] = useState<{ type: 'add' } | { type: 'edit'; place: SchedulePlace } | null>(null);
   const [formValue, setFormValue] = useState<PlaceFormValue>(EMPTY_FORM);
   const [placeError, setPlaceError] = useState<string | null>(null);
-  const autoGenerateRef = useRef(false);
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
     rememberActiveTrip(tripId);
   }, [tripId]);
 
-  const days = scheduleQuery.data?.days ?? generateSchedule.data?.days ?? EMPTY_DAYS;
+  const days = scheduleQuery.data?.days ?? EMPTY_DAYS;
   const activeDayNumber = selectedDay ?? days[0]?.dayNumber ?? 1;
   const activeDay = days.find((day) => day.dayNumber === activeDayNumber) ?? days[0];
   const voteQueries = useQueries({
@@ -87,32 +96,46 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     .map((place) => ({ id: place.travelPlaceId, lat: place.latitude, lng: place.longitude }));
 
   const notFound =
-    days.length === 0 && isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
+    days.length === 0 &&
+    (isScheduleNotFound(scheduleQuery.error) || (!scheduleQuery.isPending && !scheduleQuery.isError));
   const errorMessage = scheduleQuery.isError && !notFound ? getErrorMessage(scheduleQuery.error) : null;
   const totalDistance = activeDay?.totalDistanceKm;
   const isHost = !isGuest;
   const isConfirmable = isHost && trip?.phase !== 'ongoing' && trip?.phase !== 'settling' && trip?.phase !== 'settled';
+  const canEditPlaces = Boolean(isConfirmable && activeDay);
 
   useEffect(() => {
-    if (autoGenerateRef.current || isGuest || !groupId || !notFound) {
+    if (redirectedRef.current || isGuest || isTripLoading || scheduleQuery.isPending || !trip) {
       return;
     }
-    autoGenerateRef.current = true;
-    void generateSchedule.mutateAsync().catch(() => {
-      // 생성 실패는 아래 재시도 UI에서 보여 줍니다.
-    });
-  }, [generateSchedule, groupId, isGuest, notFound]);
+    if (days.length > 0) {
+      return;
+    }
+    if (scheduleQuery.isError && !isScheduleNotFound(scheduleQuery.error)) {
+      return;
+    }
+    redirectedRef.current = true;
+    router.replace(isHostStyleComplete(trip) ? buildTripHref(tripId, 'prep') : buildTripHref(tripId, 'style'));
+  }, [
+    days.length,
+    isGuest,
+    isTripLoading,
+    router,
+    scheduleQuery.error,
+    scheduleQuery.isError,
+    scheduleQuery.isPending,
+    trip,
+    tripId,
+  ]);
 
-  const handleRetry = async () => {
-    if (!groupId) {
+  useEffect(() => {
+    if (openMenuId === null) {
       return;
     }
-    try {
-      await generateSchedule.mutateAsync();
-    } catch {
-      // mutation error is rendered below
-    }
-  };
+    const closeMenu = () => setOpenMenuId(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, [openMenuId]);
 
   const handleConfirm = async () => {
     if (!groupId) {
@@ -130,6 +153,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const openAddSheet = () => {
     setFormValue(EMPTY_FORM);
     setPlaceError(null);
+    setOpenMenuId(null);
     setSheetMode({ type: 'add' });
   };
 
@@ -187,7 +211,23 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     deletePlace.mutate(travelPlaceId);
   };
 
-  if (isTripLoading) {
+  const handleBack = () => {
+    if (!trip) {
+      router.push('/home');
+      return;
+    }
+    if (trip.phase === 'ongoing' || trip.phase === 'settling') {
+      router.push(buildTripHref(trip.id));
+      return;
+    }
+    if (isGuest) {
+      router.push('/home');
+      return;
+    }
+    router.push(buildTripHref(trip.id, 'prep'));
+  };
+
+  if (isTripLoading || scheduleQuery.isPending) {
     return (
       <MobileShell className="bg-surface-gray">
         <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
@@ -197,29 +237,47 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     );
   }
 
+  if (!isGuest && days.length === 0 && !errorMessage) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">
+          일정 조건으로 이동하는 중…
+        </div>
+      </MobileShell>
+    );
+  }
+
   return (
     <MobileShell className="bg-surface-gray">
-      <div className="flex flex-1 flex-col gap-4 px-5 pt-3 pb-28">
-        <Header
-          title={trip ? `${trip.destination} 일정 초안` : 'AI 일정'}
-          onBack={() => router.push(trip ? buildTripHref(trip.id) : '/home')}
-        />
+      <div className="flex flex-1 flex-col gap-3 px-5 pt-3 pb-28">
+        <Header title={trip ? `${trip.destination} 일정 초안` : 'AI 일정'} onBack={handleBack} />
 
         {days.length > 0 ? (
           <div className="flex gap-2 overflow-x-auto">
             {days.map((day) => {
               const isActive = day.dayNumber === activeDay?.dayNumber;
+              const dateLabel = group?.startDate ? formatDayChipDate(group.startDate, day.dayNumber) : null;
               return (
                 <button
                   key={`day-${day.dayNumber}`}
                   type="button"
                   className={cn(
-                    'flex flex-col items-center rounded-[11px] px-3.5 py-2',
+                    'flex flex-col items-center gap-0.5 rounded-[11px] px-3.5 py-2',
                     isActive ? 'bg-ink-900 text-white' : 'bg-[rgba(112,115,132,0.08)] text-[rgba(46,47,51,0.88)]',
                   )}
                   onClick={() => setSelectedDay(day.dayNumber)}
                 >
                   <span className="text-[13.5px] font-bold">Day {day.dayNumber}</span>
+                  {dateLabel ? (
+                    <span
+                      className={cn(
+                        'text-[10.5px] font-medium opacity-85',
+                        isActive ? 'text-white' : 'text-text-secondary-soft',
+                      )}
+                    >
+                      {dateLabel}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -228,9 +286,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
 
         {activeDay ? (
           <p className="text-ink-900 text-center text-sm font-medium">
-            경유지 {activeDay.places.length}곳
-            {typeof totalDistance === 'number' ? ` · ${totalDistance.toFixed(1)}km` : ''}
-            {trip?.transport === 'car' ? ' · 렌터카' : trip?.transport === 'transit' ? ' · 대중교통' : ''}
+            {formatScheduleSummary(activeDay.places.length, trip?.transport ?? 'car', totalDistance)}
           </p>
         ) : null}
 
@@ -238,32 +294,12 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
           <KakaoMap places={mapPlaces} badge={`Day ${activeDay.dayNumber} · 경유지 ${mapPlaces.length}곳`} />
         ) : null}
 
-        {scheduleQuery.isPending ? (
-          <p className="text-text-secondary-soft text-sm font-medium">일정을 불러오는 중…</p>
-        ) : null}
-
-        {notFound ? (
+        {isGuest && notFound ? (
           <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">
-            <p className="text-ink-900 text-sm font-bold">
-              {generateSchedule.isPending ? '일정을 만드는 중…' : '아직 생성된 일정이 없어요'}
-            </p>
+            <p className="text-ink-900 text-sm font-bold">아직 생성된 일정이 없어요</p>
             <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
-              {isGuest ? '호스트가 일정을 만들면 여기서 구경할 수 있어요.' : 'AI 일정 생성을 다시 시도할 수 있어요.'}
+              호스트가 일정을 만들면 여기서 구경할 수 있어요.
             </p>
-            {!isGuest ? (
-              <Button
-                variant="primary"
-                fullWidth
-                className="mt-4"
-                disabled={generateSchedule.isPending}
-                onClick={() => void handleRetry()}
-              >
-                {generateSchedule.isPending ? '다시 만드는 중…' : 'AI 일정 다시 만들기'}
-              </Button>
-            ) : null}
-            {generateSchedule.isError ? (
-              <p className="mt-2 text-sm font-medium text-[#e08300]">{getErrorMessage(generateSchedule.error)}</p>
-            ) : null}
           </div>
         ) : null}
 
@@ -279,117 +315,130 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                   <p className="text-text-secondary-soft w-[38px] shrink-0 pt-4 text-right text-[11.5px] font-bold">
                     {formatVisitTime(place.visitTime)}
                   </p>
-                  <button
-                    type="button"
-                    className="border-line-hairline flex min-w-0 flex-1 gap-3 rounded-[14px] border bg-white px-3.5 py-3 text-left"
-                    onClick={() => router.push(buildTripHref(tripId, 'schedule', String(place.travelPlaceId)))}
-                  >
-                    {place.imageUrl ? (
-                      <Image
-                        src={place.imageUrl}
-                        alt=""
-                        width={80}
-                        height={80}
-                        unoptimized
-                        className="size-20 shrink-0 rounded-[14px] object-cover"
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          'flex size-20 shrink-0 items-center justify-center rounded-[14px] text-[40px]',
-                          typeStyle.thumbClassName,
-                        )}
-                      >
-                        <span aria-hidden>{typeStyle.emoji}</span>
-                      </div>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <p className="text-ink-900 min-w-0 flex-1 truncate text-[14.5px] font-bold">
-                          {place.name ?? '장소 정보 없음'}
-                        </p>
-                        <span
-                          className={cn(
-                            'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
-                            typeStyle.pillClassName,
-                          )}
-                        >
-                          {typeStyle.label}
-                        </span>
-                      </div>
-                      {place.address ? (
-                        <p className="text-text-secondary-soft truncate text-xs font-medium">{place.address}</p>
-                      ) : null}
-                      {vote ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
-                            👍 {vote.likeCount}
-                          </span>
-                          <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
-                            👎 {vote.dislikeCount}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  </button>
-                  {editing ? (
+                  <div className="relative min-w-0 flex-1">
                     <button
                       type="button"
-                      aria-label="장소 메뉴"
-                      className="absolute top-1 right-1 flex size-7 items-center justify-center rounded-full bg-white text-base font-bold text-[rgba(55,56,60,0.61)] shadow-[0px_2px_6px_rgba(23,23,25,0.12)]"
-                      onClick={() =>
-                        setOpenMenuId((current) => (current === place.travelPlaceId ? null : place.travelPlaceId))
-                      }
+                      className="border-line-hairline flex w-full min-w-0 gap-3 rounded-[14px] border bg-white px-3.5 py-3 text-left"
+                      onClick={() => router.push(buildTripHref(tripId, 'schedule', String(place.travelPlaceId)))}
                     >
-                      ⋮
+                      {place.imageUrl ? (
+                        <Image
+                          src={place.imageUrl}
+                          alt=""
+                          width={80}
+                          height={80}
+                          unoptimized
+                          className="size-20 shrink-0 rounded-[14px] object-cover"
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            'flex size-20 shrink-0 items-center justify-center rounded-[14px] text-[40px]',
+                            typeStyle.thumbClassName,
+                          )}
+                        >
+                          <span aria-hidden>{typeStyle.emoji}</span>
+                        </div>
+                      )}
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <p className="text-ink-900 min-w-0 flex-1 truncate text-[14.5px] font-bold">
+                            {place.name ?? '장소 정보 없음'}
+                          </p>
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-2.5 py-1 text-xs font-medium',
+                              typeStyle.pillClassName,
+                            )}
+                          >
+                            {typeStyle.label}
+                          </span>
+                          {canEditPlaces ? <span className="size-6 shrink-0" aria-hidden /> : null}
+                        </div>
+                        {place.address ? (
+                          <p className="text-text-secondary-soft truncate text-xs font-medium">{place.address}</p>
+                        ) : null}
+                        {vote ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
+                              👍 {vote.likeCount}
+                            </span>
+                            <span className="rounded-full bg-[rgba(112,115,132,0.06)] px-2 py-1 text-[11px] font-semibold text-[rgba(55,56,60,0.61)]">
+                              👎 {vote.dislikeCount}
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
                     </button>
-                  ) : null}
-                  {openMenuId === place.travelPlaceId ? (
-                    <div className="absolute top-9 right-1 z-10 flex flex-col overflow-hidden rounded-lg border border-[rgba(112,115,132,0.16)] bg-white shadow-[0px_4px_12px_rgba(23,23,25,0.12)]">
+                    {canEditPlaces ? (
                       <button
                         type="button"
-                        className="px-4 py-2 text-left text-sm font-medium text-[rgba(46,47,51,0.88)]"
-                        onClick={() => openEditSheet(place)}
+                        aria-label="장소 메뉴"
+                        className="absolute top-2 right-2 flex size-6 items-center justify-center"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenMenuId((current) => (current === place.travelPlaceId ? null : place.travelPlaceId));
+                        }}
                       >
-                        수정
+                        <EllipsisVerticalIcon aria-hidden />
                       </button>
-                      <button
-                        type="button"
-                        className="px-4 py-2 text-left text-sm font-medium text-[#e04747]"
-                        onClick={() => handleDeletePlace(place.travelPlaceId)}
+                    ) : null}
+                    {openMenuId === place.travelPlaceId ? (
+                      <div
+                        className="absolute top-9 right-1 z-10 flex min-w-[160px] flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white p-2 shadow-[0px_4px_12px_rgba(23,23,25,0.12)]"
+                        onClick={(event) => event.stopPropagation()}
                       >
-                        삭제
-                      </button>
-                    </div>
-                  ) : null}
+                        <button
+                          type="button"
+                          className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                          onClick={() => openEditSheet(place)}
+                        >
+                          수정
+                          <EditIcon aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          className="flex h-12 w-full items-center justify-between rounded-md px-4 text-left text-base text-[#111827]"
+                          onClick={() => handleDeletePlace(place.travelPlaceId)}
+                        >
+                          삭제
+                          <TrashIcon aria-hidden />
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
                 </li>
               );
             })}
           </ul>
         ) : null}
 
-        {editing && activeDay ? (
+        {canEditPlaces ? (
           <button
             type="button"
-            className="rounded-[14px] border border-[#4164ff] bg-[#edf0fa] px-3.5 py-3 text-center text-[14.5px] font-bold text-[#3366ff]"
+            className="ml-12 rounded-[14px] border border-[#4164ff] bg-[#edf0fa] px-3.5 py-3 text-center text-[14.5px] font-bold text-[#3366ff]"
             onClick={openAddSheet}
           >
-            + 장소 직접 추가
+            장소 직접 추가
           </button>
         ) : null}
       </div>
 
-      <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
+      <div className="border-line-hairline fixed right-0 bottom-0 left-0 mx-auto flex w-full max-w-[430px] flex-col gap-2 border-t bg-white px-5 pt-3 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {isConfirmable ? (
           <>
             {placeError ? <p className="text-sm font-medium text-[#e08300]">{placeError}</p> : null}
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setEditing((prev) => !prev)}>
-                {editing ? '수정 완료' : '일정 수정'}
+              <Button
+                variant="outline"
+                className="border-brand-blue text-brand-blue flex-1 border-[1.5px] text-base"
+                onClick={() => setEditing((prev) => !prev)}
+              >
+                일정 수정
               </Button>
               <Button
                 variant="primary"
-                className="flex-1"
+                className="flex-1 text-base"
                 disabled={days.length === 0 || confirmSchedule.isPending}
                 onClick={() => void handleConfirm()}
               >
@@ -398,8 +447,8 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
             </div>
           </>
         ) : isGuest ? (
-          <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId))}>
-            대기실로
+          <Button variant="primary" fullWidth onClick={() => router.push('/home')}>
+            홈으로
           </Button>
         ) : (
           <Button variant="primary" fullWidth onClick={() => router.push(buildTripHref(tripId))}>

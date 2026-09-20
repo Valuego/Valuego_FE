@@ -37,7 +37,7 @@ export const MinigameHubScreen = ({ tripId }: MinigameHubScreenProps) => {
           <div className="border-line-hairline rounded-2xl border bg-white p-[18px]">
             <p className="text-ink-900 text-sm font-bold">진행 중인 여행이 없어요</p>
             <p className="text-text-secondary-soft mt-1 text-[12.5px] font-medium">
-              대기실에서 미니게임을 열 수 있어요.
+              여행이 시작되면 미니게임을 열 수 있어요.
             </p>
             <Link href="/trips/new" className="text-brand-blue mt-3 inline-block text-sm font-bold">
               새 여행 만들기 →

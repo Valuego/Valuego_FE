@@ -149,13 +149,13 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
       router.push(buildTripHref(tripId, 'style'));
       return;
     }
-    router.push(buildTripHref(tripId, 'schedule'));
+    router.push(buildTripHref(tripId, 'prep'));
   };
 
   return (
     <MobileShell className="bg-surface-gray">
       <div className="flex flex-1 flex-col gap-5 px-5 pt-3 pb-28">
-        <Header title="친구 초대하기" onBack={() => router.push(buildTripHref(tripId))} />
+        <Header title="친구 초대하기" onBack={() => router.push('/home')} />
         <InfoBanner accent="blue" message="링크로 초대하면 자동으로 그룹에 참여해요" />
 
         {isError ? <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(error)}</p> : null}
@@ -227,7 +227,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
 
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         <Button variant="primary" fullWidth onClick={handleProceed}>
-          여행 스타일 정하러 가기
+          {hostIncomplete ? '여행 스타일 정하러 가기' : 'AI 일정 조건 확인하기'}
         </Button>
       </div>
     </MobileShell>

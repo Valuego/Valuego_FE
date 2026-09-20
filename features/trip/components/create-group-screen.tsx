@@ -171,7 +171,7 @@ export const CreateGroupScreen = () => {
       <div className="bg-surface-gray fixed right-0 bottom-0 left-0 mx-auto w-full max-w-[430px] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
         {errorMessage ? <p className="mb-2 text-sm font-medium text-[#e08300]">{errorMessage}</p> : null}
         <Button variant="primary" fullWidth disabled={!canSubmit} onClick={() => void handleSubmit()}>
-          {createGroup.isPending ? '그룹을 만드는 중…' : '다음'}
+          {createGroup.isPending ? '그룹을 만드는 중…' : '그룹 만들고 친구 초대하기'}
         </Button>
       </div>
 

@@ -6,11 +6,10 @@ import { useEffect } from 'react';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
-import { isApiError } from '@/shared/lib/api';
 import { normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { useScheduleQuery } from '../trip.hooks';
-import { buildInvitePath, buildTripHref } from '../trip.lib';
+import { buildInvitePath, buildTripHref, isScheduleNotFound } from '../trip.lib';
 import { GuestMemberBadge, GuestUrlBar } from './guest-invite-chrome';
 
 type GuestJoinCompleteScreenProps = {
@@ -24,8 +23,8 @@ export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) 
     session.trips.find((item) => normalizeInviteInput(item.inviteCode) === normalizeInviteInput(code)) ?? null;
   const scheduleQuery = useScheduleQuery(trip?.id ?? '');
   const hasSchedule = Boolean(scheduleQuery.data?.days?.length);
-  const scheduleMissing = isApiError(scheduleQuery.error) && scheduleQuery.error.errorData?.code === 'TRAVEL-001';
-  const canViewSchedule = Boolean(trip) && !scheduleQuery.isPending && (hasSchedule || !scheduleMissing);
+  const scheduleMissing = isScheduleNotFound(scheduleQuery.error);
+  const canViewSchedule = Boolean(trip) && !scheduleQuery.isPending && hasSchedule && !scheduleMissing;
 
   useEffect(() => {
     if (trip) {

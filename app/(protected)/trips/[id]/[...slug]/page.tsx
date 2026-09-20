@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { LadderScreen, MinigameHubScreen, RouletteScreen } from '@/features/minigame';
 import {
+  AiSchedulePrepScreen,
   BlindValueScreen,
   ExpenseRecordScreen,
   GroupStyleScreen,
@@ -35,6 +36,9 @@ const TripCatchAllPage = async ({ params }: TripCatchAllPageProps) => {
   }
   if (section === 'invite') {
     return <InviteScreen tripId={id} />;
+  }
+  if (section === 'prep') {
+    return <AiSchedulePrepScreen tripId={id} />;
   }
   if (section === 'style') {
     return <GroupStyleScreen tripId={id} />;

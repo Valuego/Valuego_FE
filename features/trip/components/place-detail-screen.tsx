@@ -205,9 +205,17 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
         <Button
           variant="outline"
           fullWidth
-          onClick={() => router.push(trip ? `/trips/${trip.id}` : `/trips/${tripId}`)}
+          onClick={() =>
+            router.push(
+              trip
+                ? trip.phase === 'ongoing' || trip.phase === 'settling'
+                  ? `/trips/${trip.id}`
+                  : `/trips/${trip.id}/schedule`
+                : `/trips/${tripId}/schedule`,
+            )
+          }
         >
-          {trip?.phase === 'ongoing' || trip?.phase === 'settling' ? '여행 중 홈으로' : '대기실로'}
+          {trip?.phase === 'ongoing' || trip?.phase === 'settling' ? '여행 중 홈으로' : '일정으로'}
         </Button>
       </div>
     </MobileShell>

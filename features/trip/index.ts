@@ -1,3 +1,4 @@
+export { AiSchedulePrepScreen } from './components/ai-schedule-prep-screen';
 export { CreateGroupScreen } from './components/create-group-screen';
 export { ExpenseRecordScreen } from './components/expense-record-screen';
 export { GuestInviteLandingScreen } from './components/guest-invite-landing-screen';

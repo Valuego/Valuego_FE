@@ -20,14 +20,10 @@ export const GroupStyleScreen = ({ tripId }: GroupStyleScreenProps) => {
   const createStyle = useCreateLeaderStyle(groupId ?? 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const goNext = () => {
-    completeHostStyle(tripId);
-    router.push(buildTripHref(tripId, 'schedule'));
-  };
-
   const handleSubmit = async (value: { budget: string; foods: string[]; activity: number }) => {
     if (!groupId) {
-      goNext();
+      completeHostStyle(tripId, value);
+      router.push(buildTripHref(tripId, 'prep'));
       return;
     }
 
@@ -46,10 +42,12 @@ export const GroupStyleScreen = ({ tripId }: GroupStyleScreenProps) => {
           activitySlider: value.activity,
         }),
       );
-      goNext();
+      completeHostStyle(tripId, value);
+      router.push(buildTripHref(tripId, 'prep'));
     } catch (error) {
       if (isApiError(error) && error.errorData?.code === 'STYLE-001') {
-        goNext();
+        completeHostStyle(tripId, value);
+        router.push(buildTripHref(tripId, 'prep'));
         return;
       }
       setErrorMessage(getErrorMessage(error, '여행 스타일을 저장하지 못했어요.'));
@@ -60,7 +58,7 @@ export const GroupStyleScreen = ({ tripId }: GroupStyleScreenProps) => {
     <TravelStyleForm
       onBack={() => router.push(buildTripHref(tripId, 'invite'))}
       onSubmit={(value) => void handleSubmit(value)}
-      submitLabel="AI 일정 보러 가기"
+      submitLabel="AI 일정 조건 확인하기"
       isSubmitting={createStyle.isPending}
       errorMessage={errorMessage}
     />

@@ -53,7 +53,7 @@ export const HomeScreen = () => {
 
   useEffect(() => {
     if (session.isGuest && session.activeTripId) {
-      router.replace(buildTripHref(session.activeTripId));
+      router.replace(buildTripHref(session.activeTripId, 'schedule'));
     }
   }, [router, session.activeTripId, session.isGuest]);
 

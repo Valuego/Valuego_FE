@@ -302,6 +302,7 @@ export const useCreateLeaderStyle = (groupId: number) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(groupId) });
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.styleCard(groupId) });
     },
   });
 };

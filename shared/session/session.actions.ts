@@ -71,7 +71,7 @@ export const isDemoInviteCode = (rawCode: string) => {
   return normalizeInviteInput(rawCode) === DEMO_GUEST_INVITE_CODE;
 };
 
-export const completeHostStyle = (tripId: string) => {
+export const completeHostStyle = (tripId: string, style?: { budget: string; foods: string[]; activity: number }) => {
   setSession((prev) => ({
     ...prev,
     trips: prev.trips.map((trip) => {
@@ -80,6 +80,7 @@ export const completeHostStyle = (tripId: string) => {
       }
       return withTripDefaults({
         ...trip,
+        ...(style ? { budget: style.budget, foods: style.foods, activity: style.activity } : {}),
         members: trip.members.map((member) =>
           member.role.includes('호스트') ? { ...member, status: 'done' as const, statusLabel: '완료' } : member,
         ),
