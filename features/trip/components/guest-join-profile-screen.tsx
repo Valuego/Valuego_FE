@@ -16,7 +16,7 @@ import type { MemberColor } from '../trip.types';
 import { GUEST_COLOR_OPTIONS } from '../trip.constants';
 import { useJoinGroupAsGuest } from '../trip.hooks';
 import { buildInvitePath } from '../trip.lib';
-import { GuestMemberBadge, GuestUrlBar } from './guest-invite-chrome';
+import { GuestMemberBadge } from './guest-invite-chrome';
 
 type GuestJoinProfileScreenProps = {
   code: string;
@@ -62,7 +62,6 @@ export const GuestJoinProfileScreen = ({ code }: GuestJoinProfileScreenProps) =>
 
   return (
     <MobileShell className="bg-white">
-      <GuestUrlBar groupLink={code} />
       <div className="border-line-hairline flex h-16 items-center justify-between border-b px-5">
         <Header title="뒤로가기" onBack={() => router.push(buildInvitePath(code))} />
         {trip ? <GuestMemberBadge members={trip.members} memberCount={trip.memberCount} /> : <span />}

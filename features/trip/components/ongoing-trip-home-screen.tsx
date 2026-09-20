@@ -76,7 +76,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
   const dayNumber = firstDay?.dayNumber ?? 1;
   const nextPlaceLabel = nextPlace
     ? `${formatVisitTime(nextPlace.visitTime)} · ${nextPlace.name ?? '다음 장소'}`
-    : trip.dateLabel;
+    : '오늘 일정이 모두 끝났어요';
 
   return (
     <MobileShell className="bg-surface-gray">
@@ -84,7 +84,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
         <section className="bg-[linear-gradient(129deg,#171b2e_0%,#26346b_77%)] px-5 pt-16 pb-16">
           <p className="flex items-center gap-1.5 text-xs font-bold text-white">
             <span className="bg-brand-success size-1.5 rounded-full" />
-            여행 중 · Day {dayNumber}
+            여행 중 · {dayNumber}일차
           </p>
           <h1 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-white">{trip.title}</h1>
           <p className="mt-2 text-sm font-medium text-[#c9bcff]">

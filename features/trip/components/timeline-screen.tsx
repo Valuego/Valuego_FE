@@ -90,8 +90,8 @@ export const TimelineScreen = ({ tripId }: TimelineScreenProps) => {
       <div className="flex flex-1 flex-col gap-3 px-5 pt-3 pb-28">
         <div className="flex items-center justify-between">
           <Header title="타임라인" onBack={() => router.push(`/trips/${tripId}`)} />
-          <span className="rounded-full bg-[rgba(51,102,255,0.08)] px-2.5 py-1 text-[11px] font-bold text-[#3366ff]">
-            Day {firstDay?.dayNumber ?? 1}
+          <span className="bg-ink-900 rounded-full px-2.5 py-1 text-[11px] font-bold text-white">
+            {firstDay?.dayNumber ?? 1}일차
           </span>
         </div>
 

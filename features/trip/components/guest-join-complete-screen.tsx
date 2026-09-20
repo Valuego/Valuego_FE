@@ -10,7 +10,7 @@ import { normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { useScheduleQuery } from '../trip.hooks';
 import { buildInvitePath, buildTripHref, isScheduleNotFound } from '../trip.lib';
-import { GuestMemberBadge, GuestUrlBar } from './guest-invite-chrome';
+import { GuestMemberBadge } from './guest-invite-chrome';
 
 type GuestJoinCompleteScreenProps = {
   code: string;
@@ -45,7 +45,6 @@ export const GuestJoinCompleteScreen = ({ code }: GuestJoinCompleteScreenProps) 
 
   return (
     <MobileShell className="bg-white">
-      <GuestUrlBar groupLink={code} />
       <div className="border-line-hairline flex h-16 items-center justify-between border-b px-5">
         <Header title="뒤로가기" onBack={() => router.push(`${buildInvitePath(code)}/profile`)} />
         {trip ? <GuestMemberBadge members={trip.members} memberCount={trip.memberCount} /> : <span />}

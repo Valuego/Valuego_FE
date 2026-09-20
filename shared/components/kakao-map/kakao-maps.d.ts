@@ -26,7 +26,16 @@ declare global {
       setCenter(latlng: LatLng): void;
       setLevel(level: number): void;
       relayout(): void;
+      addControl(control: ZoomControl, position: number): void;
     }
+
+    class ZoomControl {
+      constructor();
+    }
+
+    const ControlPosition: {
+      RIGHT: number;
+    };
 
     interface MarkerOptions {
       position: LatLng;

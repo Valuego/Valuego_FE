@@ -4,29 +4,6 @@ import { Avatar } from '@/shared/components/avatar';
 import { cn } from '@/shared/lib/cn';
 import type { TripMember } from '@/shared/session';
 
-import { toInviteToken } from '../trip.lib';
-
-type GuestUrlBarProps = {
-  groupLink: string;
-};
-
-export const GuestUrlBar = ({ groupLink }: GuestUrlBarProps) => {
-  const origin = typeof window === 'undefined' ? '' : window.location.host;
-
-  return (
-    <div className="bg-surface-gray px-4 pt-3">
-      <div className="flex h-9 w-full items-center justify-center gap-1.5 overflow-hidden rounded-[10px] bg-white">
-        <span className="text-[11px]" aria-hidden>
-          🔒
-        </span>
-        <p className="text-text-secondary-soft truncate text-[12.5px] font-medium">
-          {origin}/invite/{toInviteToken(groupLink)}
-        </p>
-      </div>
-    </div>
-  );
-};
-
 type GuestMemberBadgeProps = {
   members: TripMember[];
   memberCount: number;

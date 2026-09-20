@@ -38,11 +38,12 @@ export const GAMES = [
   },
 ] as const;
 
-/** 사다리 가로줄: fromCol → fromCol+1, y는 보드 내부 비율(세로선 영역 기준) */
-export const LADDER_RUNGS = [
-  { fromCol: 0, y: 0.23 },
-  { fromCol: 2, y: 0.14 },
-  { fromCol: 1, y: 0.41 },
-  { fromCol: 0, y: 0.59 },
-  { fromCol: 1, y: 0.77 },
-] as const;
+/** 사다리 가로줄 y 오프셋 패턴(보드 내부 비율, 세로선 영역 기준) — 컬럼 간격마다 순환 적용 */
+const LADDER_RUNG_Y_PATTERN = [0.23, 0.41, 0.59, 0.77, 0.14, 0.32, 0.5, 0.68, 0.86] as const;
+
+/** 참가자 수(컬럼 수)에 맞춰 인접한 컬럼마다 최소 1개의 가로줄을 생성한다 (2~8명 대응) */
+export const buildLadderRungs = (colCount: number): { fromCol: number; y: number }[] =>
+  Array.from({ length: Math.max(colCount - 1, 0) }, (_, fromCol) => ({
+    fromCol,
+    y: LADDER_RUNG_Y_PATTERN[fromCol % LADDER_RUNG_Y_PATTERN.length],
+  }));

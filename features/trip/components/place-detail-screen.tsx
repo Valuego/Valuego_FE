@@ -131,7 +131,7 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               className={cn(
                 'flex h-12 flex-1 items-center justify-center rounded-xl text-sm font-bold',
                 vote?.voteStatus === 'LIKE'
-                  ? 'bg-brand-blue text-white'
+                  ? 'bg-element-success text-white'
                   : 'border-line-hairline text-ink-900 border bg-white',
               )}
               disabled={toggleVote.isPending}
@@ -144,7 +144,7 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               className={cn(
                 'flex h-12 flex-1 items-center justify-center rounded-xl text-sm font-bold',
                 vote?.voteStatus === 'DISLIKE'
-                  ? 'bg-ink-900 text-white'
+                  ? 'bg-element-error text-white'
                   : 'border-line-hairline text-ink-900 border bg-white',
               )}
               disabled={toggleVote.isPending}
@@ -153,11 +153,6 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
               👎 별로예요 {vote ? vote.dislikeCount : ''}
             </button>
           </div>
-          {vote ? (
-            <p className="text-text-secondary-soft mt-3 text-xs font-medium">
-              {vote.totalGroupMemberCount}명 중 {vote.totalParticipantCount}명 참여 · 좋아요 {vote.likePercentage}%
-            </p>
-          ) : null}
           {toggleVote.isError ? (
             <p className="mt-2 text-sm font-medium text-[#e08300]">{getErrorMessage(toggleVote.error)}</p>
           ) : null}
@@ -188,6 +183,7 @@ export const PlaceDetailScreen = ({ tripId, placeId }: PlaceDetailScreenProps) =
             />
             <Button
               variant="primary"
+              className="self-end"
               disabled={!commentDraft.trim() || createComment.isPending}
               onClick={() => void handleSubmitComment()}
             >

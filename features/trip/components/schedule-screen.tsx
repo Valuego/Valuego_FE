@@ -264,7 +264,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                   )}
                   onClick={() => setSelectedDay(day.dayNumber)}
                 >
-                  <span className="text-[13.5px] font-bold">Day {day.dayNumber}</span>
+                  <span className="text-[13.5px] font-bold">{day.dayNumber}일차</span>
                   {dateLabel ? (
                     <span
                       className={cn(
@@ -290,7 +290,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
         {activeDay ? (
           <KakaoMap
             places={mapPlaces}
-            badge={`Day ${activeDay.dayNumber} · 경유지 ${activeDay.places.length}곳`}
+            badge={`${activeDay.dayNumber}일차 · 경유지 ${activeDay.places.length}곳`}
             fallbackCenter={getDestinationMapCenter(trip?.destination)}
           />
         ) : null}

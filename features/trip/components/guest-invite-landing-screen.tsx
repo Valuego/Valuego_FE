@@ -10,7 +10,6 @@ import { acceptInviteFromLink, normalizeInviteInput, useAppSession } from '@/sha
 
 import { INVITE_HIGHLIGHTS } from '../trip.constants';
 import { buildInvitePath } from '../trip.lib';
-import { GuestUrlBar } from './guest-invite-chrome';
 
 type GuestInviteLandingScreenProps = {
   code: string;
@@ -44,7 +43,6 @@ export const GuestInviteLandingScreen = ({ code }: GuestInviteLandingScreenProps
 
   return (
     <MobileShell className="bg-white">
-      <GuestUrlBar groupLink={code} />
       <div className="flex flex-1 flex-col items-center justify-center px-5">
         <div className="flex w-full max-w-[340px] flex-col items-center gap-4">
           <Avatar member={host?.member ?? 'doyeon'} size="md" className="size-10 text-base" />

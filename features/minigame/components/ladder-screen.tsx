@@ -13,7 +13,7 @@ import { cn } from '@/shared/lib/cn';
 import { recordGameResult, useActiveTrip, useTripById } from '@/shared/session';
 
 import {
-  LADDER_RUNGS,
+  buildLadderRungs,
   MAX_PARTICIPANTS,
   MIN_PARTICIPANTS,
   MINIGAME_MEMBERS,
@@ -57,19 +57,19 @@ const traceLadder = (startCol: number, colCount: number, rungs: readonly { fromC
 };
 
 type LadderBoardProps = {
-  members: MinigameMember[];
+  members: Array<MinigameMember & { id: string }>;
   bangCol: number;
   path: ReturnType<typeof traceLadder> | null;
 };
 
 const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
   const colCount = members.length;
-  const rungs = LADDER_RUNGS.filter((r) => r.fromCol < colCount - 1);
+  const rungs = buildLadderRungs(colCount);
 
   return (
     <div className="border-line-hairline relative h-[340px] w-full overflow-hidden rounded-[18px] border bg-white">
       {members.map((member, index) => (
-        <div key={member.key} className="absolute top-3.5" style={{ left: `${avatarPct(index, colCount)}%` }}>
+        <div key={member.id} className="absolute top-3.5" style={{ left: `${avatarPct(index, colCount)}%` }}>
           <Avatar member={member.key} size="sm" className="size-[33px] text-[9px]" />
         </div>
       ))}
@@ -77,7 +77,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
       <div className="absolute top-[59px] right-0 left-0 h-[220px]">
         {Array.from({ length: colCount }, (_, col) => (
           <div
-            key={`v-base-${members[col]?.key ?? col}`}
+            key={`v-base-${col}`}
             className="absolute top-0 h-full w-1 rounded-sm bg-[rgba(255,146,0,0.35)]"
             style={{ left: `${columnPct(col, colCount)}%` }}
           />
@@ -101,7 +101,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
 
         {path?.pathVerticals.map((seg) => (
           <div
-            key={`v-path-${members[seg.col]?.key ?? seg.col}-${seg.y0}-${seg.y1}`}
+            key={`v-path-${seg.col}-${seg.y0}-${seg.y1}`}
             className="absolute w-1 rounded-sm bg-[#ff9200]"
             style={{
               left: `${columnPct(seg.col, colCount)}%`,
@@ -132,7 +132,7 @@ const LadderBoard = ({ members, bangCol, path }: LadderBoardProps) => {
         const isBang = index === bangCol;
         return (
           <div
-            key={`result-${member.key}`}
+            key={`result-${member.id}`}
             className={cn(
               'absolute top-[295px] rounded-full px-2 py-[5px]',
               isBang ? 'bg-[rgba(255,146,0,0.15)]' : 'bg-[rgba(112,115,132,0.08)]',
@@ -197,6 +197,7 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
   const resolvedCount = useApi ? seedNames.length : count;
   const resolvedNames = useApi ? seedNames : names;
   const members = buildParticipants(resolvedCount, resolvedNames).map((participant) => ({
+    id: participant.id,
     key: participant.key,
     name: participant.name,
     initial: participant.name.slice(0, 1),
@@ -239,7 +240,7 @@ export const LadderScreen = ({ tripId }: { tripId?: string }) => {
       }
     }
 
-    const rungs = LADDER_RUNGS.filter((r) => r.fromCol < members.length - 1);
+    const rungs = buildLadderRungs(members.length);
     const nextPath = traceLadder(winnerIndex, members.length, rungs);
     const winner = members[winnerIndex];
 

@@ -152,14 +152,17 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
 
         <label className="border-line-hairline flex flex-col items-center gap-1 rounded-[18px] border bg-white py-[26px]">
           <span className="text-text-secondary-soft text-[13px] font-bold">얼마를 썼나요?</span>
-          <input
-            value={amountInput}
-            inputMode="numeric"
-            aria-label="금액"
-            placeholder="0원"
-            className="text-ink-900 placeholder:text-ink-900 w-full bg-transparent text-center text-[34px] font-extrabold tracking-[-0.5px] outline-none"
-            onChange={(event) => setAmountInput(event.target.value)}
-          />
+          <div className="flex items-baseline justify-center gap-1">
+            <input
+              value={amount ? amount.toLocaleString('ko-KR') : ''}
+              inputMode="numeric"
+              aria-label="금액"
+              placeholder="0"
+              className="text-ink-900 placeholder:text-ink-900 w-full max-w-[220px] bg-transparent text-right text-[34px] font-extrabold tracking-[-0.5px] outline-none"
+              onChange={(event) => setAmountInput(event.target.value)}
+            />
+            <span className="text-ink-900 text-[22px] font-extrabold">원</span>
+          </div>
         </label>
 
         <section className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white p-[18px]">
