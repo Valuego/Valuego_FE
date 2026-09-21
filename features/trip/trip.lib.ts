@@ -83,14 +83,16 @@ export const isGuestViewerOfGroup = (
   group: GroupInfo | null | undefined,
   options: { isGuestSession: boolean; isAuthenticated: boolean; guestMemberId: number | null },
 ) => {
-  if (options.guestMemberId != null && group?.members.length) {
+  if (options.guestMemberId != null) {
+    if (!group?.members.length) {
+      // Member roster not loaded yet — trust the session's own guest flag instead of
+      // assuming host, so guest-only UI/polling doesn't flicker to host during loading.
+      return options.isGuestSession && !options.isAuthenticated;
+    }
     const self = group.members.find((member) => member.groupMemberId === options.guestMemberId);
     if (self) {
       return self.memberRole !== 'LEADER';
     }
-    return false;
-  }
-  if (options.guestMemberId != null) {
     return false;
   }
   return options.isGuestSession && !options.isAuthenticated;

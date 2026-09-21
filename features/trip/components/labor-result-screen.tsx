@@ -24,7 +24,7 @@ export const LaborResultScreen = ({ tripId }: LaborResultScreenProps) => {
   const members = trip?.members ?? [];
   const current = members[index];
   const targetMemberId = current ? Number(current.id) : 0;
-  const resultQuery = useEffortResultQuery(groupId, targetMemberId, Boolean(current));
+  const resultQuery = useEffortResultQuery(groupId, targetMemberId, Boolean(current), 4000);
 
   if (isLoading || !trip || !current) {
     return (

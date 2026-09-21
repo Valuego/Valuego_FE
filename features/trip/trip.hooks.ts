@@ -163,11 +163,17 @@ export const useEffortItemsQuery = (groupId: number, enabled = true) => {
   });
 };
 
-export const useEffortResultQuery = (groupId: number, targetMemberId: number, enabled = true) => {
+export const useEffortResultQuery = (
+  groupId: number,
+  targetMemberId: number,
+  enabled = true,
+  refetchInterval?: number | false,
+) => {
   return useQuery({
     ...effortResultQueryOptions(groupId, targetMemberId),
     enabled:
       enabled && Number.isFinite(groupId) && groupId > 0 && Number.isFinite(targetMemberId) && targetMemberId > 0,
+    refetchInterval,
   });
 };
 
@@ -373,8 +379,10 @@ export const useCreateGuestStyle = () => {
 
   return useMutation({
     mutationFn: (body: StyleCreateRequest) => createGuestStyle(body),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.details() });
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.detail(result.groupId) });
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
+      await queryClient.invalidateQueries({ queryKey: tripQueryKeys.styleCard(result.groupId) });
     },
   });
 };
@@ -434,8 +442,16 @@ export const useDeleteEffortItem = (groupId: number) => {
 };
 
 export const useCreateEffort = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (body: CreateEffortRequest) => createEffort(body),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: tripQueryKeys.effortResult(variables.groupId, variables.targetMemberId),
+      });
+      queryClient.invalidateQueries({ queryKey: tripQueryKeys.settlement(variables.groupId) });
+    },
   });
 };
 
