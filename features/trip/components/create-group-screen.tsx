@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+import { useAuthStatus } from '@/features/auth';
 import { DESTINATIONS } from '@/features/home/home.constants';
 import CalendarIcon from '@/shared/assets/icons/calendar.svg';
 import { BottomSheet } from '@/shared/components/bottom-sheet';
@@ -13,7 +14,7 @@ import { Header } from '@/shared/components/header';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { useAppSession, useTripDraft } from '@/shared/session';
+import { beginHostPlanning, useTripDraft } from '@/shared/session';
 import type { Transport } from '@/shared/session';
 
 import { useCreateGroup } from '../trip.hooks';
@@ -31,16 +32,23 @@ import {
 
 export const CreateGroupScreen = () => {
   const router = useRouter();
-  const session = useAppSession();
+  const { isBootstrapping, isAuthenticated } = useAuthStatus();
   const draft = useTripDraft();
   const createGroup = useCreateGroup();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (session.isGuest) {
-      router.replace(session.activeTripId ? `/trips/${session.activeTripId}` : '/join');
+    beginHostPlanning();
+  }, []);
+
+  useEffect(() => {
+    if (isBootstrapping) {
+      return;
     }
-  }, [router, session.activeTripId, session.isGuest]);
+    if (!isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, isBootstrapping, router]);
   const defaultDates = useMemo(() => getDefaultTripDates(), []);
   const [destination, setDestination] = useState<(typeof DESTINATIONS)[number]>(
     (draft?.destination as (typeof DESTINATIONS)[number]) ?? '부산',
@@ -61,6 +69,14 @@ export const CreateGroupScreen = () => {
   const nightsLabel = start && end ? formatNightsLabel(start, end) : '기간을 선택하세요';
   const dateLabel = start && end ? formatDateRangeLabel(start, end) : '날짜를 선택해 주세요';
   const canSubmit = memberCount >= 2 && memberCount <= 8 && hasCompleteRange && !createGroup.isPending;
+
+  if (isBootstrapping || !isAuthenticated) {
+    return (
+      <MobileShell className="bg-surface-gray">
+        <div className="flex flex-1 items-center justify-center text-sm text-[rgba(55,56,60,0.61)]">이동 중…</div>
+      </MobileShell>
+    );
+  }
 
   const handleSubmit = async () => {
     if (!start || !end) {

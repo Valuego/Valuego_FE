@@ -18,13 +18,22 @@ declare global {
       level?: number;
       scrollwheel?: boolean;
       draggable?: boolean;
+      disableDoubleClickZoom?: boolean;
     }
 
     class Map {
       constructor(container: HTMLElement, options: MapOptions);
-      setBounds(bounds: LatLngBounds): void;
+      setBounds(
+        bounds: LatLngBounds,
+        paddingTop?: number,
+        paddingRight?: number,
+        paddingBottom?: number,
+        paddingLeft?: number,
+      ): void;
       setCenter(latlng: LatLng): void;
       setLevel(level: number): void;
+      getLevel(): number;
+      setZoomable(zoomable: boolean): void;
       relayout(): void;
       addControl(control: ZoomControl, position: number): void;
     }

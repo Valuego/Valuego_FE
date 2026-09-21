@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 
-import { apiRequest } from '@/shared/lib/api';
+import { apiRequest, isApiError } from '@/shared/lib/api';
 
 import type {
   AiScheduleSuggestion,
@@ -38,6 +38,7 @@ import type {
   UserTimeline,
 } from './trip.types';
 
+import { sortExpensesNewestFirst } from './trip.lib';
 import {
   aiScheduleSuggestionSchema,
   effortInfoSchema,
@@ -253,9 +254,32 @@ export const getUserTimeline = async (groupId: number): Promise<UserTimeline> =>
   return userTimelineSchema.parse(data);
 };
 
+const EMPTY_REMAINING_SCHEDULE = {
+  groupId: 0,
+  scheduleStatus: '',
+  groupTitle: '',
+  currentDay: 1,
+  currentStatus: '',
+  totalExpense: 0,
+  todaySchedules: [] as UserRemainingSchedule['todaySchedules'],
+};
+
 export const getRemainingSchedule = async (groupId: number): Promise<UserRemainingSchedule> => {
-  const data = await apiRequest<UserRemainingSchedule>(`/users/timeline/remaining?groupId=${groupId}`);
-  return userRemainingScheduleSchema.parse(data);
+  try {
+    const data = await apiRequest<UserRemainingSchedule>(`/users/timeline/remaining?groupId=${groupId}`);
+    return userRemainingScheduleSchema.parse({ ...data, groupId: data.groupId ?? groupId });
+  } catch (error) {
+    if (
+      isApiError(error) &&
+      (error.status === 404 ||
+        error.errorData?.code === 'TRAVEL-001' ||
+        error.errorData?.code === 'TRAVEL-003' ||
+        error.errorData?.code === 'GROUP-001')
+    ) {
+      return { ...EMPTY_REMAINING_SCHEDULE, groupId };
+    }
+    throw error;
+  }
 };
 
 export const getEffortItems = async (groupId: number): Promise<EffortItem[]> => {
@@ -290,9 +314,22 @@ export const createExpense = async (body: CreateExpenseRequest): Promise<Expense
   return expenseInfoSchema.parse(data);
 };
 
+const EMPTY_EXPENSE_LIST = { totalAmount: 0, expenseInfoResDtos: [] as ExpenseList['expenseInfoResDtos'] };
+
 export const getExpenses = async (groupId: number): Promise<ExpenseList> => {
-  const data = await apiRequest<ExpenseList>(`/expenses/all?groupId=${groupId}`);
-  return expenseListSchema.parse(data);
+  try {
+    const data = await apiRequest<ExpenseList>(`/expenses/all?groupId=${groupId}`);
+    const parsed = expenseListSchema.parse(data);
+    return {
+      ...parsed,
+      expenseInfoResDtos: sortExpensesNewestFirst(parsed.expenseInfoResDtos),
+    };
+  } catch (error) {
+    if (isApiError(error) && (error.status === 404 || error.errorData?.code === 'GROUP-001')) {
+      return EMPTY_EXPENSE_LIST;
+    }
+    throw error;
+  }
 };
 
 export const getSettlement = async (groupId: number): Promise<Settlement> => {

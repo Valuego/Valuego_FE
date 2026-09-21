@@ -144,6 +144,7 @@ export const createInitialSession = (): AppSession => ({
   isGuest: false,
   hasCompletedOnboarding: false,
   guestMemberId: null,
+  postLoginPath: null,
   user: DEFAULT_USER,
   draft: null,
   trips: SEED_PAST_TRIPS,

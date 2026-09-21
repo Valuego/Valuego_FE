@@ -45,10 +45,13 @@ export const AiSchedulePrepScreen = ({ tripId }: AiSchedulePrepScreenProps) => {
   }, [tripId]);
 
   useEffect(() => {
+    if (isLoading) {
+      return;
+    }
     if (isGuest) {
       router.replace(buildTripHref(tripId));
     }
-  }, [isGuest, router, tripId]);
+  }, [isGuest, isLoading, router, tripId]);
 
   const handleGenerate = async () => {
     if (!groupId) {

@@ -12,8 +12,22 @@ import { advanceTripPhase } from '@/shared/session';
 
 import type { SchedulePlace } from '../trip.types';
 
-import { rememberActiveTrip, useExpensesQuery, useScheduleQuery, useSettlementQuery, useTripView } from '../trip.hooks';
-import { buildTripHref, formatVisitTime, getPlaceTypeStyle, isTripPeriodOver, parseGroupId } from '../trip.lib';
+import {
+  rememberActiveTrip,
+  useExpensesQuery,
+  useRemainingScheduleQuery,
+  useScheduleQuery,
+  useSettlementQuery,
+  useTripView,
+} from '../trip.hooks';
+import {
+  buildTripHref,
+  formatVisitTime,
+  getCurrentTravelDayNumber,
+  getPlaceTypeStyle,
+  isTripPeriodOver,
+  parseGroupId,
+} from '../trip.lib';
 
 type OngoingTripHomeScreenProps = {
   tripId: string;
@@ -21,26 +35,42 @@ type OngoingTripHomeScreenProps = {
 
 const getRemainingPlaces = (places: SchedulePlace[]) => {
   const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-  const upcoming = places.filter((place) => {
-    if (!place.visitTime) {
-      return true;
-    }
-    const [hours, minutes] = place.visitTime.slice(0, 5).split(':').map(Number);
-    return (hours ?? 0) * 60 + (minutes ?? 0) >= nowMinutes;
-  });
+  const upcoming = places
+    .filter((place) => {
+      if (!place.visitTime) {
+        return true;
+      }
+      const [hours, minutes] = place.visitTime.slice(0, 5).split(':').map(Number);
+      return (hours ?? 0) * 60 + (minutes ?? 0) >= nowMinutes;
+    })
+    .sort((left, right) => (left.visitTime ?? '').localeCompare(right.visitTime ?? ''));
   return upcoming.slice(0, 3);
 };
 
 export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) => {
   const router = useRouter();
-  const { trip, isGuest, isLoading, isError, error } = useTripView(tripId, { refetchInterval: 4000 });
-  const scheduleQuery = useScheduleQuery(tripId, { refetchInterval: isGuest ? 4000 : false });
+  const { trip, group, isGuest, isLoading, isError, error } = useTripView(tripId, { refetchInterval: 4000 });
   const groupId = parseGroupId(tripId) ?? 0;
+  const scheduleQuery = useScheduleQuery(tripId, { refetchInterval: isGuest ? 4000 : false });
+  const remainingQuery = useRemainingScheduleQuery(tripId, groupId > 0);
   const expensesQuery = useExpensesQuery(groupId);
   const settlementQuery = useSettlementQuery(groupId, isGuest && groupId > 0);
-  const days = scheduleQuery.data?.days ?? [];
-  const firstDay = days[0];
-  const remainingPlaces = getRemainingPlaces(firstDay?.places ?? []);
+  const days = [...(scheduleQuery.data?.days ?? [])].sort((left, right) => left.dayNumber - right.dayNumber);
+  const currentDayNumber =
+    remainingQuery.data?.currentDay ??
+    (group?.startDate ? getCurrentTravelDayNumber(group.startDate, days.length) : (days[0]?.dayNumber ?? 1));
+  const todayDay = days.find((day) => day.dayNumber === currentDayNumber) ?? days[0];
+  const remainingFromApi = (remainingQuery.data?.todaySchedules ?? [])
+    .filter((item) => item.travelPlaceId > 0)
+    .map((item) => ({
+      travelPlaceId: item.travelPlaceId,
+      visitTime: item.time,
+      name: item.placeName,
+      placeType: item.category,
+    }));
+  const remainingPlaces = remainingQuery.isSuccess
+    ? remainingFromApi
+    : getRemainingPlaces(todayDay?.places ?? []).filter((place) => place.travelPlaceId > 0);
   const nextPlace = remainingPlaces[0];
   const localTotalSpent = useMemo(() => trip?.expenses.reduce((acc, item) => acc + item.amount, 0) ?? 0, [trip]);
   const totalSpent = groupId ? (expensesQuery.data?.totalAmount ?? 0) : localTotalSpent;
@@ -80,7 +110,7 @@ export const OngoingTripHomeScreen = ({ tripId }: OngoingTripHomeScreenProps) =>
     );
   }
 
-  const dayNumber = firstDay?.dayNumber ?? 1;
+  const dayNumber = remainingQuery.data?.currentDay ?? todayDay?.dayNumber ?? 1;
   const nextPlaceLabel = nextPlace
     ? `${formatVisitTime(nextPlace.visitTime)} · ${nextPlace.name ?? '다음 장소'}`
     : '오늘 일정이 모두 끝났어요';

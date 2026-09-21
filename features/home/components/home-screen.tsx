@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { useAuthStatus } from '@/features/auth';
 import {
   groupToTrip,
   isTripPeriodOver,
@@ -17,11 +18,12 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { TabBar } from '@/shared/components/tab-bar';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { useAppSession } from '@/shared/session';
+import { beginHostPlanning, useAppSession } from '@/shared/session';
 
 export const HomeScreen = () => {
   const session = useAppSession();
-  const groupsQuery = useMyGroupsQuery(!session.isGuest);
+  const { isAuthenticated, isGuest } = useAuthStatus();
+  const groupsQuery = useMyGroupsQuery(isAuthenticated);
   const withLocal = (trip: ReturnType<typeof groupToTrip>) =>
     mergeTripWithLocal(
       trip,
@@ -109,11 +111,11 @@ export const HomeScreen = () => {
               </div>
             </Link>
 
-            {session.isGuest ? null : (
-              <Button asChild variant="primary" fullWidth>
-                <Link href="/trips/new">새 여행 계획 만들기</Link>
-              </Button>
-            )}
+            <Button asChild variant="primary" fullWidth>
+              <Link href="/trips/new" onClick={beginHostPlanning}>
+                새 여행 계획 만들기
+              </Link>
+            </Button>
           </>
         ) : (
           <div className="border-line-hairline flex flex-col items-center gap-2 rounded-2xl border bg-white px-6 pt-5 pb-7">
@@ -124,10 +126,10 @@ export const HomeScreen = () => {
               ✈️
             </div>
             <p className="text-ink-900 text-base font-bold">
-              {session.isGuest ? '참여 중인 여행이 없어요' : '아직 여행이 없어요'}
+              {isGuest ? '참여 중인 여행이 없어요' : '아직 여행이 없어요'}
             </p>
             <p className="text-text-subtle text-center text-sm leading-[1.5]">
-              {session.isGuest ? (
+              {isGuest ? (
                 <>
                   친구가 보낸 초대 링크로 들어오면
                   <br />
@@ -142,8 +144,8 @@ export const HomeScreen = () => {
               )}
             </p>
             <Button asChild variant="primary" fullWidth className="mt-1">
-              <Link href={session.isGuest ? '/join' : '/trips/new'}>
-                {session.isGuest ? '초대 코드로 참여하기' : '새 여행 계획 만들기'}
+              <Link href={isGuest ? '/join' : '/trips/new'} onClick={isGuest ? undefined : beginHostPlanning}>
+                {isGuest ? '초대 코드로 참여하기' : '새 여행 계획 만들기'}
               </Link>
             </Button>
           </div>

@@ -183,6 +183,13 @@ const markerContent = (order: number) => {
   return `<div style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #fff;border-radius:999px;background:#3366ff;color:#fff;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(23,23,25,0.24);">${order}</div>`;
 };
 
+const KAKAO_MIN_LEVEL = 1;
+const KAKAO_MAX_LEVEL = 14;
+
+const clampMapLevel = (level: number) => {
+  return Math.min(KAKAO_MAX_LEVEL, Math.max(KAKAO_MIN_LEVEL, level));
+};
+
 export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CENTER }: KakaoMapProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
@@ -198,6 +205,14 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
   const placesKey = places
     .map((place) => `${place.id}:${place.lat ?? ''}:${place.lng ?? ''}:${place.name ?? ''}:${place.address ?? ''}`)
     .join('|');
+
+  const changeZoom = (delta: number) => {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+    map.setLevel(clampMapLevel(map.getLevel() + delta));
+  };
 
   useEffect(() => {
     if (!appKey || !containerRef.current) {
@@ -228,11 +243,13 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
       container.replaceChildren();
       mapRef.current = new maps.Map(container, {
         center,
-        level: resolved.length > 1 ? 7 : 5,
-        scrollwheel: false,
+        level: resolved.length > 1 ? 8 : 5,
+        scrollwheel: true,
+        draggable: true,
+        disableDoubleClickZoom: false,
       });
       const map = mapRef.current;
-      map.addControl(new maps.ZoomControl(), maps.ControlPosition.RIGHT);
+      map.setZoomable(true);
       map.relayout();
 
       if (resolved.length === 0) {
@@ -244,7 +261,7 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
       const path = resolved.map((place) => new maps.LatLng(place.lat, place.lng));
       const bounds = new maps.LatLngBounds();
       path.forEach((position) => bounds.extend(position));
-      map.setBounds(bounds);
+      map.setBounds(bounds, 24, 48, 24, 24);
 
       const markers = path.map((position, index) => {
         const overlay = new maps.CustomOverlay({
@@ -276,7 +293,7 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
         }
         map.relayout();
         if (resolved.length > 1) {
-          map.setBounds(bounds);
+          map.setBounds(bounds, 24, 48, 24, 24);
         } else {
           map.setCenter(path[0] ?? center);
         }
@@ -326,7 +343,7 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
     return (
       <div
         className={cn(
-          'border-line-hairline flex h-[140px] w-full items-center justify-center rounded-2xl border bg-[#eef1f5] px-4 text-center text-[12.5px] font-medium text-[rgba(55,56,60,0.5)]',
+          'border-line-hairline flex h-[168px] w-full items-center justify-center rounded-2xl border bg-[#eef1f5] px-4 text-center text-[12.5px] font-medium text-[rgba(55,56,60,0.5)]',
           className,
         )}
       >
@@ -336,8 +353,8 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
   }
 
   return (
-    <div className={cn('relative isolate z-0 h-[140px] w-full overflow-hidden rounded-2xl bg-[#eef1f5]', className)}>
-      <div ref={containerRef} className="h-[140px] w-full" />
+    <div className={cn('relative isolate z-0 h-[168px] w-full overflow-hidden rounded-2xl bg-[#eef1f5]', className)}>
+      <div ref={containerRef} className="h-[168px] w-full" />
       {status !== 'ready' ? (
         <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center px-4 text-center text-[12.5px] font-medium text-[rgba(55,56,60,0.5)]">
           {status === 'error'
@@ -345,8 +362,29 @@ export const KakaoMap = ({ places, badge, className, fallbackCenter = DEFAULT_CE
             : '지도를 불러오는 중…'}
         </div>
       ) : null}
+      {status === 'ready' ? (
+        <div className="absolute top-2 right-2 z-20 flex flex-col overflow-hidden rounded-lg border border-[#e5e7eb] bg-white shadow-[0px_2px_8px_rgba(23,23,25,0.12)]">
+          <button
+            type="button"
+            aria-label="지도 확대"
+            className="flex size-8 items-center justify-center text-lg font-bold text-[#171717]"
+            onClick={() => changeZoom(-1)}
+          >
+            +
+          </button>
+          <span className="h-px w-full bg-[#e5e7eb]" aria-hidden />
+          <button
+            type="button"
+            aria-label="지도 축소"
+            className="flex size-8 items-center justify-center text-lg font-bold text-[#171717]"
+            onClick={() => changeZoom(1)}
+          >
+            −
+          </button>
+        </div>
+      ) : null}
       {badge ? (
-        <span className="pointer-events-none absolute top-3 left-3 z-10 rounded-md bg-white px-2 py-1 text-[10.5px] font-bold text-[#171717] shadow-[0px_1px_4px_rgba(23,23,25,0.08)]">
+        <span className="pointer-events-none absolute top-3 left-3 z-10 rounded-md bg-white px-2 py-1 text-[10.5px] font-bold text-[#171717] shadow-[0px_1px_8px_rgba(23,23,25,0.08)]">
           {badge}
         </span>
       ) : null}

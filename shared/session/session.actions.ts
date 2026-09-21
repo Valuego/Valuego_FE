@@ -47,9 +47,36 @@ export const applyAuthenticatedUser = (user: UserProfile) => {
     ...prev,
     isAuthenticated: true,
     isGuest: false,
-    guestMemberId: null,
+    // 초대 링크로 들어온 뒤 카카오 호스트 로그인을 해도, 기존 게스트 멤버십은 그 여행에서만 게스트로 남긴다.
     user,
   }));
+};
+
+export const beginHostPlanning = () => {
+  setSession((prev) => ({
+    ...prev,
+    isGuest: false,
+    postLoginPath: '/trips/new',
+  }));
+};
+
+export const consumePostLoginPath = () => {
+  const current = getSessionSnapshot().postLoginPath;
+  if (current) {
+    setSession((prev) => ({
+      ...prev,
+      postLoginPath: null,
+    }));
+  }
+  return current;
+};
+
+export const getPostAuthPath = () => {
+  const session = getSessionSnapshot();
+  if (!session.hasCompletedOnboarding) {
+    return '/onboarding';
+  }
+  return session.postLoginPath || '/home';
 };
 
 export const enterGuestSession = (

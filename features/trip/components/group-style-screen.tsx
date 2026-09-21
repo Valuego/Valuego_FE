@@ -16,15 +16,18 @@ type GroupStyleScreenProps = {
 
 export const GroupStyleScreen = ({ tripId }: GroupStyleScreenProps) => {
   const router = useRouter();
-  const { trip, groupId, isGuest } = useTripView(tripId);
+  const { trip, groupId, isGuest, isLoading } = useTripView(tripId);
   const createStyle = useCreateLeaderStyle(groupId ?? 0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isLoading) {
+      return;
+    }
     if (isGuest) {
       router.replace(buildTripHref(tripId));
     }
-  }, [isGuest, router, tripId]);
+  }, [isGuest, isLoading, router, tripId]);
 
   const handleSubmit = async (value: { budget: string; foods: string[]; activity: number }) => {
     if (!groupId) {

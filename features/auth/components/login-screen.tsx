@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
-import { getSessionSnapshot } from '@/shared/session';
+import { consumePostLoginPath, getPostAuthPath } from '@/shared/session';
 
-import { getKakaoAuthorizeUrl } from '../auth.api';
+import { getKakaoAuthorizeUrl, logoutRequest } from '../auth.api';
 import { startKakaoLogin, useAuthStatus, useLoginWithTestAccount } from '../auth.hooks';
 import { isKakaoRedirectOriginMismatch } from '../auth.lib';
 import { BrandLogo } from './brand-logo';
@@ -19,26 +19,38 @@ type LoginScreenProps = {
 
 export const LoginScreen = ({ kakaoErrorFromCallback = null }: LoginScreenProps) => {
   const router = useRouter();
-  const { isAuthenticated, hasCompletedOnboarding, isBootstrapping, isGuest } = useAuthStatus();
+  const { isAuthenticated, isBootstrapping } = useAuthStatus();
   const testLogin = useLoginWithTestAccount();
   const [kakaoError, setKakaoError] = useState<string | null>(kakaoErrorFromCallback);
   const kakaoReady = Boolean(getKakaoAuthorizeUrl());
 
   useEffect(() => {
-    if (isGuest || isBootstrapping || !isAuthenticated) {
+    if (isBootstrapping || !isAuthenticated) {
       return;
     }
-    router.replace(hasCompletedOnboarding ? '/home' : '/onboarding');
-  }, [hasCompletedOnboarding, isAuthenticated, isBootstrapping, isGuest, router]);
+    const nextPath = getPostAuthPath();
+    if (nextPath !== '/onboarding') {
+      consumePostLoginPath();
+    }
+    router.replace(nextPath);
+  }, [isAuthenticated, isBootstrapping, router]);
 
   const redirectAfterLogin = () => {
-    const session = getSessionSnapshot();
-    router.push(session.hasCompletedOnboarding ? '/home' : '/onboarding');
+    const nextPath = getPostAuthPath();
+    if (nextPath !== '/onboarding') {
+      consumePostLoginPath();
+    }
+    router.push(nextPath);
   };
 
-  const handleKakaoLogin = () => {
+  const handleKakaoLogin = async () => {
     try {
       setKakaoError(null);
+      try {
+        await logoutRequest();
+      } catch {
+        // 게스트 쿠키만 지우는 용도라 실패해도 카카오 로그인은 진행한다.
+      }
       startKakaoLogin();
     } catch (error) {
       setKakaoError(getErrorMessage(error, '카카오 로그인을 시작할 수 없어요.'));

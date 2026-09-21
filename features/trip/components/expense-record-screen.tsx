@@ -13,7 +13,7 @@ import { cn } from '@/shared/lib/cn';
 
 import { EXPENSE_CATEGORY_OPTIONS, expenseCategoryEmoji, expenseCategoryLabel } from '../trip.constants';
 import { useCreateExpense, useExpensesQuery, useTripView } from '../trip.hooks';
-import { parseGroupId, toIsoDate } from '../trip.lib';
+import { isPayableTripMember, parseGroupId, parseGroupMemberId, toIsoDate } from '../trip.lib';
 
 type ExpenseRecordScreenProps = {
   tripId: string;
@@ -35,7 +35,9 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
   const [amountInput, setAmountInput] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [category, setCategory] = useState<(typeof EXPENSE_CATEGORY_OPTIONS)[number] | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const amount = parseAmount(amountInput);
+  const payableMembers = (trip?.members ?? []).filter(isPayableTripMember);
 
   const canSubmit = Boolean(
     groupId && amount > 0 && selectedMemberIds.length > 0 && category && !createExpense.isPending,
@@ -76,14 +78,20 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
     if (!canSubmit || !category) {
       return;
     }
+    const memberIds = selectedMemberIds.map((id) => parseGroupMemberId(id)).filter((id): id is number => id != null);
+    if (memberIds.length === 0) {
+      setSubmitError('함께 쓴 사람을 다시 선택해 주세요.');
+      return;
+    }
+    setSubmitError(null);
     try {
       await createExpense.mutateAsync({
         groupId,
         amount,
         category: category.category,
         expenseDate: toIsoDate(new Date()),
-        payers: [{ groupMemberId: Number(selectedMemberIds[0]) }],
-        participants: selectedMemberIds.map((id) => ({ groupMemberId: Number(id), isIncluded: true })),
+        payers: [{ groupMemberId: memberIds[0] }],
+        participants: memberIds.map((id) => ({ groupMemberId: id, isIncluded: true })),
       });
       setAmountInput('');
       setSelectedMemberIds([]);
@@ -106,6 +114,10 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
           <ul className="border-line-hairline overflow-hidden rounded-2xl border bg-white">
             {expensesQuery.isPending ? (
               <li className="text-text-secondary-soft px-3.5 py-4 text-sm font-medium">불러오는 중…</li>
+            ) : expensesQuery.isError ? (
+              <li className="px-3.5 py-4 text-sm font-medium text-[#e08300]">
+                {getErrorMessage(expensesQuery.error, '지출 기록을 불러오지 못했어요.')}
+              </li>
             ) : expenses.length === 0 ? (
               <li className="text-text-secondary-soft px-3.5 py-4 text-sm font-medium">아직 지출 기록이 없어요</li>
             ) : (
@@ -168,7 +180,7 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
         <section className="border-line-hairline flex flex-col gap-3 rounded-2xl border bg-white p-[18px]">
           <p className="text-ink-900 text-[15px] font-bold tracking-[-0.2px]">누가 함께 썼나요?</p>
           <div className="flex gap-2.5">
-            {trip.members.map((member) => {
+            {(payableMembers.length > 0 ? payableMembers : trip.members).map((member) => {
               const selected = selectedMemberIds.includes(member.id);
               return (
                 <button
@@ -199,6 +211,7 @@ export const ExpenseRecordScreen = ({ tripId, initialView = 'form' }: ExpenseRec
           </div>
         </section>
 
+        {submitError ? <p className="text-sm font-medium text-[#e08300]">{submitError}</p> : null}
         {createExpense.isError ? (
           <p className="text-sm font-medium text-[#e08300]">{getErrorMessage(createExpense.error)}</p>
         ) : null}

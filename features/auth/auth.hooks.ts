@@ -32,7 +32,8 @@ export const useAuthStatus = (options?: { fetchProfile?: boolean }) => {
   const session = useAppSession();
   const fetchProfile = options?.fetchProfile ?? true;
   const profileQuery = useUserProfileQuery(fetchProfile, {
-    skipAuthRetry: session.isGuest || !session.isAuthenticated,
+    // 게스트로 들어온 뒤 카카오 로그인을 하면 refresh로 호스트 세션을 살려야 한다.
+    skipAuthRetry: false,
   });
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export const useAuthStatus = (options?: { fetchProfile?: boolean }) => {
   return {
     isBootstrapping,
     isAuthenticated,
-    isGuest: session.isGuest,
+    isGuest: session.isGuest && !isAuthenticated,
     hasCompletedOnboarding: session.hasCompletedOnboarding,
     profile: profileQuery.data,
     session,

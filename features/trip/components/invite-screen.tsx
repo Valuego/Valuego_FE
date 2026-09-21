@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useAuthStatus } from '@/features/auth';
 import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { Header } from '@/shared/components/header';
@@ -20,6 +21,7 @@ import {
   buildInviteUrl,
   buildTripHref,
   formatInviteLinkLabel,
+  isHostStyleComplete,
   isInviteSeatFilled,
   toInviteStatusLabel,
 } from '../trip.lib';
@@ -47,14 +49,18 @@ const isShareAbort = (error: unknown) => {
 export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   const router = useRouter();
   const session = useAppSession();
+  const { isBootstrapping } = useAuthStatus();
   const { trip, isLoading, isError, error, isGuest } = useTripView(tripId, { refetchInterval: 4000 });
   const [toast, setToast] = useState<InviteToast>(null);
 
   useEffect(() => {
+    if (isLoading || isBootstrapping) {
+      return;
+    }
     if (isGuest) {
       router.replace(buildTripHref(tripId));
     }
-  }, [isGuest, router, tripId]);
+  }, [isBootstrapping, isGuest, isLoading, router, tripId]);
 
   useEffect(() => {
     if (!isLoading && !isError && !trip) {
@@ -109,9 +115,7 @@ export const InviteScreen = ({ tripId }: InviteScreenProps) => {
   const waitingCount = trip.members.filter((member) => toInviteStatusLabel(member) === '대기 중').length;
   const filledCount = trip.members.filter((member) => isInviteSeatFilled(member)).length;
   const showEmptyFriends = friends.length === 0;
-  const hostIncomplete = trip.members.some(
-    (member) => member.role.includes('호스트') && toInviteStatusLabel(member) !== '완료',
-  );
+  const hostIncomplete = !isHostStyleComplete(trip);
 
   const markInvitesSent = () => {
     seedPendingInvitees(trip.id);

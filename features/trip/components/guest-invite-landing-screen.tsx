@@ -7,7 +7,7 @@ import { Avatar } from '@/shared/components/avatar';
 import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
-import { isDemoInviteCode, normalizeInviteInput, useAppSession } from '@/shared/session';
+import { beginHostPlanning, isDemoInviteCode, normalizeInviteInput, useAppSession } from '@/shared/session';
 
 import { INVITE_HIGHLIGHTS } from '../trip.constants';
 import { useGroupSummaryQuery } from '../trip.hooks';
@@ -45,6 +45,11 @@ export const GuestInviteLandingScreen = ({ code }: GuestInviteLandingScreenProps
 
   const handleJoin = () => {
     router.push(`${buildInvitePath(code)}/onboarding`);
+  };
+
+  const handleCreateAsHost = () => {
+    beginHostPlanning();
+    router.push('/trips/new');
   };
 
   return (
@@ -96,7 +101,14 @@ export const GuestInviteLandingScreen = ({ code }: GuestInviteLandingScreenProps
         <Button variant="primary" fullWidth onClick={handleJoin}>
           1분만에 여행 시작하러가기
         </Button>
-        <p className="text-text-secondary-soft mt-3 text-center text-[13.5px] font-medium">
+        <button
+          type="button"
+          className="text-text-secondary-soft mt-3 w-full text-center text-[13.5px] font-medium underline-offset-2 hover:underline"
+          onClick={handleCreateAsHost}
+        >
+          호스트로 새 여행 만들기
+        </button>
+        <p className="text-text-secondary-soft mt-2 text-center text-[13.5px] font-medium">
           앱 설치 · 회원가입 필요 없어요
         </p>
       </div>

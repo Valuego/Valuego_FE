@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { getErrorMessage } from '@/shared/lib/api';
-import { applyAuthenticatedUser, getSessionSnapshot } from '@/shared/session';
+import { applyAuthenticatedUser, consumePostLoginPath, getPostAuthPath } from '@/shared/session';
 
 import { authQueryKeys, userProfileQueryOptions } from '../auth.api';
 import { toSessionUser } from '../auth.lib';
@@ -34,8 +34,11 @@ export const LoginCompleteScreen = () => {
           }
           const profile = await queryClient.fetchQuery(userProfileQueryOptions);
           applyAuthenticatedUser(toSessionUser(profile));
-          const session = getSessionSnapshot();
-          router.replace(session.hasCompletedOnboarding ? '/home' : '/onboarding');
+          const nextPath = getPostAuthPath();
+          if (nextPath !== '/onboarding') {
+            consumePostLoginPath();
+          }
+          router.replace(nextPath);
           return;
         } catch (error) {
           lastError = error;

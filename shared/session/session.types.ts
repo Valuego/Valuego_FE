@@ -122,6 +122,7 @@ export type AppSession = {
   isGuest: boolean;
   hasCompletedOnboarding: boolean;
   guestMemberId: number | null;
+  postLoginPath: string | null;
   user: UserProfile;
   draft: TripDraft | null;
   trips: Trip[];

@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
-import { completeOnboarding } from '@/shared/session';
+import { completeOnboarding, consumePostLoginPath } from '@/shared/session';
 
 import { ONBOARDING_STEPS } from '../onboarding.constants';
 import { StepDots } from './step-dots';
@@ -28,7 +28,7 @@ export const OnboardingScreen = ({ lastCtaLabel, onSkip, onComplete }: Onboardin
       return;
     }
     completeOnboarding();
-    router.push('/home');
+    router.push(consumePostLoginPath() || '/home');
   };
 
   const handleSkip = () => {
@@ -37,7 +37,7 @@ export const OnboardingScreen = ({ lastCtaLabel, onSkip, onComplete }: Onboardin
       return;
     }
     completeOnboarding();
-    router.push('/home');
+    router.push(consumePostLoginPath() || '/home');
   };
 
   const handleNext = () => {

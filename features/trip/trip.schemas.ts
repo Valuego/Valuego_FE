@@ -257,9 +257,20 @@ export const userTimelineSchema = z.object({
   items: z.array(userTimelineItemSchema),
 });
 
+const remainingTimeSchema = z.preprocess((value) => {
+  if (typeof value === 'string') {
+    const matched = value.match(/T(\d{2}:\d{2})/);
+    return matched?.[1] ?? value;
+  }
+  if (Array.isArray(value) && value.length >= 5) {
+    return `${String(value[3]).padStart(2, '0')}:${String(value[4]).padStart(2, '0')}`;
+  }
+  return value;
+}, z.string());
+
 export const remainingScheduleItemSchema = z.object({
   travelPlaceId: z.coerce.number(),
-  time: z.string(),
+  time: remainingTimeSchema,
   placeName: z.string(),
   category: z.string(),
 });
@@ -305,18 +316,28 @@ export const effortResultSchema = z.object({
   comments: z.array(z.string()),
 });
 
+const expenseDateSchema = z.preprocess((value) => {
+  if (value == null || value === '') {
+    return null;
+  }
+  if (Array.isArray(value) && value.length >= 3) {
+    return `${value[0]}-${String(value[1]).padStart(2, '0')}-${String(value[2]).padStart(2, '0')}`;
+  }
+  return value;
+}, z.string().nullable());
+
 export const expenseInfoSchema = z.object({
   expenseId: z.coerce.number(),
   amount: z.coerce.number(),
   category: expenseCategorySchema.nullable(),
-  expenseDate: z.string().nullable(),
-  payerName: z.string(),
-  participantCount: z.number(),
+  expenseDate: expenseDateSchema,
+  payerName: z.string().optional().default(''),
+  participantCount: z.coerce.number().optional().default(0),
 });
 
 export const expenseListSchema = z.object({
-  totalAmount: z.coerce.number(),
-  expenseInfoResDtos: z.array(expenseInfoSchema),
+  totalAmount: z.coerce.number().optional().default(0),
+  expenseInfoResDtos: z.array(expenseInfoSchema).optional().default([]),
 });
 
 export const settlementEffortRewardSchema = z.object({
@@ -366,10 +387,10 @@ export const pastSettlementListSchema = z.array(pastSettlementSchema);
 
 export const userRemainingScheduleSchema = z.object({
   groupId: z.coerce.number(),
-  scheduleStatus: z.string(),
-  groupTitle: z.string(),
-  currentDay: z.number(),
-  currentStatus: z.string(),
-  totalExpense: z.number(),
-  todaySchedules: z.array(remainingScheduleItemSchema),
+  scheduleStatus: z.string().optional().default(''),
+  groupTitle: z.string().optional().default(''),
+  currentDay: z.coerce.number().optional().default(1),
+  currentStatus: z.string().optional().default(''),
+  totalExpense: z.coerce.number().optional().default(0),
+  todaySchedules: z.array(remainingScheduleItemSchema).optional().default([]),
 });

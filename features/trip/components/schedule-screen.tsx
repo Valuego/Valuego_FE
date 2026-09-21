@@ -16,7 +16,7 @@ import { MobileShell } from '@/shared/components/mobile-shell';
 import { TextField } from '@/shared/components/text-field';
 import { getErrorMessage } from '@/shared/lib/api';
 import { cn } from '@/shared/lib/cn';
-import { advanceTripPhase } from '@/shared/session';
+import { advanceTripPhase, useAppSession } from '@/shared/session';
 
 import type { ScheduleDay, SchedulePlace } from '../trip.types';
 
@@ -42,6 +42,7 @@ import {
   isHostStyleComplete,
   isScheduleNotFound,
   parseGroupId,
+  resolvePlaceTypeLabel,
   resolvePlanningPath,
 } from '../trip.lib';
 
@@ -69,6 +70,7 @@ const toVisitTimePayload = (value: string) => {
 
 export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
   const router = useRouter();
+  const session = useAppSession();
   const {
     trip,
     group,
@@ -117,8 +119,13 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
     (isScheduleNotFound(scheduleQuery.error) || (!scheduleQuery.isPending && !scheduleQuery.isError));
   const errorMessage = scheduleQuery.isError && !notFound ? getErrorMessage(scheduleQuery.error) : null;
   const totalDistance = activeDay?.totalDistanceKm;
-  const isHost = !isGuest;
-  const isConfirmable = isHost && trip?.phase !== 'ongoing' && trip?.phase !== 'settling' && trip?.phase !== 'settled';
+  const isConfirmedPhase = trip?.phase === 'ongoing' || trip?.phase === 'settling' || trip?.phase === 'settled';
+  const isGuestMemberOfTrip = Boolean(
+    session.guestMemberId != null &&
+    group?.members.some((member) => member.groupMemberId === session.guestMemberId && member.memberRole !== 'LEADER'),
+  );
+  const isHost = !isGuestMemberOfTrip;
+  const isConfirmable = isHost && !isConfirmedPhase;
   const canManagePlaces = Boolean(isConfirmable && activeDay);
 
   useEffect(() => {
@@ -653,7 +660,7 @@ export const ScheduleScreen = ({ tripId }: ScheduleScreenProps) => {
                 {suggestAiUpdate.data.newPlaces.map((place, index) => (
                   <li key={place.contentId ?? index} className="text-ink-900 text-[13.5px] font-medium">
                     → {place.visitTime ? `${place.visitTime} · ` : ''}
-                    {place.placeType ?? '일정'}
+                    {resolvePlaceTypeLabel(place.placeType)}
                     {place.reason ? ` (${place.reason})` : ''}
                   </li>
                 ))}

@@ -3,7 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef } from 'react';
 
-import { enterGuestSession, setActiveTripId, upsertLocalTrip, useAppSession, useTripById } from '@/shared/session';
+import {
+  consumePostLoginPath,
+  enterGuestSession,
+  setActiveTripId,
+  upsertLocalTrip,
+  useAppSession,
+  useTripById,
+} from '@/shared/session';
 
 import type {
   AiScheduleSuggestion,
@@ -59,7 +66,14 @@ import {
   userTimelineQueryOptions,
 } from './trip.api';
 import { LOCAL_DEMO_SCHEDULE } from './trip.constants';
-import { decodeTripId, groupToTrip, MEMBER_COLOR_TO_KEY, mergeTripWithLocal, parseGroupId } from './trip.lib';
+import {
+  decodeTripId,
+  groupToTrip,
+  isGuestViewerOfGroup,
+  MEMBER_COLOR_TO_KEY,
+  mergeTripWithLocal,
+  parseGroupId,
+} from './trip.lib';
 
 export const useMyGroupsQuery = (enabled = true) => {
   return useQuery({
@@ -203,21 +217,26 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
   const localTrip = useTripById(tripId);
   const groupId = parseGroupId(tripId);
   const groupQuery = useGroupDetailQuery(tripId, Boolean(groupId), options?.refetchInterval);
-  const listQuery = useMyGroupsQuery(!session.isGuest);
+  const listQuery = useMyGroupsQuery(session.isAuthenticated || !session.isGuest);
   const groupFromList = useMemo(() => {
     const groups = [...(listQuery.data?.ongoingGroups ?? []), ...(listQuery.data?.pastGroups ?? [])];
     return findGroupByTripId(groups, tripId);
   }, [listQuery.data, tripId]);
   const resolvedGroup = groupQuery.data ?? groupFromList;
+  const isGuestViewer = isGuestViewerOfGroup(resolvedGroup, {
+    isGuestSession: session.isGuest,
+    isAuthenticated: session.isAuthenticated,
+    guestMemberId: session.guestMemberId,
+  });
   const tripFromGroup = useMemo(
     () =>
       resolvedGroup
         ? groupToTrip(resolvedGroup, {
-            viewerIsGuest: session.isGuest,
+            viewerIsGuest: isGuestViewer,
             viewerMemberId: session.guestMemberId,
           })
         : null,
-    [resolvedGroup, session.guestMemberId, session.isGuest],
+    [isGuestViewer, resolvedGroup, session.guestMemberId],
   );
   const trip = useMemo(
     () => (tripFromGroup ? mergeTripWithLocal(tripFromGroup, localTrip) : localTrip),
@@ -240,7 +259,7 @@ export const useTripView = (tripId: string, options?: { refetchInterval?: number
     trip,
     group: resolvedGroup,
     groupId,
-    isGuest: session.isGuest,
+    isGuest: isGuestViewer,
     isLoading: waitingForRemote,
     isError: Boolean(groupId) && groupQuery.isError && !trip,
     error: groupQuery.error,
@@ -254,6 +273,7 @@ export const useCreateGroup = () => {
   return useMutation({
     mutationFn: (body: GroupCreateRequest) => createGroup(body),
     onSuccess: async (group) => {
+      consumePostLoginPath();
       queryClient.setQueryData(tripQueryKeys.detail(group.groupId), group);
       await queryClient.invalidateQueries({ queryKey: tripQueryKeys.lists() });
       upsertLocalTrip(groupToTrip(group));

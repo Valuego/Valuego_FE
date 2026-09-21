@@ -71,6 +71,48 @@ export const parseGroupId = (tripId: string): number | null => {
   return Number.isSafeInteger(groupId) ? groupId : null;
 };
 
+export const parseGroupMemberId = (memberId: string): number | null => {
+  if (!/^\d+$/.test(memberId.trim())) {
+    return null;
+  }
+  const parsed = Number(memberId);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+export const isGuestViewerOfGroup = (
+  group: GroupInfo | null | undefined,
+  options: { isGuestSession: boolean; isAuthenticated: boolean; guestMemberId: number | null },
+) => {
+  if (options.guestMemberId != null && group?.members.length) {
+    const self = group.members.find((member) => member.groupMemberId === options.guestMemberId);
+    if (self) {
+      return self.memberRole !== 'LEADER';
+    }
+    return false;
+  }
+  if (options.guestMemberId != null) {
+    return false;
+  }
+  return options.isGuestSession && !options.isAuthenticated;
+};
+
+export const sortExpensesNewestFirst = <T extends { expenseId: number; expenseDate: string | null }>(expenses: T[]) => {
+  return [...expenses].sort((left, right) => {
+    const dateCompare = (right.expenseDate ?? '').localeCompare(left.expenseDate ?? '');
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+    return right.expenseId - left.expenseId;
+  });
+};
+
+export const getCurrentTravelDayNumber = (startDate: string, dayCount: number) => {
+  const start = startOfDay(parseIsoDate(startDate));
+  const today = startOfDay(new Date());
+  const index = Math.round((today.getTime() - start.getTime()) / MS_PER_DAY) + 1;
+  return Math.min(Math.max(index, 1), Math.max(dayCount, 1));
+};
+
 export const decodeTripId = (tripId: string) => {
   try {
     return decodeURIComponent(tripId);
@@ -196,6 +238,10 @@ export const isHostStyleComplete = (trip: Trip) => {
     return host.statusLabel === '완료';
   }
   return trip.foods.length > 0;
+};
+
+export const isPayableTripMember = (member: TripMember) => {
+  return parseGroupMemberId(member.id) != null;
 };
 
 export const formatDayChipDate = (startDate: string, dayNumber: number) => {
@@ -520,11 +566,52 @@ export const mergeTripWithLocal = (remote: Trip, local?: Trip | null): Trip => {
   };
 };
 
+const normalizePlaceTypeToken = (value: string) => {
+  return value
+    .trim()
+    .replace(/[\s/_-]+/g, '_')
+    .toUpperCase();
+};
+
+export const resolvePlaceTypeLabel = (placeType?: string | null) => {
+  return getPlaceTypeStyle(placeType).label;
+};
+
 export const getPlaceTypeStyle = (placeType?: string | null) => {
   if (!placeType) {
     return DEFAULT_PLACE_TYPE_STYLE;
   }
+
   const trimmed = placeType.trim();
-  const aliased = PLACE_TYPE_ALIASES[trimmed] ?? PLACE_TYPE_ALIASES[trimmed.toUpperCase()];
-  return PLACE_TYPE_STYLE[aliased ?? trimmed] ?? DEFAULT_PLACE_TYPE_STYLE;
+  const compact = normalizePlaceTypeToken(trimmed);
+  const direct =
+    PLACE_TYPE_ALIASES[trimmed] ?? PLACE_TYPE_ALIASES[trimmed.toUpperCase()] ?? PLACE_TYPE_ALIASES[compact];
+  if (direct) {
+    return PLACE_TYPE_STYLE[direct];
+  }
+
+  const tokens = trimmed
+    .split(/[/,|]+/)
+    .map((token) => normalizePlaceTypeToken(token))
+    .filter(Boolean);
+  for (const token of tokens) {
+    const aliased = PLACE_TYPE_ALIASES[token];
+    if (aliased) {
+      return PLACE_TYPE_STYLE[aliased];
+    }
+  }
+
+  const upper = trimmed.toUpperCase();
+  const haystack = `${trimmed} ${upper}`;
+  if (/(RESTAURANT|FOOD|MEAL|CAFE|EATERY|DINING|식사|맛집|음식|식당|카페)/i.test(haystack)) {
+    return PLACE_TYPE_STYLE.식사;
+  }
+  if (/(TRANSPORT|TRANSFER|TRANSIT|TRAFFIC|MOVE|DRIVE|이동|교통)/i.test(haystack)) {
+    return PLACE_TYPE_STYLE.이동;
+  }
+  if (/(TOUR|ATTRACTION|SIGHT|ACTIVITY|CUSTOM|HOTEL|STAY|관광|명소|숙소)/i.test(haystack)) {
+    return PLACE_TYPE_STYLE.관광;
+  }
+
+  return PLACE_TYPE_STYLE[trimmed] ?? DEFAULT_PLACE_TYPE_STYLE;
 };

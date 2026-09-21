@@ -6,7 +6,7 @@ import { BrandLogo } from '@/features/auth';
 import { Button } from '@/shared/components/button';
 import { MobileShell } from '@/shared/components/mobile-shell';
 import { cn } from '@/shared/lib/cn';
-import { completeOnboarding } from '@/shared/session';
+import { completeOnboarding, consumePostLoginPath } from '@/shared/session';
 
 import { WELCOME_FEATURES } from '../onboarding.constants';
 
@@ -15,7 +15,7 @@ export const WelcomeScreen = () => {
 
   const handleStart = () => {
     completeOnboarding();
-    router.push('/home');
+    router.push(consumePostLoginPath() || '/home');
   };
 
   return (
